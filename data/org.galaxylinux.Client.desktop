@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Name=galaxy-linux
+GenericName=Game library (GOG.com, unofficial)
+GenericName[de]=Spielebibliothek (GOG.com, inoffiziell)
+Comment=Unofficial GOG.com client with per-game Proton selection
+Comment[de]=Inoffizieller Client für GOG.com mit Proton-Auswahl pro Spiel
+Exec=galaxy-linux %u
+Icon=org.galaxylinux.Client
+Terminal=false
+Categories=Game;
+Keywords=GOG;Galaxy;Proton;Wine;Games;
+Keywords[de]=GOG;Galaxy;Proton;Wine;Spiele;
+StartupNotify=true
+StartupWMClass=org.galaxylinux.Client
+MimeType=x-scheme-handler/galaxy-linux;

@@ -1,0 +1,94 @@
+/* Erscheinungsbild nach GOG Galaxy 2.0: sehr dunkles Grau, violetter Akzent, Kapitälchen-Überschriften */
+window.galaxy { background-color: #1b1b20; color: #d9d9de; }
+.titlebar-galaxy { background-color: #1b1b20; min-height: 44px; }
+.sidebar-head { background-color: #16161a; }
+.sidebar { background-color: #16161a; border-right: 1px solid rgba(255,255,255,0.05); }
+.content-head { background-color: #1b1b20; border-bottom: 1px solid rgba(255,255,255,0.04); }
+
+.hdr-btn { color: #b6bdc2; min-width: 28px; min-height: 28px; padding: 2px; border-radius: 6px; }
+.hdr-btn:hover { background-color: rgba(255,255,255,0.08); color: #fff; }
+.hdr-btn:checked { color: #c57be3; }
+.hdr-pill { background-color: #2a2a31; color: #c9cdd1; border-radius: 6px; padding: 2px 12px; min-height: 28px; }
+.hdr-pill:hover { background-color: #34343c; color: #fff; }
+.hdr-search { background-color: #2a2a31; color: #e0e0e4; border-radius: 6px; min-height: 28px; border: none; caret-color: #c57be3; }
+.hdr-search:focus-within { background-color: #34343c; }
+.hdr-search image { color: #8c8c92; }
+
+.sec-hdr { color: #8c8c92; font-size: 8.5pt; font-weight: 700; letter-spacing: 1.4px; }
+.sec-hdr-btn { padding: 2px 4px; border-radius: 4px; min-height: 0; }
+.nav-section { color: #6e6e74; font-size: 7.5pt; font-weight: 700; letter-spacing: 1.4px; margin-top: 14px; margin-bottom: 2px; padding-left: 22px; }
+.nav-item { padding: 3px 12px 3px 22px; border-radius: 0; background: transparent; color: #a0a0a6; min-height: 24px; font-size: 9.5pt; }
+.nav-item:hover { color: #fff; background-color: rgba(255,255,255,0.035); }
+.nav-item.selected { color: #ffffff; box-shadow: inset 3px 0 0 #c57be3; background-color: rgba(255,255,255,0.03); }
+.nav-item:disabled { color: #55555b; }
+.nav-item image { color: inherit; opacity: 0.9; }
+.nav-badge { background-color: rgba(255,255,255,0.1); border-radius: 999px; padding: 0 7px; font-size: 7.5pt; color: #c8c8cc; min-height: 16px; }
+.nav-badge.accent { background-color: #6b4a9e; color: #ffffff; }
+.nav-add { min-height: 18px; min-width: 18px; padding: 0; margin: 0 10px 1px 0; border-radius: 4px; color: #6e6e74; }
+.nav-add:hover { color: #ffffff; background-color: rgba(255,255,255,0.06); }
+.nav-hint { color: #6e6e74; }
+.lib-head { margin-bottom: -10px; }
+.destructive-text { color: #ff9a9a; }
+
+.cover-card { padding: 0; border-radius: 6px; }
+.cover { border-radius: 4px; background-color: #26262c; box-shadow: 0 4px 14px rgba(0,0,0,0.55); }
+.cover-card:hover .cover { box-shadow: 0 0 0 2px rgba(255,255,255,0.45), 0 6px 18px rgba(0,0,0,0.6); }
+.cover-card.dim .cover { opacity: 0.55; }
+.cover-title { font-size: 9pt; color: #c9c9ce; }
+.cover-badge { border-radius: 4px; padding: 1px 6px; font-size: 7.5pt; font-weight: 700; background-color: rgba(20,20,24,0.85); color: #fff; }
+.cover-badge.update { background-color: #c57be3; color: #1b1b20; }
+.cover-badge.running { background-color: #6bcf8a; color: #1b1b20; }
+.cover-progress { min-height: 4px; }
+.cover-progress trough { background-color: rgba(0,0,0,0.6); min-height: 4px; border-radius: 0; }
+.cover-progress progress { background-color: #c57be3; min-height: 4px; border-radius: 0; }
+
+/* Spielansicht */
+.hero { background-color: #121216; }
+.hero-shade { background: linear-gradient(to top, #1b1b20 0%, rgba(27,27,32,0.6) 28%, rgba(27,27,32,0.0) 60%); }
+.hero-title { font-size: 30pt; font-weight: 800; color: #fff; text-shadow: 0 2px 12px rgba(0,0,0,0.85); }
+.actionbar { padding: 14px 28px; background-color: #1b1b20; }
+.btn-play { background-color: #8b4fd6; color: #ffffff; font-weight: 700; font-size: 11.5pt; letter-spacing: 1.3px; padding: 0 30px; min-height: 44px; border-radius: 4px; }
+.btn-play:hover { background-color: #9a63df; }
+.btn-play:disabled { background-color: #4e3a6b; color: #b9a9d3; }
+.btn-install { background-color: #8b4fd6; color: #fff; font-weight: 700; font-size: 11.5pt; letter-spacing: 1.3px; padding: 0 30px; min-height: 44px; border-radius: 4px; }
+.btn-install:hover { background-color: #9a63df; }
+.btn-secondary { background-color: #2a2a31; color: #e0e0e4; font-weight: 700; letter-spacing: 1px; min-height: 44px; padding: 0 18px; border-radius: 4px; }
+.btn-secondary:hover { background-color: #34343c; }
+.btn-danger { background-color: #3a2a31; color: #ffb0b0; font-weight: 700; min-height: 44px; padding: 0 18px; border-radius: 4px; }
+.btn-icon-big { min-height: 44px; min-width: 44px; background-color: #2a2a31; border-radius: 4px; color: #d0d0d4; }
+.btn-icon-big:hover { background-color: #34343c; color: #fff; }
+.stat-key { color: #8c8c92; font-size: 8pt; font-weight: 700; letter-spacing: 1.2px; }
+.stat-val { color: #ffffff; font-size: 11pt; }
+.stat-btn { padding: 0 10px; border-radius: 4px; }
+.stat-btn:hover { background-color: rgba(255,255,255,0.06); }
+.detail-key { color: #8c8c92; font-size: 9pt; }
+.detail-val { color: #e6e6ea; font-size: 9.5pt; }
+.body-text { color: #c4c4ca; font-size: 10pt; }
+.tag { background-color: rgba(255,255,255,0.08); color: #c9c9ce; border-radius: 3px; padding: 1px 8px; font-size: 8.5pt; }
+.panel { background-color: rgba(255,255,255,0.03); border-radius: 6px; padding: 14px; }
+.progress-strip { padding: 10px 28px; background-color: #202026; }
+.progress-strip progressbar trough { background-color: rgba(255,255,255,0.08); }
+.progress-strip progressbar progress { background-color: #c57be3; }
+.achievement-icon { border-radius: 6px; background-color: #26262c; }
+.achievement-icon.locked { opacity: 0.35; }
+.compat-dd { background-color: #2a2a31; border-radius: 4px; color: #e0e0e4; }
+.compat-entry { background-color: #2a2a31; border-radius: 4px; color: #e0e0e4; border: none; min-height: 32px; }
+.mono { font-family: monospace; font-size: 8.5pt; color: #9a9aa0; }
+.dim { opacity: 0.7; }
+.dl-row { padding: 12px 16px; border-radius: 6px; background-color: rgba(255,255,255,0.03); }
+.dl-row progressbar progress { background-color: #c57be3; }
+.welcome-logo { font-size: 26pt; font-weight: 800; letter-spacing: 2px; }
+
+.cover-placeholder { color: #d0d0d6; font-weight: 700; font-size: 11pt; }
+.cover.external-cover { background-image: linear-gradient(160deg, #3a2f52 0%, #1e1b26 70%); }
+
+.game-list { background: transparent; }
+.game-row { border-radius: 6px; }
+.game-row:hover { background-color: rgba(255,255,255,0.05); }
+.row-title { font-weight: 600; color: #ececf0; }
+.row-cell { color: #b8b8be; font-size: 9.5pt; }
+.row-cover { border-radius: 3px; }
+.list-header { padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.st-update { color: #d9a8f0; }
+.st-running { color: #8fe0a8; }
+.st-busy { color: #9ec9ff; }

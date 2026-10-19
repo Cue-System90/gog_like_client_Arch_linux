@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "galaxy-linux"
+version = "0.1.6"
+description = "Inoffizieller nativer Client für GOG.com auf CachyOS/Arch Linux mit Proton-Auswahl pro Spiel und Steam-kompatiblen Startoptionen"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+dependencies = ["requests>=2.25"]
+
+[project.optional-dependencies]
+vdf = ["vdf"]
+
+[project.scripts]
+galaxy-linux = "galaxy_linux.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["galaxy_linux*"]
+
+[tool.setuptools.package-data]
+"galaxy_linux" = ["locale/*.po"]
+"galaxy_linux.ui" = ["*.css"]

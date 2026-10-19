@@ -1,0 +1,5 @@
+#!/bin/sh
+# Startskript für die Nutzer-Installation (install.sh --user)
+PREFIX="${GALAXY_LINUX_HOME:-$HOME/.local/lib/galaxy-linux}"
+export PYTHONPATH="$PREFIX${PYTHONPATH:+:$PYTHONPATH}"
+exec python3 -m galaxy_linux "$@"
