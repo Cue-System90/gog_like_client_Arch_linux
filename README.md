@@ -20,31 +20,7 @@ GOG und GOG Galaxy sind Marken von GOG sp. z o.o. Dieses Projekt steht in keiner
 untersagt nicht genehmigte Drittprogramme; GOG duldet Open-Source-Clients wie Heroic, Minigalaxy oder Lutris
 seit Jahren, ein Anspruch darauf besteht aber nicht. Das Repository enthält keinen Code und keine Grafiken von GOG.
 
-<details>
-<summary><b>English</b></summary>
-
-An unofficial, **native** client for **GOG.com** on **CachyOS / Arch Linux** that works like the native
-Steam client: library, installation through GOG's own content system, **per-game Proton version**,
-**Steam-style launch options** (e.g. the line GOverlay generates), playtime, achievements, updates,
-custom libraries for non-GOG games and prefix tools – as a GTK4/libadwaita app and as a command line tool.
-
-- **Language:** the interface is available in German and English. It follows the system language
-  (German → German, everything else → English); change it under *Settings → General → Interface* or
-  start with `GALAXY_LINUX_LANG=en galaxy-linux`. New strings: `scripts/i18n-update.py`.
-- **Install:** `./install.sh --build` builds the pacman package (`scripts/build-package.sh`),
-  `./install.sh` removes an existing version and installs it. Dependencies: `python python-requests
-  python-gobject gtk4 libadwaita unzip xdg-utils`; recommended: `umu-launcher proton-cachyos webkitgtk-6.0
-  mangohud goverlay winetricks gamescope`.
-- **CLI:** `galaxy-linux --help` (login, list, install, launch, config, library, prefix, …).
-- **Tests:** `python3 -m unittest discover -s tests -t .`
-
-**Disclaimer:** unofficial project, use at your own risk. GOG's user agreement prohibits unauthorised
-third-party programs; open-source clients such as Heroic, Minigalaxy and Lutris have been tolerated for
-years, but there is no guarantee. This repository contains no code or artwork from GOG.
-GOG and GOG GALAXY are trademarks of GOG sp. z o.o.; this project is not affiliated with GOG.
-License: MIT.
-
-</details>
+**English:** complete documentation in [README.en.md](README.en.md).
 
 ## Oberfläche
 
@@ -90,6 +66,9 @@ Der Aufbau folgt GOG Galaxy 2.0:
 | Eigenschaften-Dialog | wie Steam: Kompatibilität, Startoptionen, Umgebungsvariablen, Startdatei (playTask), Pre-/Post-Befehle, Redistributables, Winetricks, Prefix/Ordner/Protokoll öffnen, Favorit, verstecken. |
 | Spielzeit | lokal gemessen, optional an GOG übertragen (erscheint im GOG-Profil wie bei Galaxy). |
 | Erfolge | pro Spiel über die Gameplay-API (spiel-spezifisches Token aus dem Build-Manifest, wie Galaxy). |
+| Einstellungen | **Allgemein**: Sprache der Oberfläche, Spiele- und Prefix-Ordner, weitere Installationsorte, ausgeschlossene Spielordner, bevorzugte Spielsprache, parallele Download-Verbindungen, Ordnerüberwachung, automatische Prefixe, Verknüpfungs-Vorgaben, Update-Suche beim Start, Spielzeit an GOG übertragen, versteckte Spiele anzeigen, Zugangsdaten im System-Schlüsselbund. **Bibliotheken**: eigene Bibliotheken anlegen, bearbeiten, löschen. **Kompatibilität**: Standard-Kompatibilitätstool, umu-launcher bevorzugen, Wayland-Treiber als Vorgabe, Redistributables, DPI für neue Prefixe (0 = aus der Desktop-Skalierung), globale Startoptionen, Übersicht der gefundenen Werkzeuge (umu, GOverlay, MangoHud, vkBasalt, GameMode, Gamescope). |
+| Sprache | Oberfläche auf **Deutsch** und **Englisch**, folgt der Systemsprache; umstellbar in den Einstellungen (siehe [Sprache](#sprache)). |
+| Protokoll | Ausführliches Log für die Fehlersuche, Zugangsdaten und Tokens maskiert (siehe [Protokollierung](#protokollierung-für-die-auswertung)). |
 | CLI | alles auch im Terminal/Skript: `galaxy-linux install|launch|config|tools|…`. URI-Schema `galaxy-linux://launch/<id>`. |
 
 **Noch nicht umgesetzt** (Galaxy-Funktionen, die ein eigenes Projekt wären): Freunde/Chat, Cloud-Saves,
@@ -97,31 +76,38 @@ Integration anderer Stores (Steam/Epic-Plugins), Galaxy-Overlay im Spiel, Auto-U
 
 ---
 
-## Installation auf CachyOS
-
-Das fertige Paket liegt unter `../dist/galaxy-linux-<version>-any.pkg.tar.zst` (Prüfsummen in `SHA256SUMS`).
+## Installation auf CachyOS / Arch Linux
 
 ```bash
-sudo pacman -U ../dist/galaxy-linux-0.1.6-1-any.pkg.tar.zst
+git clone https://github.com/Cue-System90/gog_like_client_Arch_linux.git
+cd gog_like_client_Arch_linux
+./install.sh
 ```
 
-Voraussetzungen (meist schon vorhanden): `python python-requests python-gobject gtk4 libadwaita unzip xdg-utils`.
-Empfohlen: `webkitgtk-6.0 umu-launcher proton-cachyos mangohud lib32-mangohud goverlay winetricks gamescope innoextract python-vdf`.
+`install.sh` prüft die Pakete (fehlende Pflichtpakete per pacman, empfohlene auf Nachfrage), baut das
+pacman-Paket nach `../dist/` (neben dem geklonten Ordner), entfernt eine vorhandene Version restlos
+(Einstellungen, Zugangsdaten und Spiele bleiben) und installiert per `sudo pacman -U`.
+**Update:** `git pull && ./install.sh`.
+
+Pflicht: `python python-requests python-gobject gtk4 libadwaita unzip xdg-utils`.
+Empfohlen: `webkitgtk-6.0 umu-launcher proton-cachyos mangohud lib32-mangohud goverlay winetricks gamescope innoextract python-vdf`
+(`webkitgtk-6.0` = GOG-Login direkt im Client).
 
 ```bash
-cd galaxy-linux
-./install.sh          # entfernt eine vorhandene Version restlos (Paket, Nutzer-Installation, Cache) und installiert ../dist
-./install.sh --purge  # wie oben, löscht vorher zusätzlich Einstellungen, Zugangsdaten und Logs (Spiele bleiben)
-./install.sh --build  # Paket nur neu bauen (scripts/build-package.sh), Ablage in ../dist
+./install.sh --purge   # wie oben, löscht vorher zusätzlich Einstellungen, Zugangsdaten und Logs (Spiele bleiben)
+./install.sh --build   # Paket nur bauen (scripts/build-package.sh), Ablage in ../dist
+./install.sh --user    # ohne Root nach ~/.local (Startskript ~/.local/bin/galaxy-linux + Menüeintrag)
+./install.sh --deps    # nur fehlende Pakete prüfen/installieren
+scripts/uninstall.sh [--purge] [--games]   # entfernen; --purge auch Einstellungen/Zugangsdaten/Logs, --games auch Spiele und Prefixe
+python3 -m galaxy_linux                    # direkt aus dem Ordner starten, ohne Installation
 ```
 
-Im Ordner `dist/` liegen zusätzlich eigenständige Skripte für andere Rechner: `install.sh` (entfernt die alte
-Version automatisch, prüft die Prüfsummen, installiert per `pacman -U`) und `uninstall.sh`
-(`--purge` löscht Einstellungen/Zugangsdaten/Logs, `--games` zusätzlich Spiele und Wine-Prefixe).
+`--build` legt neben dem Paket eigenständige Skripte für andere Rechner ab: `install.sh` (entfernt die alte
+Version automatisch, prüft die Prüfsummen in `SHA256SUMS`, installiert per `pacman -U`) und `uninstall.sh`.
 
 ### Protokollierung (für die Auswertung)
 
-Diese Version protokolliert standardmäßig ausführlich nach
+Der Client protokolliert standardmäßig ausführlich nach
 `~/.local/share/galaxy-linux/logs/galaxy-linux.log` (rotierend, 5 MB × 3): Systemumgebung und gefundene
 Werkzeuge, jeden GOG-API-Aufruf mit Status und Dauer, Installationspläne (Build, Sprache, Depots, Größen),
 Download-Zusammenfassungen, Startbefehle, Exit-Codes, Fehler mit Traceback sowie GTK-Warnungen.
@@ -136,18 +122,6 @@ GALAXY_LINUX_LOG=debug galaxy-linux  # zusätzlich Debug auf der Konsole
 ```
 
 Pro Spiel gibt es außerdem `~/.local/share/galaxy-linux/logs/<id>.log` mit der Ausgabe von Proton/Wine/umu.
-
-Ohne Root:
-
-```bash
-./install.sh --user   # nach ~/.local, Startskript ~/.local/bin/galaxy-linux + Menüeintrag
-```
-
-Direkt aus dem Ordner starten (ohne Installation):
-
-```bash
-python3 -m galaxy_linux
-```
 
 ## Sprache
 
@@ -267,10 +241,12 @@ galaxy_linux/
               scanner.py (kopierte GOG-Spiele), external.py (Startdatei-Erkennung für Spiele eigener Bibliotheken)
   launch/     compat.py (Proton/Wine-Erkennung), launch_options.py (Steam-Syntax), goverlay.py, launcher.py
   ui/         app.py, window.py, game_page.py, dialogs.py, style.css
+  locale/     en.po (englischer Katalog)              i18n.py  tr(), Spracherkennung, .po lesen/schreiben
   backend.py  Fassade + Job-Warteschlange, eigene Bibliotheken     cli.py  Kommandozeile
   settings.py Einstellungen, Bibliotheken (CustomLibrary), Registry
 tests/        Unit-Tests (Fake-CDN) + Netz-Tests
-data/         .desktop, Icon        PKGBUILD, install.sh, scripts/
+data/         .desktop, Icon        PKGBUILD, install.sh
+scripts/      build-package.sh, uninstall.sh, i18n-update.py (Übersetzungen pflegen), install-official-galaxy-wine.sh
 ```
 
 Lizenz: MIT.

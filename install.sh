@@ -55,10 +55,11 @@ case "${1:-}" in
     ;;
   *)
     check_deps
-    PKG="$(ls -t "$HERE/../dist"/galaxy-linux-*.pkg.tar.zst 2>/dev/null | head -1 || true)"
+    # Paket genau dieser Quellversion (nach git pull wird neu gebaut statt ein älteres Paket zu nehmen)
+    PKG="$(ls -t "$HERE/../dist"/galaxy-linux-"$PKGVER"-*-any.pkg.tar.zst 2>/dev/null | head -1 || true)"
     if [ -z "$PKG" ]; then
       "$HERE/scripts/build-package.sh" "$HERE/../dist"
-      PKG="$(ls -t "$HERE/../dist"/galaxy-linux-*.pkg.tar.zst | head -1)"
+      PKG="$(ls -t "$HERE/../dist"/galaxy-linux-"$PKGVER"-*-any.pkg.tar.zst | head -1)"
     fi
     if pacman -Qq galaxy-linux >/dev/null 2>&1 || [ -d "$HOME/.local/lib/galaxy-linux" ]; then
       echo "Entferne vorhandene Version restlos (Einstellungen bleiben; --purge löscht sie) …"
