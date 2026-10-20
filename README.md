@@ -6,10 +6,8 @@ Content-System, **Proton-Version pro Spiel**, **Steam-kompatible Startoptionen**
 die **GOverlay** erzeugt), Spielzeit, Erfolge, Updates, Prefix-Werkzeuge – als GTK4/libadwaita-App
 und als Kommandozeile.
 
-> **Warum kein „Port der EXE“?** `GOG_Galaxy_2.0.exe` ist ein 964 KB großer, UPX-gepackter
-> Web-Installer-Stub, der den eigentlichen (geschlossenen) Windows-Client nur nachlädt. Es gibt keinen
-> Quellcode, den man portieren könnte. Dieses Projekt baut den Client deshalb nativ nach und spricht
-> **dieselben GOG-Dienste** wie Galaxy (Login über auth.gog.com, Bibliothek, Content-System v2 mit
+> Dieses Projekt baut den Client nativ nach und kommuniziert mit
+> den **GOG-Diensten** wie Galaxy auch (Login über auth.gog.com, Bibliothek, Content-System v2 mit
 > Manifesten/Depots/Chunks, GamesDB-Metadaten, Gameplay-API für Spielzeit und Erfolge).
 > Ein optionales Skript (`scripts/install-official-galaxy-wine.sh`) installiert den Original-Client
 > zusätzlich in ein Wine-Prefix – experimentell und nicht nötig.
