@@ -40,8 +40,8 @@ The layout follows GOG Galaxy 2.0:
   button, the "⋯" menu (verify, folder, prefix, Winetricks, log, GOG.com, hide, uninstall), the stats
   PLAYTIME · LAST PLAYED · ACHIEVEMENTS · COMPATIBILITY, then "About the game" (genres, description,
   DLCs), achievements as an icon row and "Game details". In addition – like Steam – a **Compatibility**
-  block with Proton selection, launch options, "From GOverlay" and a command preview; the gear opens the
-  full properties.
+  block with Proton selection, launch options, the game's GOverlay profile, "Open GOverlay" and a command
+  preview; the gear opens the full properties.
 * **Downloads**: queue with progress, speed, remaining time, cancel and history.
 * URIs: `galaxy-linux://game/<id>`, `galaxy-linux://launch/<id>`, `galaxy-linux://view/{all|recent|installed|downloads}`,
   `galaxy-linux://view/library/<library-id>`.
@@ -64,7 +64,7 @@ The layout follows GOG Galaxy 2.0:
 | Update / verify | Build comparison, updates download only changed chunks and remove obsolete files; "Verify files" repairs damaged chunks. |
 | Launching like Steam | **Selectable per game:** every Proton found (Steam libraries, `compatibilitytools.d`, `/usr/share/steam/compatibilitytools.d` → **proton-cachyos**, Heroic), GE-Proton/UMU-Proton (auto-download via umu), system Wine, Lutris/Bottles runners. Launch method: **umu-launcher** (default, with protonfixes and the Steam Linux Runtime – required for `proton-cachyos-slr`), Proton directly or Wine. One Wine prefix per game. The **Proton Wayland driver** (`PROTON_ENABLE_WAYLAND=1`) is the default (KDE Wayland); XWayland only as a per-game exception under Properties → Compatibility. |
 | Launch options | **Steam syntax 1:1**: `mangohud %command%`, `ENABLE_VKBASALT=1 mangohud %command% -novid`, `gamescope -f -- %command%`, `PROTON_LOG=1 %command%`, just `-windowed` … Global and per game. Preview of the resulting command. |
-| GOverlay | The **"From GOverlay"** button derives the line from the current GOverlay/MangoHud configuration (exactly the line GOverlay shows under *Steam launch options*); the GOverlay line can also simply be pasted. Toggles for MangoHud, vkBasalt, GameMode, Gamescope. "Open GOverlay". |
+| GOverlay | **Per-game profiles like under Steam**: galaxy-linux adds its game folders to GOverlay's folder list (`~/.config/goverlay/nonsteam_folders.txt`) so the games show up in GOverlay (then "Refresh game library" there), and stores their covers. Clicking the game in GOverlay creates its profile; at launch galaxy-linux puts that profile's `bgmod` in front of the command (MangoHud, vkBasalt, OptiScaler, Lossless … with the game's settings instead of the global configuration), plus `gamemoderun` and `/WineDetectionEnabled:False` when chosen in the profile. Without an own profile the global GOverlay profile can be used. Before verify, update, move and uninstall, `bgmod-uninstaller` undoes the changes in the game folder. Settings → Compatibility → GOverlay; per game under Properties → Compatibility. Toggles for MangoHud, vkBasalt, GameMode, Gamescope. "Open GOverlay". |
 | Properties dialog | Like Steam: compatibility, launch options, environment variables, executable (playTask), pre/post commands, redistributables, Winetricks, open prefix/folder/log, favourite, hide. |
 | Playtime | Measured locally, optionally sent to GOG (appears in the GOG profile like with Galaxy). |
 | Achievements | Per game via the gameplay API (game-specific token from the build manifest, like Galaxy). |
@@ -148,8 +148,8 @@ effect after a restart), with `galaxy-linux config global ui_language en`, or fo
    folder, DLCs → the size is calculated live from the manifest.
 3. **Choose Proton**: on the game page in the *Proton / Wine* field (or *Properties → Compatibility*).
    The default is the system Proton (`proton-cachyos`) via umu.
-4. **Launch options from GOverlay**: configure GOverlay → click *From GOverlay* on the game page, or paste
-   the line GOverlay shows into *Launch options* → *Apply*.
+4. **GOverlay**: click *Open GOverlay* on the game page → "Refresh game library" in GOverlay → click the game
+   and configure it. galaxy-linux then launches the game with this profile (shown in the *Compatibility* block).
 5. **Play**.
 
 Default folders: games `~/Games/GOG/<game>`, prefixes `~/Games/GOG/prefixes/<ID>`, configuration
@@ -209,7 +209,8 @@ galaxy-linux config locations --add /mnt/games    # additional install location 
 galaxy-linux tools                       # detected Proton/Wine versions (IDs)
 galaxy-linux config tool <game> cachyos  # compatibility tool (ID or part of the name, "auto")
 galaxy-linux config options <game> "ENABLE_VKBASALT=1 mangohud %command%"
-galaxy-linux goverlay-import <game>      # derive launch options from GOverlay
+galaxy-linux goverlay [<game>] [--sync]  # GOverlay: registered folders and the profile of each game (--sync: register)
+galaxy-linux goverlay-import <game>      # derive launch options from GOverlay (with a profile: no mangohud line)
 galaxy-linux config env <game> DXVK_ASYNC=1
 galaxy-linux launch <game> --dry-run     # only show the command
 galaxy-linux launch <game> -- -windowed  # launch, arguments for the game

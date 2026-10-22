@@ -503,24 +503,15 @@ class GameSettingsDialog(Adw.PreferencesDialog):
         page = Adw.PreferencesPage(title=tr('Startoptionen'), icon_name="utilities-terminal-symbolic", name="launch")
         grp = Adw.PreferencesGroup(title=tr('Startoptionen (Steam-Syntax)'),
                                    description=tr("Genau wie im Steam-Client: z. B. „mangohud %command%“, „ENABLE_VKBASALT=1 mangohud %command%“ "
-                                                  "oder „gamescope -f -- %command% -novid“. GOverlay zeigt diese Zeile unter „Steam launch options“ an."))
+                                                  "oder „gamescope -f -- %command% -novid“. Ein GOverlay-Profil braucht keine Zeile – "
+                                                  "es wird beim Start eingesetzt (Eigenschaften → Kompatibilität)."))
         lib = self.backend.library_of(self.pid)
         title = tr('Startoptionen (leer = Vorgabe der Bibliothek: {0})').format(GLib.markup_escape_text(lib.launch_options)) \
             if lib is not None and lib.launch_options else tr('Startoptionen')
         self.opts_row = Adw.EntryRow(title=title, text=self.gs.launch_options, show_apply_button=True)
         self.opts_row.connect("apply", self._apply_opts)
         grp.add(self.opts_row)
-        st = goverlay.status()
-        imp = Adw.ButtonRow(title=tr('Aus GOverlay übernehmen'))
-        imp.set_start_icon_name("document-import-symbolic")
-        imp.connect("activated", self._import_goverlay)
-        imp.set_sensitive(st.mangohud or st.goverlay)
-        grp.add(imp)
-        og = Adw.ButtonRow(title=tr('GOverlay öffnen (MangoHud konfigurieren)'))
-        og.set_start_icon_name("preferences-system-symbolic")
-        og.set_sensitive(st.goverlay)
-        og.connect("activated", lambda *_: goverlay.open_goverlay())
-        grp.add(og)
+        st = goverlay.status()      # GOverlay-Profil und „GOverlay öffnen“: ui/ext_goverlay.py (Seite Kompatibilität)
         preset_names = [tr('Vorlage wählen …')] + [n for n, _ in goverlay.PRESETS]
         self.preset_row = Adw.ComboRow(title=tr('Vorlage'), model=Gtk.StringList.new(preset_names))
         self.preset_row.connect("notify::selected", self._apply_preset)
@@ -568,12 +559,6 @@ class GameSettingsDialog(Adw.PreferencesDialog):
             return
         self._save(launch_options=text)
         self._toast(tr('Startoptionen gespeichert'))
-
-    def _import_goverlay(self, *_: object) -> None:
-        text = goverlay.import_from_goverlay()
-        self.opts_row.set_text(text)
-        self._save(launch_options=text)
-        self._toast(tr('Aus GOverlay übernommen: {0}').format(text))
 
     def _apply_preset(self, row: Adw.ComboRow, _p) -> None:
         i = row.get_selected()
