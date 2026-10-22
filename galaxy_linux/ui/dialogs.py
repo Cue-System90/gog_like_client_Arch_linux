@@ -17,6 +17,7 @@ from ..jsonstore import read_json
 from ..launch import compat, goverlay, launch_options
 from ..launch.launcher import LaunchError
 from ..settings import GameSettings, format_bytes
+from . import prefs_registry
 from .util import (LANGUAGES, Adw, Gio, GLib, Gtk, choose_folder, copy_text, icon_button, idle, label,
                    language_index, open_uri, pick_icon, run_async)
 
@@ -371,10 +372,11 @@ class GameSettingsDialog(Adw.PreferencesDialog):
         self.set_title(tr('Eigenschaften – {0}').format(entry.title if entry else self.pid))
         self.tools = backend.launcher.tools()
         self._building = True
-        self.add(self._page_compat())
-        self.add(self._page_launch())
-        self.add(self._page_env())
-        self.add(self._page_advanced())
+        prefs_registry.load_extensions()
+        for page in (self._page_compat(), self._page_launch(), self._page_features(), self._page_env(), self._page_advanced()):
+            for grp in prefs_registry.build_game_groups(page.get_name(), self, self.pid):
+                page.add(grp)
+            self.add(page)
         self._building = False
         self._refresh_preview()
 
@@ -391,7 +393,7 @@ class GameSettingsDialog(Adw.PreferencesDialog):
 
     # Seite 1: Kompatibilität
     def _page_compat(self) -> Adw.PreferencesPage:
-        page = Adw.PreferencesPage(title=tr('Kompatibilität'), icon_name="application-x-executable-symbolic")
+        page = Adw.PreferencesPage(title=tr('Kompatibilität'), icon_name="application-x-executable-symbolic", name="compat")
         grp = Adw.PreferencesGroup(title=tr('Kompatibilitätstool'),
                                    description=tr('Wie unter Steam: pro Spiel eine Proton-/Wine-Version erzwingen. Die globale Vorgabe gilt, wenn nichts gewählt ist.'))
         default, source = self.backend.launcher.default_tool(self.pid)
@@ -498,7 +500,7 @@ class GameSettingsDialog(Adw.PreferencesDialog):
 
     # Seite 2: Startoptionen
     def _page_launch(self) -> Adw.PreferencesPage:
-        page = Adw.PreferencesPage(title=tr('Startoptionen'), icon_name="utilities-terminal-symbolic")
+        page = Adw.PreferencesPage(title=tr('Startoptionen'), icon_name="utilities-terminal-symbolic", name="launch")
         grp = Adw.PreferencesGroup(title=tr('Startoptionen (Steam-Syntax)'),
                                    description=tr("Genau wie im Steam-Client: z. B. „mangohud %command%“, „ENABLE_VKBASALT=1 mangohud %command%“ "
                                                   "oder „gamescope -f -- %command% -novid“. GOverlay zeigt diese Zeile unter „Steam launch options“ an."))
@@ -525,7 +527,7 @@ class GameSettingsDialog(Adw.PreferencesDialog):
         grp.add(self.preset_row)
         page.add(grp)
 
-        tg = Adw.PreferencesGroup(title=tr('Overlays & Leistung (Schalter)'),
+        tg = Adw.PreferencesGroup(title=GLib.markup_escape_text(tr('Overlays & Leistung (Schalter)')),
                                   description=tr('Werden zusätzlich zu den Startoptionen angewendet.'))
         self.sw_mango = Adw.SwitchRow(title="MangoHud", subtitle="FPS-Overlay" + ("" if st.mangohud else tr(' – nicht installiert')), active=self.gs.use_mangohud)
         self.sw_mango.set_sensitive(st.mangohud)
@@ -587,7 +589,7 @@ class GameSettingsDialog(Adw.PreferencesDialog):
             return
         try:
             if self.installed:
-                plan = self.backend.launcher.build_plan(self.pid)
+                plan = self.backend.launcher.preview_plan(self.pid)
                 self.preview.set_text(plan.shell_preview())
                 self.runner_row.set_subtitle({"umu": tr('umu-launcher (Proton im Steam-Linux-Runtime-Container)'),
                                               "proton": tr('Proton direkt'), "wine": tr('Wine'), "native": tr("nativ")}.get(plan.runner, plan.runner)
@@ -601,7 +603,7 @@ class GameSettingsDialog(Adw.PreferencesDialog):
 
     # Seite 3: Umgebung
     def _page_env(self) -> Adw.PreferencesPage:
-        page = Adw.PreferencesPage(title=tr('Umgebung'), icon_name="preferences-other-symbolic")
+        page = Adw.PreferencesPage(title=tr('Umgebung'), icon_name="preferences-other-symbolic", name="env")
         self.env_group = Adw.PreferencesGroup(title=tr('Umgebungsvariablen'),
                                               description=tr("Zusätzlich zu VAR=wert in den Startoptionen; z. B. DXVK_ASYNC=1, PROTON_USE_WINED3D=1."))
         self._env_rows: list[Gtk.Widget] = []
@@ -655,9 +657,29 @@ class GameSettingsDialog(Adw.PreferencesDialog):
         self._save(env=env)
         self._rebuild_env()
 
-    # Seite 4: Erweitert
+    # Seite: Spielfunktionen (Galaxy: Konfigurieren → Funktionen)
+    def _page_features(self) -> Adw.PreferencesPage:
+        page = Adw.PreferencesPage(title=tr('Spielfunktionen'), icon_name="applications-games-symbolic", name="features")
+        grp = Adw.PreferencesGroup(title=tr('Funktionen'),
+                                   description=tr('Abweichend von „Einstellungen → Spielfunktionen“ nur für dieses Spiel.'))
+        gog = self.installed is not None and self.installed.method != "external" and not self.pid.startswith("ext-")
+        s = self.backend.settings
+        modes = ["", "on", "off"]
+        for key, title, glob in (("cloud_saves", tr('Lokale Speicherstände mit der GOG Galaxy-Cloud synchronisieren'), s.feature_cloud_saves),
+                                 ("galaxy_services", tr('GOG Galaxy-Funktionen im Spiel nutzen'), s.feature_galaxy_services)):
+            row = Adw.ComboRow(title=title, model=Gtk.StringList.new(
+                [tr('Globale Vorgabe ({0})').format(tr('an') if glob else tr('aus')), tr('An'), tr('Aus')]))
+            cur = getattr(self.gs, key)
+            row.set_selected(modes.index(cur) if cur in modes else 0)
+            row.set_sensitive(gog)
+            row.connect("notify::selected", lambda r, _, k=key: self._save(**{k: modes[r.get_selected()]}))
+            grp.add(row)
+        page.add(grp)
+        return page
+
+    # Seite: Erweitert
     def _page_advanced(self) -> Adw.PreferencesPage:
-        page = Adw.PreferencesPage(title=tr('Erweitert'), icon_name="applications-engineering-symbolic")
+        page = Adw.PreferencesPage(title=tr('Erweitert'), icon_name="applications-engineering-symbolic", name="advanced")
         grp = Adw.PreferencesGroup(title=tr('Start'))
         is_ext = bool(self.installed and self.installed.method == "external")
         if is_ext:
@@ -798,9 +820,15 @@ class PreferencesDialog(Adw.PreferencesDialog):
         self.backend = backend
         self.s = backend.settings
         self.on_changed = on_changed or (lambda: None)
-        self.add(self._page_general())
-        self.add(self._page_libraries())
-        self.add(self._page_compat())
+        self._lib_ext_groups: list[Adw.PreferencesGroup] = []
+        prefs_registry.load_extensions()
+        for page in (self._page_general(), self._page_libraries(), self._page_compat(), self._page_features()):
+            groups = prefs_registry.build_groups(page.get_name(), self)
+            for grp in groups:
+                page.add(grp)
+            if page.get_name() == "libraries":
+                self._lib_ext_groups = groups
+            self.add(page)
 
     def _save(self, **changes) -> None:
         for k, v in changes.items():
@@ -809,7 +837,7 @@ class PreferencesDialog(Adw.PreferencesDialog):
         self.on_changed()
 
     def _page_general(self) -> Adw.PreferencesPage:
-        page = Adw.PreferencesPage(title=tr('Allgemein'), icon_name="preferences-system-symbolic")
+        page = Adw.PreferencesPage(title=tr('Allgemein'), icon_name="preferences-system-symbolic", name="general")
         ui = Adw.PreferencesGroup(title=tr('Oberfläche'))
         codes = list(UI_LANGUAGES)
         ui_lang = Adw.ComboRow(title=tr('Sprache der Oberfläche'), subtitle=tr('wirkt nach einem Neustart des Clients'),
@@ -864,7 +892,6 @@ class PreferencesDialog(Adw.PreferencesDialog):
                                 ("shortcut_menu", tr('Nach der Installation Verknüpfung im Startmenü anlegen'), tr('Vorgabe für den Installations-Dialog')),
                                 ("shortcut_desktop", tr('Nach der Installation Verknüpfung auf dem Schreibtisch anlegen'), tr('Vorgabe für den Installations-Dialog')),
                                 ("auto_check_updates", tr('Beim Start nach Spiel-Updates suchen'), ""),
-                                ("sync_playtime", tr('Spielzeit an GOG übertragen'), tr('wie Galaxy – erscheint im GOG-Profil')),
                                 ("show_hidden", tr('Versteckte Spiele anzeigen'), ""),
                                 ("use_keyring", tr('Zugangsdaten im System-Schlüsselbund speichern'), tr('statt in ~/.config/galaxy-linux/credentials.json (0600); wirkt beim nächsten Login'))):
             r = Adw.SwitchRow(title=title, subtitle=sub, active=getattr(self.s, key))
@@ -943,13 +970,15 @@ class PreferencesDialog(Adw.PreferencesDialog):
         return page
 
     def _rebuild_libraries(self) -> None:
-        for g in self._lib_groups:
+        for g in self._lib_groups + self._lib_ext_groups:
             self.lib_page.remove(g)
         self._lib_groups.clear()
         for lib in self.backend.libraries():
             g = self._library_group(lib)
             self.lib_page.add(g)
             self._lib_groups.append(g)
+        for g in self._lib_ext_groups:      # Gruppen der Erweiterungen bleiben unter den Bibliotheken
+            self.lib_page.add(g)
 
     def _lib_save(self, lib_id: str, toast: str = "", **changes) -> bool:
         try:
@@ -1040,7 +1069,7 @@ class PreferencesDialog(Adw.PreferencesDialog):
         confirm_delete_library(self, lib, len(self.backend.library_games(lib_id)), do)
 
     def _page_compat(self) -> Adw.PreferencesPage:
-        page = Adw.PreferencesPage(title=tr('Kompatibilität'), icon_name="application-x-executable-symbolic")
+        page = Adw.PreferencesPage(title=tr('Kompatibilität'), icon_name="application-x-executable-symbolic", name="compat")
         tools = self.backend.launcher.tools(refresh=True)
         grp = Adw.PreferencesGroup(title=tr('Standard-Kompatibilitätstool'), description=tr('Gilt für alle Windows-Spiele ohne eigene Auswahl.'))
         ids = ["auto"] + [t.id for t in tools]
@@ -1084,6 +1113,34 @@ class PreferencesDialog(Adw.PreferencesDialog):
                          (tr('Gamescope'), st.gamescope), (tr('MangoHud-Konfiguration (GOverlay)'), st.mangohud_config)):
             info.add(Adw.ActionRow(title=name, subtitle=tr('gefunden') if ok else tr('nicht gefunden')))
         page.add(info)
+        return page
+
+    # Seite: Spielfunktionen (wie Galaxy 2.1: Einstellungen → Spielfunktionen → Globale Einstellungen)
+    def _page_features(self) -> Adw.PreferencesPage:
+        page = Adw.PreferencesPage(title=tr('Spielfunktionen'), icon_name="applications-games-symbolic", name="features")
+        sections = (
+            (tr('Allgemeine Funktionen zum Spiel'), tr('Globale Einstellungen – einzelne Spiele lassen sich unter „Eigenschaften → Spielfunktionen“ abweichend einstellen.'), (
+                ("feature_auto_update", tr('Spiele automatisch aktualisieren'),
+                 tr('Hiermit werden deine GOG-Spiele automatisch im Hintergrund aktualisiert und du musst Updates nicht selber ausführen.')),
+                ("feature_cloud_saves", tr('Cloud-Spielstände'),
+                 tr('Cloud-Spielstände lädt deine Spielstände herunter, wenn du ein unterstütztes GOG-Spiel installierst. Außerdem werden die Spielstände vor und nach jeder Session synchronisiert.')))),
+            (tr('Funktionen im Spiel'), "", (
+                ("feature_achievements", tr('Erfolge'),
+                 tr('Erfolge werden bei unterstützten Spielen im Spiel freigeschaltet, hochgeladen und in galaxy-linux angezeigt.')),
+                ("feature_galaxy_services", tr('Galaxy-Dienste im Spiel (comet)'),
+                 tr('Erfolge, Statistiken und Bestenlisten für Spiele mit GOG Galaxy-SDK – comet ersetzt den Galaxy-Dienst im Prefix.')),
+                ("sync_playtime", tr('Erfassung der Spielzeit'),
+                 tr('Spielzeit nach jeder Sitzung an GOG übertragen – erscheint im GOG-Profil und in GOG Galaxy.')),
+                ("goverlay_use_profiles", tr('GOverlay-Profile pro Spiel'),
+                 tr('Spiele mit ihrem eigenen GOverlay-Profil (MangoHud, vkBasalt …) starten statt mit der globalen Konfiguration.')))),
+        )
+        for title, desc, rows in sections:
+            grp = Adw.PreferencesGroup(title=title, description=desc)
+            for key, row_title, sub in rows:
+                r = Adw.SwitchRow(title=row_title, subtitle=sub, active=getattr(self.s, key))
+                r.connect("notify::active", lambda row, _, k=key: self._save(**{k: row.get_active()}))
+                grp.add(r)
+            page.add(grp)
         return page
 
 

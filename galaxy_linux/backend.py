@@ -10,7 +10,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 
 from . import paths
 from .api.auth import CredentialStore
@@ -20,7 +20,7 @@ from .content.downloader import DownloadCancelled, Progress
 from .content import external, scanner
 from .content.installer import InstallError, InstallManager, InstallPlan, NoGalaxyBuild, safe_dirname
 from .content.manifest import Build
-from .launch import shortcuts
+from .launch import hooks as launch_hooks, shortcuts
 from .launch.launcher import LaunchError, Launcher, PlayTask, RunningGame
 from .settings import (EXTERNAL_LIBRARY_ID, VIEW_KEYS, CustomLibrary, GameSettingsStore, GlobalSettings, InstalledGame,
                        InstalledRegistry, PlaytimeStore)
@@ -42,9 +42,46 @@ class ScanReport:
         return bool(self.imported or self.removed)
 
 
+# --------------------------------------------------------------------------- Erweiterungspunkt Auftragsarten
+@dataclass
+class JobKind:
+    """Eigene Auftragsart für die Download-/Job-Warteschlange (z. B. Cloud-Abgleich, Prefix-Einrichtung).
+    ``run(backend, job, on_progress, status)`` läuft im Job-Thread; Rückgabe landet in ``job.result``;
+    ``InstallError``/``ApiError``/``OSError``/``ValueError`` gelten als „Fehlgeschlagen“, ``DownloadCancelled`` als
+    „Abgebrochen“ (``job.cancel`` regelmäßig prüfen)."""
+    kind: str
+    label: str
+    run: Callable[["Backend", "Job", Callable[[Progress], None], Callable[[str], None]], Any]
+    network: bool = False         # braucht GOG-Zugang → „Ausloggen“ bricht ihn ab
+
+
+JOB_KINDS: dict[str, JobKind] = {}
+NETWORK_JOB_KINDS = {"install", "install-linux", "install-offline", "update", "verify"}
+# nach jedem beendeten Auftrag (fertig, fehlgeschlagen, abgebrochen) im Job-Thread: fn(backend, job)
+_job_finished_hooks: list[Callable[["Backend", "Job"], None]] = []
+
+
+def register_job_kind(kind: str, label: str, run: Callable[..., Any], network: bool = False) -> JobKind:
+    jk = JobKind(kind, label, run, network)
+    JOB_KINDS[kind] = jk
+    return jk
+
+
+def on_job_finished(fn: Callable[["Backend", "Job"], None]) -> Callable[["Backend", "Job"], None]:
+    """Rückruf nach jedem beendeten Auftrag anmelden (z. B. Installations-Datensatz, Cloud-Download nach Install)."""
+    if fn not in _job_finished_hooks:
+        _job_finished_hooks.append(fn)
+    return fn
+
+
+def is_network_job(kind: str) -> bool:
+    jk = JOB_KINDS.get(kind)
+    return kind in NETWORK_JOB_KINDS or bool(jk and jk.network)
+
+
 @dataclass
 class Job:
-    kind: str                     # install | update | verify | install-linux | install-offline | move | prefix
+    kind: str                     # install | update | verify | install-linux | install-offline | move | prefix | JOB_KINDS
     product_id: str
     title: str
     platform: str = "windows"
@@ -62,8 +99,9 @@ class Job:
     id: str = field(default_factory=lambda: uuid.uuid4().hex[:8])
     on_progress: Callable[["Job"], None] | None = None
     on_done: Callable[["Job"], None] | None = None
-    result: InstalledGame | None = None
+    result: Any = None            # InstalledGame bei Installationen, sonst Rückgabe von JobKind.run
     plan: InstallPlan | None = None
+    data: dict[str, Any] = field(default_factory=dict)   # Angaben für eigene Auftragsarten
 
     @property
     def active(self) -> bool:
@@ -73,7 +111,8 @@ class Job:
     def label(self) -> str:
         return {"install": tr('Installieren'), "update": tr('Aktualisieren'), "verify": tr('Dateien prüfen'), "move": tr('Verschieben'),
                 "prefix": tr('Prefix anlegen'),
-                "install-linux": tr('Installieren (Linux)'), "install-offline": tr('Installieren (Offline-Installer)')}.get(self.kind, self.kind)
+                "install-linux": tr('Installieren (Linux)'), "install-offline": tr('Installieren (Offline-Installer)')}.get(
+                    self.kind, JOB_KINDS[self.kind].label if self.kind in JOB_KINDS else self.kind)
 
 
 class JobQueue:
@@ -200,6 +239,8 @@ class JobQueue:
                 job.result = inst.move(job.product_id, job.install_root, on_progress, job.cancel, status)
             elif job.kind == "prefix":
                 self.backend.create_game_prefix(job.product_id, status)
+            elif job.kind in JOB_KINDS:
+                job.result = JOB_KINDS[job.kind].run(self.backend, job, on_progress, status)
             else:
                 raise InstallError(tr('Unbekannter Job: {0}').format(job.kind))
             if job.kind.startswith("install") and (job.shortcut_menu or job.shortcut_desktop):
@@ -223,6 +264,11 @@ class JobQueue:
             job.state, job.status, job.error = "failed", tr('Fehlgeschlagen'), f"{type(exc).__name__}: {exc}"
             log.exception("Job %s abgestürzt", job.id)
         self._notify(job)
+        for fn in list(_job_finished_hooks):
+            try:
+                fn(self.backend, job)
+            except Exception:
+                log.exception("Rückruf nach Auftrag %s fehlgeschlagen", job.id)
         if job.on_done:
             try:
                 job.on_done(job)
@@ -248,6 +294,8 @@ class Backend:
         self.jobs = JobQueue(self)
         self._scan_lock = threading.Lock()
         self._assign_libraries()
+        # Hook-Module (launch/hook_*.py) früh laden: sie melden auch Auftragsarten und Job-Rückrufe an
+        launch_hooks.load_builtin_hooks()
         log.info("Einstellungen: install_dir=%s prefix_dir=%s compat=%s prefer_umu=%s lang=%s workers=%s redist=%s",
                  self.settings.install_dir, self.settings.prefix_dir, self.settings.default_compat_tool,
                  self.settings.prefer_umu, self.settings.language, self.settings.max_workers, self.settings.install_redist)
@@ -984,6 +1032,20 @@ class Backend:
     def launch(self, product_id: str, task: PlayTask | None = None, extra_args: list[str] | None = None,
                on_exit=None, status_cb=None) -> RunningGame:
         return self.launcher.launch(product_id, task, extra_args, on_exit, status_cb)
+
+    def ensure_build_records(self, force: bool = False) -> int:
+        """Installations-Datensätze (Build, Client-ID, Abhängigkeiten) für alle installierten GOG-Windows-Spiele
+        anlegen, denen einer fehlt – z. B. übernommene Spiele. Gibt die Zahl neu angelegter Datensätze zurück."""
+        from .content import build_records
+        n = 0
+        for g in self.registry.all():
+            if g.method == "external" or g.platform != "windows":
+                continue
+            if not force and build_records.is_complete(build_records.load_record(g.product_id)):
+                continue
+            if build_records.is_complete(build_records.ensure_record(self.api, g, force=force)):
+                n += 1
+        return n
 
     def save_settings(self) -> None:
         self.settings.save()

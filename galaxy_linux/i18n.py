@@ -111,12 +111,21 @@ def _escape(s: str) -> str:
     return s.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\t", "\\t")
 
 
+def _po_files(where: list[str]) -> list[str]:
+    """Fundstellen ohne Zeilennummern (sortiert, ohne Doppelte) – der Katalog ändert sich so nicht bei jeder
+    Verschiebung im Code, und parallele Zweige geraten seltener in Konflikt."""
+    return sorted(dict.fromkeys(w.rsplit(":", 1)[0] if w.rsplit(":", 1)[-1].isdigit() else w for w in where))
+
+
 def write_po(path: Path, messages: dict[str, list[str]], translations: dict[str, str], lang: str) -> None:
-    """Katalog schreiben: Kopf, dann je Text Fundstellen, msgid und msgstr (leer = noch nicht übersetzt)."""
+    """Katalog schreiben: Kopf, dann je Text Fundstellen (Dateien), msgid und msgstr (leer = noch nicht übersetzt).
+    Reihenfolge: nach erster Datei, dann alphabetisch – stabil gegenüber Zeilenverschiebungen."""
     lines = ['# galaxy-linux – Übersetzung der Oberfläche', '# Quelltexte: Deutsch. Pflege mit scripts/i18n-update.py', 'msgid ""', 'msgstr ""',
              '"Content-Type: text/plain; charset=UTF-8\\n"', f'"Language: {lang}\\n"', ""]
-    for msgid, where in messages.items():
-        lines.append("#: " + " ".join(where[:3]))
+    entries = sorted(((_po_files(where), msgid) for msgid, where in messages.items()),
+                     key=lambda e: (e[0][0] if e[0] else "", e[1]))
+    for files, msgid in entries:
+        lines.append("#: " + " ".join(files[:3]))
         lines.append(f'msgid "{_escape(msgid)}"')
         lines.append(f'msgstr "{_escape(translations.get(msgid, ""))}"')
         lines.append("")

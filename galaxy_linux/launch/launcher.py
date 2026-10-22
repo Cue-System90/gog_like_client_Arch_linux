@@ -25,11 +25,11 @@ from pathlib import Path
 from typing import Callable
 
 from .. import paths
-from ..jsonstore import read_json
 from ..settings import (DEFAULT_EXTERNAL_DIR, CustomLibrary, GameSettings, GameSettingsStore, GlobalSettings, InstalledGame,
                         InstalledRegistry, PlaytimeStore)
-from . import compat, launch_options
+from . import compat, hooks as launch_hooks, launch_options
 from .compat import CompatTool
+from .hooks import ConsoleBridge, LaunchContext
 
 log = logging.getLogger(__name__)
 
@@ -160,13 +160,44 @@ def guess_executable(install_dir: Path) -> PlayTask | None:
 # --------------------------------------------------------------------------- Plan & Prozess
 @dataclass
 class LaunchPlan:
-    argv: list[str]
+    """Startbefehl aus geordneten Slots; ``argv`` setzt sie zusammen:
+
+    ``[*user_wrappers, *compositor, *tool_wrappers, *wrappers, *base, *args, *game_args_suffix]``
+
+    * user_wrappers – Wrapper aus den Startoptionen vor ``%command%``
+    * compositor    – ``gamescope … --``
+    * tool_wrappers – Werkzeug-Wrapper hinter dem Compositor (z. B. GOverlay ``<Profil>/bgmod``)
+    * wrappers      – Schalter des Clients (``gamemoderun``, ``mangohud``)
+    * base          – ``umu-run``/``proton …``/``wine`` + Startdatei + Argumente des playTasks
+    * args          – Argumente aus den Startoptionen nach ``%command%``
+    * game_args_suffix – ganz am Ende, z. B. ``/WineDetectionEnabled:False``
+    """
     env: dict[str, str]
     cwd: str
     tool: CompatTool | None
     prefix: str
     runner: str                  # umu | proton | wine | native
     description: str
+    base: list[str] = field(default_factory=list)
+    user_wrappers: list[str] = field(default_factory=list)
+    compositor: list[str] = field(default_factory=list)
+    tool_wrappers: list[str] = field(default_factory=list)
+    wrappers: list[str] = field(default_factory=list)
+    args: list[str] = field(default_factory=list)
+    game_args_suffix: list[str] = field(default_factory=list)
+    exe: str = ""                # absolute Startdatei ("" bei command_override)
+
+    @property
+    def argv(self) -> list[str]:
+        return [*self.user_wrappers, *self.compositor, *self.tool_wrappers, *self.wrappers, *self.base,
+                *self.args, *self.game_args_suffix]
+
+    @argv.setter
+    def argv(self, value: list[str]) -> None:
+        """Ganzen Befehl ersetzen: landet in ``base``, alle anderen Slots werden geleert."""
+        self.base = list(value)
+        self.user_wrappers, self.compositor, self.tool_wrappers, self.wrappers = [], [], [], []
+        self.args, self.game_args_suffix = [], []
 
     def shell_preview(self) -> str:
         keys = ("WINEPREFIX", "PROTONPATH", "GAMEID", "STORE", "PROTON_VERB", "STEAM_COMPAT_DATA_PATH",
@@ -184,6 +215,8 @@ class RunningGame:
     started_at: float
     plan: LaunchPlan
     log_file: Path
+    ctx: LaunchContext | None = None
+    finishing: bool = False       # Prozess beendet, Nachbereitung (Spielzeit, Hooks) läuft noch
 
     def poll(self) -> int | None:
         return self.process.poll()
@@ -208,7 +241,10 @@ class Launcher:
         self.api = api
         self._tools: list[CompatTool] | None = None
         self._running: dict[str, RunningGame] = {}
+        self._starting: set[str] = set()      # Start vorbereitet (Hooks laufen), Prozess noch nicht gestartet
         self._lock = threading.Lock()
+        # Rückfragen/Meldungen der Launch-Hooks: Terminal (CLI) bzw. ui/bridge.GtkBridge (Oberfläche)
+        self.ui_bridge = ConsoleBridge()
 
     # ------------------------------------------------------------------ Tools
     def tools(self, refresh: bool = False) -> list[CompatTool]:
@@ -338,6 +374,7 @@ class Launcher:
         prefix = self.prefix_for(product_id, gs)
         lib = self.library_of(game)
 
+        exe_path = ""
         if command_override:
             base = list(command_override)
             cwd = str(install_dir)
@@ -350,6 +387,7 @@ class Launcher:
                 exe = install_dir / "start.sh"
             if not exe.exists():
                 raise LaunchError(tr('Startdatei nicht gefunden: {0}').format(exe))
+            exe_path = str(exe)
             if task.working_dir:
                 cwd_path = install_dir / to_posix(task.working_dir)
                 cwd = str(cwd_path if cwd_path.is_dir() else exe.parent)
@@ -412,9 +450,10 @@ class Launcher:
         # Schalter wie in GOverlay/Steam
         if gs.use_vkbasalt:
             env["ENABLE_VKBASALT"] = "1"
+        compositor: list[str] = []
         wrappers: list[str] = []
         if gs.use_gamescope and shutil.which("gamescope"):
-            wrappers += ["gamescope", *shlex.split(gs.gamescope_args or ""), "--"]
+            compositor = ["gamescope", *shlex.split(gs.gamescope_args or ""), "--"]
         if gs.use_gamemode and shutil.which("gamemoderun"):
             wrappers.append("gamemoderun")
         if gs.use_mangohud and shutil.which("mangohud"):
@@ -427,14 +466,18 @@ class Launcher:
             else (game_opts or self.settings.default_launch_options)
         opts = launch_options.parse(opts_text)
         env.update(opts.env)
-        argv = [*opts.wrapper, *wrappers, *base, *opts.args]
         desc = f"{runner}" + (f" · {tool.name}" if tool else "")
-        return LaunchPlan(argv=argv, env=env, cwd=cwd, tool=tool, prefix=str(prefix), runner=runner, description=desc)
+        return LaunchPlan(env=env, cwd=cwd, tool=tool, prefix=str(prefix), runner=runner, description=desc,
+                          base=base, user_wrappers=list(opts.wrapper), compositor=compositor, wrappers=wrappers,
+                          args=list(opts.args), exe=exe_path)
 
     # ------------------------------------------------------------------ Start
     def is_running(self, product_id: str) -> bool:
+        """Läuft das Spiel noch – oder seine Nachbereitung (z. B. Cloud-Upload nach dem Beenden)?"""
+        if str(product_id) in self._starting:
+            return True
         rg = self._running.get(str(product_id))
-        return rg is not None and rg.poll() is None
+        return rg is not None and (rg.finishing or rg.poll() is None)
 
     def running(self, product_id: str) -> RunningGame | None:
         return self._running.get(str(product_id))
@@ -443,20 +486,31 @@ class Launcher:
                on_exit: Callable[[str, int, int], None] | None = None,
                status_cb: Callable[[str], None] | None = None) -> RunningGame:
         product_id = str(product_id)
-        if self.is_running(product_id):
-            raise LaunchError(tr('Das Spiel läuft bereits.'))
-        gs = self.game_settings.get(product_id)
+        with self._lock:
+            if self.is_running(product_id):
+                raise LaunchError(tr('Das Spiel läuft bereits.'))
+            self._starting.add(product_id)
+        try:
+            return self._launch(product_id, task, extra_args, on_exit, status_cb)
+        finally:
+            with self._lock:
+                self._starting.discard(product_id)
+
+    def _launch(self, product_id: str, task: PlayTask | None, extra_args: list[str] | None,
+                on_exit: Callable[[str, int, int], None] | None, status_cb: Callable[[str], None] | None) -> RunningGame:
         game = self.registry.get(product_id)
         if game is None:
             raise LaunchError(tr('Spiel ist nicht installiert.'))
-
-        if game.platform == "windows" and gs.install_redist:
-            self._install_redistributables(product_id, game, gs, status_cb)
 
         plan = self.build_plan(product_id, task, extra_args)
         if game.platform == "windows":
             Path(plan.prefix).mkdir(parents=True, exist_ok=True)
         log_file = paths.game_log_file(product_id)
+        ctx = self.make_context(product_id, plan, status_cb, log_file)
+        launch_hooks.load_builtin_hooks()
+        launch_hooks.run_adjust(ctx)           # Startbefehl ergänzen (z. B. GOverlay-Profil)
+        launch_hooks.run_prepare(ctx)          # Redistributables, Galaxy-Dienste, Cloud …
+        plan, gs = ctx.plan, ctx.gs
         if status_cb:
             status_cb(tr('Starte …'))
         if gs.pre_launch.strip():
@@ -474,7 +528,7 @@ class Launcher:
             except OSError as exc:
                 raise LaunchError(tr('Start fehlgeschlagen: {0}').format(exc)) from exc
         log.info("Spiel %s gestartet (PID %d) via %s: %s", product_id, proc.pid, plan.description, plan.shell_preview())
-        rg = RunningGame(product_id, proc, time.time(), plan, log_file)
+        rg = RunningGame(product_id, proc, time.time(), plan, log_file, ctx)
         with self._lock:
             self._running[product_id] = rg
         threading.Thread(target=self._watch, args=(rg, gs, on_exit), name=f"gl-watch-{product_id}", daemon=True).start()
@@ -482,26 +536,107 @@ class Launcher:
 
     def _watch(self, rg: RunningGame, gs: GameSettings, on_exit) -> None:
         code = rg.process.wait()
+        rg.finishing = True               # bis zum Ende der Nachbereitung gilt das Spiel als laufend
         ended = time.time()
         minutes = int(round((ended - rg.started_at) / 60.0))
-        log.info("Spiel %s beendet: Exit-Code %s nach %.0f s", rg.product_id, code, ended - rg.started_at)
-        self.playtime.add_session(rg.product_id, minutes, ended)
-        with open(rg.log_file, "ab") as lf:
-            lf.write(f"===== Ende, Exit-Code {code}, {minutes} Min. =====\n".encode())
-        if gs.post_exit.strip():
-            try:
-                self._run_hook(gs.post_exit, rg.plan, rg.log_file)
-            except Exception as exc:  # pragma: no cover
-                log.warning("post_exit fehlgeschlagen: %s", exc)
-        if self.api is not None and self.settings.sync_playtime and minutes > 0 and not str(rg.product_id).startswith("ext-"):
-            try:
-                self.api.post_playtime(rg.product_id, minutes, ended)
-            except Exception as exc:  # pragma: no cover
-                log.warning("Spielzeit-Sync fehlgeschlagen: %s", exc)
-        with self._lock:
-            self._running.pop(rg.product_id, None)
+        try:
+            log.info("Spiel %s beendet: Exit-Code %s nach %.0f s", rg.product_id, code, ended - rg.started_at)
+            self.playtime.add_session(rg.product_id, minutes, ended)
+            with open(rg.log_file, "ab") as lf:
+                lf.write(f"===== Ende, Exit-Code {code}, {minutes} Min. =====\n".encode())
+            if gs.post_exit.strip():
+                try:
+                    self._run_hook(gs.post_exit, rg.plan, rg.log_file)
+                except Exception as exc:  # pragma: no cover
+                    log.warning("post_exit fehlgeschlagen: %s", exc)
+            if self.api is not None and self.settings.sync_playtime and minutes > 0 and not str(rg.product_id).startswith("ext-"):
+                try:
+                    self.api.post_playtime(rg.product_id, minutes, ended)
+                except Exception as exc:  # pragma: no cover
+                    log.warning("Spielzeit-Sync fehlgeschlagen: %s", exc)
+            if rg.ctx is not None:
+                # z. B. Cloud-Upload – kein Neustart mitten im Upload (is_running bleibt bis hier wahr)
+                launch_hooks.run_after_exit(rg.ctx, code, minutes)
+        except Exception:  # pragma: no cover
+            log.exception("Nachbereitung von %s fehlgeschlagen", rg.product_id)
+        finally:
+            with self._lock:
+                if self._running.get(rg.product_id) is rg:
+                    self._running.pop(rg.product_id, None)
+            rg.finishing = False
         if on_exit:
             on_exit(rg.product_id, code, minutes)
+
+    # ------------------------------------------------------------------ Launch-Hooks
+    def make_context(self, product_id: str, plan: LaunchPlan | None, status_cb: Callable[[str], None] | None = None,
+                     log_file: Path | None = None, prepare_only: bool = False, preview: bool = False) -> LaunchContext:
+        """Kontext für die Launch-Hooks (siehe launch/hooks.py)."""
+        product_id = str(product_id)
+        game = self.registry.get(product_id)
+        if game is None:
+            raise LaunchError(tr('Spiel ist nicht installiert.'))
+        gs = self.game_settings.get(product_id)
+        if plan is not None:
+            prefix, runner, tool = Path(plan.prefix), plan.runner, plan.tool
+            exe = Path(plan.exe) if plan.exe else None
+        else:
+            tool = self.resolve_tool(gs, game.platform, product_id)
+            runner = self.runner_for(tool) if tool is not None else "native"
+            prefix, exe = self.prefix_for(product_id, gs), None
+        def status(text: str) -> None:
+            if status_cb:
+                status_cb(text)
+
+        def ask(title: str, body: str, options: list[tuple[str, str]], default_id: str) -> str:
+            try:
+                return self.ui_bridge.ask(title, body, options, default_id)
+            except Exception as exc:
+                log.warning("Rückfrage „%s“ fehlgeschlagen: %s", title, exc)
+                return default_id
+
+        return LaunchContext(product_id=product_id, game=game, gs=gs, settings=self.settings, plan=plan,
+                             install_dir=Path(game.install_path), exe=exe, prefix=prefix, runner=runner, tool=tool,
+                             log_file=log_file or paths.game_log_file(product_id), status=status, ask=ask,
+                             launcher=self, api=self.api, prepare_only=prepare_only, preview=preview)
+
+    def preview_plan(self, product_id: str, task: PlayTask | None = None, extra_args: list[str] | None = None) -> LaunchPlan:
+        """Startbefehl wie beim echten Start, inklusive ``adjust_plan`` der Hooks, aber ohne etwas auszuführen –
+        für Befehlsvorschau und ``launch --dry-run`` (darf im Hauptthread laufen)."""
+        plan = self.build_plan(product_id, task, extra_args)
+        ctx = self.make_context(product_id, plan, preview=True)
+        launch_hooks.load_builtin_hooks()
+        launch_hooks.run_adjust(ctx)
+        return ctx.plan
+
+    def run_prepare_only(self, product_id: str, status_cb: Callable[[str], None] | None = None) -> LaunchContext:
+        """Nur die Prefix-Einrichtung (Hooks mit ``setup = True``) ausführen, ohne das Spiel zu starten –
+        für „Setup erneut ausführen“. ``ctx.plan`` ist ``None``, wenn kein Startbefehl gebaut werden kann."""
+        product_id = str(product_id)
+        with self._lock:
+            if self.is_running(product_id):
+                raise LaunchError(tr('Das Spiel läuft bereits.'))
+            self._starting.add(product_id)
+        try:
+            game = self.registry.get(product_id)
+            if game is None:
+                raise LaunchError(tr('Spiel ist nicht installiert.'))
+            try:
+                plan: LaunchPlan | None = self.build_plan(product_id)
+            except LaunchError as exc:
+                log.info("Setup %s ohne Startbefehl: %s", product_id, exc)
+                plan = None
+            ctx = self.make_context(product_id, plan, status_cb, prepare_only=True)
+            if ctx.is_windows:
+                if ctx.tool is None:
+                    raise LaunchError(tr('Kein Proton/Wine verfügbar.'))
+                ctx.prefix.mkdir(parents=True, exist_ok=True)
+            launch_hooks.load_builtin_hooks()
+            ran = launch_hooks.run_prepare(ctx, setup_only=True)
+            log.info("Setup %s ausgeführt: %s", product_id, ", ".join(ran) or "-")
+            return ctx
+        finally:
+            with self._lock:
+                self._starting.discard(product_id)
 
     def _run_hook(self, cmd: str, plan: LaunchPlan, log_file: Path) -> None:
         with open(log_file, "ab") as lf:
@@ -589,26 +724,7 @@ class Launcher:
         argv, env = self.winetricks_command(product_id, verbs)
         return subprocess.Popen(argv, env=env, start_new_session=True)
 
-    def _install_redistributables(self, product_id: str, game: InstalledGame, gs: GameSettings,
-                                  status_cb: Callable[[str], None] | None) -> None:
-        record = read_json(paths.MANIFEST_DIR / f"{product_id}.json", {})
-        redists = [r for r in record.get("redist", []) if r.get("path") and r.get("id") not in gs.redist_done]
-        if not redists:
-            return
-        install_dir = Path(game.install_path)
-        done = list(gs.redist_done)
-        for r in redists:
-            exe = install_dir / to_posix(r["path"])
-            if not exe.exists():
-                done.append(r["id"])
-                continue
-            if status_cb:
-                status_cb(tr('Installiere {0} …').format(r.get('name') or r['id']))
-            log.info("Redistributable %s wird installiert: %s %s", r["id"], exe, r.get("arguments", ""))
-            code = self.run_in_prefix(product_id, [str(exe), *split_windows_args(r.get("arguments", ""))])
-            log.info("Redistributable %s beendet mit %s", r["id"], code)
-            done.append(r["id"])
-            self.game_settings.update(product_id, redist_done=done)
+    # Redistributables beim ersten Start: launch/hook_redist.py (RedistHook)
 
     # ------------------------------------------------------------------ Verschiedenes
     def open_path(self, path: Path | str) -> None:

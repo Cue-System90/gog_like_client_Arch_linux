@@ -7,7 +7,7 @@ DIST="${1:-$HERE/../dist}"
 BUILD="$(mktemp -d)"
 trap 'rm -rf "$BUILD"' EXIT
 mkdir -p "$BUILD/galaxy-linux-$PKGVER" "$DIST"
-cp -r "$HERE/galaxy_linux" "$HERE/data" "$HERE/scripts" "$HERE/pyproject.toml" "$HERE/README.md" "$HERE/LICENSE" "$BUILD/galaxy-linux-$PKGVER/"
+cp -r "$HERE/galaxy_linux" "$HERE/data" "$HERE/scripts" "$HERE/pyproject.toml" "$HERE/README.md" "$HERE/CHANGELOG.md" "$HERE/LICENSE" "$BUILD/galaxy-linux-$PKGVER/"
 find "$BUILD/galaxy-linux-$PKGVER" -name '__pycache__' -type d -prune -exec rm -rf {} +
 tar -C "$BUILD" -czf "$BUILD/galaxy-linux-$PKGVER.tar.gz" "galaxy-linux-$PKGVER"
 cp "$HERE/PKGBUILD" "$BUILD/"

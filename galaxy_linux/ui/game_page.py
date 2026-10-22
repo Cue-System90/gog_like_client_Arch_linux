@@ -16,7 +16,8 @@ from ..launch.launcher import LaunchError
 from ..settings import format_bytes, format_minutes
 from .dialogs import (GameSettingsDialog, InstallDialog, confirm_destructive, confirm_remove_game, confirm_uninstall,
                       move_installation)
-from .util import Adw, Gtk, Pango, fmt_eta, fmt_speed, icon_button, idle, label, open_uri, pick_icon, relative_time, run_async
+from . import ui_registry
+from .util import Adw, Gtk, Pango, fmt_eta, fmt_speed, icon_button, idle, label, pick_icon, relative_time, run_async
 
 
 class Stat(Gtk.Box):
@@ -217,6 +218,13 @@ class GamePage(Gtk.Box):
         comp.append(self.cmd_preview)
         right.append(comp)
 
+        # Abschnitte der Erweiterungen (ui_registry.register_game_section)
+        self._ext_sections: list[Gtk.Widget] = []
+        for col, box in (("left", left), ("right", right)):
+            for w in ui_registry.build_sections(col, self):
+                box.append(w)
+                self._ext_sections.append(w)
+
         scrolled.set_child(content)
         self.append(scrolled)
 
@@ -234,7 +242,7 @@ class GamePage(Gtk.Box):
             (tr('Wine-Prefix öffnen'), lambda *_: self.backend.launcher.open_path(self.backend.launcher.prefix_for(self.pid))),
             (tr('Winetricks'), self._on_winetricks),
             (tr('Protokoll öffnen'), lambda *_: self.backend.launcher.open_path(paths.game_log_file(self.pid))),
-            (tr('Auf GOG.com öffnen'), lambda *_: open_uri((self.meta.gog_url if self.meta and self.meta.gog_url else None) or (self.entry.gog_url if self.entry and self.entry.gog_url else "https://www.gog.com/"))),
+            (tr('Auf GOG.com öffnen'), lambda *_: self.win.open_store((self.meta.gog_url if self.meta and self.meta.gog_url else None) or (self.entry.gog_url if self.entry and self.entry.gog_url else "/"))),
             (tr('Prefix anlegen'), lambda *_: self._prefix_action("create")),
             (tr('Prefix neu anlegen …'), lambda *_: self._prefix_action("reset")),
             (tr('Prefix löschen …'), lambda *_: self._prefix_action("delete")),
@@ -252,9 +260,25 @@ class GamePage(Gtk.Box):
             elif text == "__shortcut_desktop__":
                 self.desktop_shortcut_btn = b
             box.append(b)
-        pop.connect("show", lambda *_: self._update_shortcut_labels())
+        # Einträge der Erweiterungen (ui_registry.register_game_action) nach „Auf GOG.com öffnen“
+        anchor = self._menu_btns.get(tr('Auf GOG.com öffnen'))
+        self._ext_actions: list[tuple[object, Gtk.Button]] = []
+        for act in ui_registry.game_actions():
+            b = Gtk.Button(label=act.label)
+            b.add_css_class("flat")
+            b.get_child().set_xalign(0)
+            b.connect("clicked", lambda _b, act=act: (pop.popdown(), ui_registry.run_action(act, self, self.pid)))
+            box.insert_child_after(b, anchor)
+            anchor = b
+            self._ext_actions.append((act, b))
+        pop.connect("show", lambda *_: self._on_menu_show())
         pop.set_child(box)
         return pop
+
+    def _on_menu_show(self) -> None:
+        self._update_shortcut_labels()
+        for act, b in self._ext_actions:
+            b.set_visible(ui_registry.action_visible(act, self, self.pid))
 
     def _update_shortcut_labels(self) -> None:
         if not self.pid:
@@ -312,6 +336,7 @@ class GamePage(Gtk.Box):
         self._fill_quick()
         self.refresh_state()
         self._load_achievements()
+        ui_registry.notify_sections(self._ext_sections, "set_game", self.pid)
 
     def _fill_meta(self, m) -> None:
         if m is None:
@@ -388,7 +413,7 @@ class GamePage(Gtk.Box):
             return
         try:
             if self.backend.registry.is_installed(self.pid):
-                self.cmd_preview.set_text(self.backend.launcher.build_plan(self.pid).shell_preview())
+                self.cmd_preview.set_text(self.backend.launcher.preview_plan(self.pid).shell_preview())
             else:
                 gs = self.backend.game_settings.get(self.pid)
                 self.cmd_preview.set_text(launch_options.describe(gs.launch_options, ["<spiel>"]) if gs.launch_options else "")
@@ -445,6 +470,7 @@ class GamePage(Gtk.Box):
                 d[k].set_text("–")
             d[tr('Sprache')].set_text(self.backend.settings.language)
         self._update_preview()
+        ui_registry.notify_sections(self._ext_sections, "refresh_state", self.pid)
 
     def on_job(self, job) -> None:
         if job.product_id != self.pid:

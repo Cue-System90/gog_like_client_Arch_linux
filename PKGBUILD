@@ -1,7 +1,7 @@
 # Maintainer: lokal (CachyOS)
 # Reines Python-Paket ohne Build-Werkzeuge: Quellen werden direkt nach site-packages installiert.
 pkgname=galaxy-linux
-pkgver=0.1.6
+pkgver=0.2.0
 pkgrel=1
 pkgdesc="Inoffizieller nativer Client für GOG.com mit Proton-Auswahl pro Spiel und Steam-kompatiblen Startoptionen"
 arch=('any')
@@ -55,5 +55,8 @@ LAUNCHER
   install -Dm644 data/org.galaxylinux.Client.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/org.galaxylinux.Client.svg"
   install -Dm755 scripts/install-official-galaxy-wine.sh "$pkgdir/usr/share/$pkgname/scripts/install-official-galaxy-wine.sh"
   install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
+  # „Neu bei uns“ im Zahnrad-Menü liest das Änderungsprotokoll aus dem Paketordner
+  install -Dm644 CHANGELOG.md "$pkgdir$site/galaxy_linux/CHANGELOG.md"
+  install -Dm644 CHANGELOG.md "$pkgdir/usr/share/doc/$pkgname/CHANGELOG.md"
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }

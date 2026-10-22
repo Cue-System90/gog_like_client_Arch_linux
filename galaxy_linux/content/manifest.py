@@ -197,6 +197,18 @@ def pick_language(available: Iterable[str], wanted: str) -> str:
     return av[0]
 
 
+def support_entries(products: Iterable[dict[str, Any]]) -> list[dict[str, str]]:
+    """Support-Programme (``temp_executable``/``temp_arguments``) der Produkte eines v2-Build-Manifests –
+    Heroic führt sie nach der Installation aus, wenn kein ISI (scriptInterpreter) verlangt wird."""
+    out = []
+    for p in products:
+        exe = str(p.get("temp_executable") or "") if isinstance(p, dict) else ""
+        if exe:
+            out.append({"product_id": str(p.get("productId", "")), "name": str(p.get("name", "")),
+                        "temp_executable": exe, "temp_arguments": str(p.get("temp_arguments") or "")})
+    return out
+
+
 @dataclass
 class BuildManifest:
     build_id: str
@@ -212,6 +224,7 @@ class BuildManifest:
     offline_depot: Depot | None = None
     tags: list[str] = field(default_factory=list)
     script_interpreter: bool = False
+    support: list[dict[str, str]] = field(default_factory=list)   # Support-Programme je Produkt (temp_executable)
 
     @classmethod
     def parse(cls, d: dict[str, Any]) -> "BuildManifest":
@@ -232,6 +245,7 @@ class BuildManifest:
             offline_depot=Depot.from_json(d["offlineDepot"]) if d.get("offlineDepot") else None,
             tags=list(d.get("tags") or []),
             script_interpreter=bool(d.get("scriptInterpreter", False)),
+            support=support_entries(d.get("products") or []),
         )
 
     @property

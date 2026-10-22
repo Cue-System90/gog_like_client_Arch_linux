@@ -11,7 +11,7 @@ import os
 import shutil
 import threading
 import time
-from dataclasses import asdict, dataclass, field, fields
+from dataclasses import MISSING, asdict, dataclass, field, fields
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -36,11 +36,23 @@ def _system_language() -> str:
     return lang
 
 
+_FIELD_KINDS: dict[type, dict[str, Any]] = {}
+
+
 def _from_dict(cls, data: dict[str, Any] | None):
-    """Tolerantes Laden: unbekannte Schlüssel werden ignoriert, fehlende bekommen Defaults."""
-    data = data or {}
-    names = {f.name for f in fields(cls)}
-    return cls(**{k: v for k, v in data.items() if k in names})
+    """Tolerantes Laden: unbekannte Schlüssel werden ignoriert, fehlende bekommen Defaults; Listen/Objekte
+    mit falschem Typ (z. B. null aus einer von Hand bearbeiteten Datei) ebenfalls."""
+    data = data if isinstance(data, dict) else {}
+    kinds = _FIELD_KINDS.get(cls)
+    if kinds is None:
+        kinds = {}
+        for f in fields(cls):
+            kind = None
+            if f.default_factory is not MISSING and f.default_factory in (list, dict):   # type: ignore[misc]
+                kind = f.default_factory                                                   # type: ignore[misc]
+            kinds[f.name] = kind
+        _FIELD_KINDS[cls] = kinds
+    return cls(**{k: v for k, v in data.items() if k in kinds and (kinds[k] is None or isinstance(v, kinds[k]))})
 
 
 DEFAULT_EXTERNAL_DIR = paths.DEFAULT_GAMES_DIR.parent / "External"
@@ -104,6 +116,25 @@ class GlobalSettings:
     library_titles: bool = True       # Titel unter den Covern
     library_sections: bool = True     # Abschnitte wie „Als Nächstes spielen“
     library_sort: int = 0
+    # Bibliotheks-Abgleich mit GOG (ab 0.2.0)
+    library_sync_interval: int = 10   # Minuten zwischen automatischen Abgleichen, 0 = aus
+    library_sync_on_focus: bool = True
+    library_new_ids: dict[str, float] = field(default_factory=dict)   # Produkt-ID → Zeitpunkt der ersten Sichtung (NEU)
+    library_checksum: str = ""        # letzte userData.json-Prüfsumme der Bibliothek
+    # Spielfunktionen (Einstellungen → Spielfunktionen, wie Galaxy 2.1)
+    feature_cloud_saves: bool = True
+    feature_galaxy_services: bool = True
+    feature_achievements: bool = True
+    feature_auto_update: bool = False # Spiel-Updates automatisch installieren
+    # GOverlay
+    goverlay_register_folders: bool = True     # Spiele-Ordner in GOverlays nonsteam_folders.txt eintragen
+    goverlay_use_profiles: bool = True         # GOverlay-Profil (bgmod) pro Spiel nutzen
+    goverlay_global_fallback: bool = True      # ohne eigenes Profil das globale GOverlay-Profil nutzen
+    goverlay_added_folders: list[str] = field(default_factory=list)   # von galaxy-linux eingetragene Ordner
+    # Galaxy-Dienste (comet) und Store
+    comet_path: str = ""              # "" = automatisch suchen
+    store_visible: bool = True        # STORE in der Seitenleiste (Galaxy: „Bevorzugter Store“)
+    store_last_url: str = ""
 
     _lock = threading.Lock()
 
@@ -198,6 +229,37 @@ class GameSettings:
     post_exit: str = ""
     hidden: bool = False
     favorite: bool = False
+    cloud_saves: str = ""          # "" = globale Vorgabe, "on" / "off"
+    galaxy_services: str = ""      # "" = globale Vorgabe, "on" / "off"
+    goverlay_profile: str = ""     # "" = automatisch nach Ordnername, "none" = aus, sonst Profilname
+    cloud_timestamps: dict[str, float] = field(default_factory=dict)   # Ort → Zeitpunkt der letzten Synchronisation
+    setup_done: list[str] = field(default_factory=list)   # Produkt-/Build-IDs, deren Prefix-Einrichtung gelaufen ist
+
+
+def resolve_switch(value: str, default: bool) -> bool:
+    """Dreistufiger Schalter pro Spiel: "" = globale Vorgabe, "on" / "off" überschreiben sie."""
+    if value == "on":
+        return True
+    if value == "off":
+        return False
+    return bool(default)
+
+
+def coerce_value(current: Any, raw: str) -> Any:
+    """Text von der Kommandozeile in den Typ der vorhandenen Einstellung wandeln (bool, int, Liste/Objekt als JSON)."""
+    import json
+    if isinstance(current, bool):
+        return str(raw).strip().lower() in ("1", "true", "ja", "yes", "on")
+    if isinstance(current, int):
+        return int(raw)
+    if isinstance(current, float):
+        return float(raw)
+    if isinstance(current, (list, dict)):
+        val = json.loads(raw)
+        if not isinstance(val, type(current)):
+            raise ValueError(tr('Erwartet wird JSON vom Typ {0}').format(type(current).__name__))
+        return val
+    return raw
 
 
 class GameSettingsStore:
@@ -214,10 +276,13 @@ class GameSettingsStore:
             write_json(paths.GAME_SETTINGS_FILE, self._data)
 
     def update(self, product_id: str, **changes: Any) -> GameSettings:
-        s = self.get(product_id)
-        for k, v in changes.items():
-            setattr(s, k, v)
-        self.set(product_id, s)
+        """Einzelne Felder ändern – Lesen und Schreiben unter einer Sperre (Hooks schreiben aus Arbeits-Threads)."""
+        with self._lock:
+            s = _from_dict(GameSettings, self._data.get(str(product_id)))
+            for k, v in changes.items():
+                setattr(s, k, v)
+            self._data[str(product_id)] = asdict(s)
+            write_json(paths.GAME_SETTINGS_FILE, self._data)
         return s
 
 

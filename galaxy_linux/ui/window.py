@@ -1,7 +1,7 @@
 """Hauptfenster im Aufbau von GOG Galaxy 2.0.
 
-Titelleiste: links Einstellungen · Avatar · Suche (über der Seitenleiste), rechts Zurück/Vor,
-Lesezeichen, Filter, „+“, Suchfeld, Ansicht und die Fensterknöpfe.
+Titelleiste: links Zahnrad-Menü (wie Galaxy 2.1, siehe ui/menus.py) · Avatar-Menü · Suche (über der Seitenleiste),
+rechts Zurück/Vor, Lesezeichen, Filter, „+“, Suchfeld, Ansicht und die Fensterknöpfe.
 Seitenleiste: SPIELE (Zuletzt gespielt, Alle Spiele, Installiert, Downloads), darunter BIBLIOTHEKEN (eigene
 Bibliotheken für Nicht-GOG-Spiele, je ein Eintrag mit Zähler), FREUNDE, STORE.
 Inhalt: Cover-Raster in Abschnitten, Downloads-Seite, Spielansicht.
@@ -15,9 +15,12 @@ import socket
 import time
 from pathlib import Path
 
-from .. import APP_NAME, __version__
+from .. import APP_NAME, __version__, i18n
 from ..api.client import NotLoggedIn
 from ..settings import format_bytes, format_minutes
+from ..store_links import store_lang, store_url
+from . import menus, prefs_registry, ui_registry
+from .bridge import GtkBridge
 from .dialogs import LoginDialog, PreferencesDialog
 from .game_page import GamePage
 from .util import (Adw, Gdk, Gio, GLib, Gtk, ImageLoader, Pango, choose_folder, clamped_picture, fmt_eta, fmt_speed, icon_button, idle, label,
@@ -244,6 +247,7 @@ class MainWindow(Adw.ApplicationWindow):
     def __init__(self, app, backend) -> None:
         super().__init__(application=app, title=APP_NAME)
         self.backend = backend
+        prefs_registry.load_extensions()    # ui/prefs_*.py, ui/ext_*.py – vor dem Aufbau von Spielansicht und Menüs
         self.images = ImageLoader(backend.api)
         self.set_default_size(1360, 860)
         self.add_css_class("galaxy")
@@ -293,6 +297,10 @@ class MainWindow(Adw.ApplicationWindow):
         self.stack.add_named(self.welcome, "welcome")
 
         self.backend.jobs.listeners.append(lambda job: idle(self._on_job, job))
+        # Rückfragen der Launch-Hooks (z. B. Cloud-Konflikt) als Dialog über diesem Fenster
+        self.bridge = GtkBridge(self)
+        self.backend.launcher.ui_bridge = self.bridge
+        self.connect("close-request", lambda *_: (self.bridge.cancel_all(), False)[1])
         self._monitors: list = []
         self._scan_timer = 0
         self._scanning = False
@@ -303,9 +311,10 @@ class MainWindow(Adw.ApplicationWindow):
         self.setup_folder_watch()
         GLib.timeout_add_seconds(2, lambda: (self.scan_folders_async(quiet=True), False)[1])
         if self.backend.api.logged_in and not self.backend.library:
-            self.refresh_library_async()
+            self.request_library_refresh("startup")
         elif self.backend.api.logged_in and self.backend.settings.auto_check_updates and self.backend.registry.all():
             self.check_updates_async(quiet=True)
+        ui_registry.run_window_hooks(self)      # Erweiterungen (ui/ext_*.py): Timer, Fokus, eigene Seiten …
 
     # ------------------------------------------------------------------ Kopfzeile
     def _build_header(self) -> Gtk.Widget:
@@ -316,10 +325,14 @@ class MainWindow(Adw.ApplicationWindow):
         left.add_css_class("sidebar-head")
         left.set_size_request(SIDEBAR_WIDTH, 44)
         left.set_hexpand(False)
-        cog = icon_button(pick_icon("emblem-system-symbolic", "preferences-system-symbolic"), tr('Einstellungen'), ["flat", "hdr-btn"])
+        # Zahnrad = Hauptmenü wie in Galaxy 2.1 (Einstellungen, Bibliothek aktualisieren, Neu bei uns …)
+        cog = Gtk.MenuButton(icon_name=pick_icon("emblem-system-symbolic", "preferences-system-symbolic"), tooltip_text=tr('Menü'),
+                             menu_model=menus.main_menu_model())
+        cog.add_css_class("flat")
+        cog.add_css_class("hdr-btn")
         cog.set_margin_start(10)
         cog.set_valign(Gtk.Align.CENTER)
-        cog.connect("clicked", lambda *_: self.open_preferences())
+        self.main_menu_btn = cog
         left.append(cog)
         sp1 = Gtk.Box(hexpand=True)
         left.append(sp1)
@@ -328,7 +341,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.avatar_btn.add_css_class("flat")
         self.avatar_btn.add_css_class("hdr-btn")
         self.avatar_btn.set_valign(Gtk.Align.CENTER)
-        self.avatar_btn.set_popover(self._avatar_popover())
+        self.avatar_header = None          # Bild im Kopf des Avatar-Menüs (menus.avatar_popover)
         left.append(self.avatar_btn)
         sp2 = Gtk.Box(hexpand=True)
         left.append(sp2)
@@ -387,24 +400,6 @@ class MainWindow(Adw.ApplicationWindow):
         handle.set_child(bar)
         return handle
 
-    def _avatar_popover(self) -> Gtk.Popover:
-        pop = Gtk.Popover()
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4, margin_top=8, margin_bottom=8, margin_start=8, margin_end=8)
-        self.avatar_name = label(tr('Nicht angemeldet'), css=["heading"])
-        self.avatar_name.set_margin_start(6)
-        self.avatar_name.set_margin_bottom(4)
-        box.append(self.avatar_name)
-        for text, cb in ((tr('Bei GOG anmelden'), lambda: self.do_login()), (tr('Abmelden'), lambda: self.do_logout()),
-                         (tr('GOG-Konto im Browser'), lambda: open_uri("https://www.gog.com/account")),
-                         (tr('Info'), lambda: self.get_application().activate_action("about"))):
-            b = Gtk.Button(label=text)
-            b.add_css_class("flat")
-            b.get_child().set_xalign(0)
-            b.connect("clicked", lambda _b, cb=cb: (pop.popdown(), cb()))
-            box.append(b)
-        pop.set_child(box)
-        return pop
-
     def _plus_popover(self) -> Gtk.Popover:
         pop = Gtk.Popover()
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2, margin_top=6, margin_bottom=6, margin_start=6, margin_end=6)
@@ -413,10 +408,7 @@ class MainWindow(Adw.ApplicationWindow):
                          (tr('Spiele-Ordner nach Spielen durchsuchen'), lambda: self.scan_folders_async(quiet=False)),
                          (tr('Fehlende Prefixe für alle Spiele anlegen'), lambda: self.create_missing_prefixes()),
                          (tr('Verwaiste Prefixe entfernen …'), lambda: self.cleanup_prefixes()),
-                         (tr('Bibliothek von GOG aktualisieren'), lambda: self.refresh_library_async()),
-                         (tr('Nach Spiel-Updates suchen'), lambda: self.check_updates_async()),
-                         (tr('Spiele-Ordner öffnen'), lambda: self.backend.launcher.open_path(self.backend.settings.install_dir)),
-                         (tr('GOG-Store öffnen'), lambda: open_uri("https://www.gog.com/de/games"))):
+                         (tr('Spiele-Ordner öffnen'), lambda: self.backend.launcher.open_path(self.backend.settings.install_dir))):
             b = Gtk.Button(label=text)
             b.add_css_class("flat")
             b.get_child().set_xalign(0)
@@ -537,8 +529,8 @@ class MainWindow(Adw.ApplicationWindow):
         item("friends", tr('Freunde online'), pick_icon("system-users-symbolic", "avatar-default-symbolic"), enabled=False)
         item("messages", tr('Nachrichten'), pick_icon("mail-unread-symbolic", "chat-symbolic"), enabled=False)
         section(tr('STORE'))
-        item("featured", tr('Empfohlen'), pick_icon("starred-symbolic", "emblem-favorite-symbolic"), cb=lambda: open_uri("https://www.gog.com/de/games"))
-        item("discounts", tr('Angebote'), pick_icon("emblem-favorite-symbolic", "tag-symbolic"), cb=lambda: open_uri("https://www.gog.com/de/promo"))
+        item("featured", tr('Empfohlen'), pick_icon("starred-symbolic", "emblem-favorite-symbolic"), cb=lambda: self.open_store("/games"))
+        item("discounts", tr('Angebote'), pick_icon("emblem-favorite-symbolic", "tag-symbolic"), cb=lambda: self.open_store("/promo"))
         box = outer
         self.status_lbl = label("", css=["dim", "caption"])
         self.status_lbl.set_margin_start(22)
@@ -732,7 +724,7 @@ class MainWindow(Adw.ApplicationWindow):
                 add(tr('Als Nächstes spielen'), next_to_play[:12])
             add(tr('Alle Spiele'), ents)
             if not ents:
-                self.lib_box.append(label(tr('Keine Spiele in der Bibliothek. Über „+“ die Bibliothek von GOG laden.'), css=["dim"]))
+                self.lib_box.append(label(tr('Keine Spiele in der Bibliothek. Über das Zahnrad → „Bibliothek aktualisieren“ (F5) die Bibliothek von GOG laden.'), css=["dim"]))
 
     def _library_header(self, lib) -> Gtk.Widget:
         """Kopf der Bibliotheksansicht: Ordner und die häufigsten Aktionen als Knöpfe, der Rest im „⋯“-Menü."""
@@ -909,18 +901,37 @@ class MainWindow(Adw.ApplicationWindow):
         user = self.backend.api.user or {}
         name = user.get("username") or ("" if not self.backend.api.logged_in else tr('GOG'))
         self.avatar.set_text(name or tr('GOG'))
-        self.avatar_name.set_text(name if name else tr('Nicht angemeldet'))
+        self.avatar_btn.set_tooltip_text(name or tr('Nicht angemeldet'))
+        self.avatar_btn.set_popover(menus.avatar_popover(self))
         url = user.get("avatar") or ""
         if url and not url.lower().endswith((".jpg", ".png", ".webp")):
             url += "_avm.jpg"
         if url:
-            self.images.load(url, lambda tex: self.avatar.set_custom_image(tex))
+            self.images.load(url, self._set_avatar_image)
+
+    def _set_avatar_image(self, tex) -> None:
+        self.avatar.set_custom_image(tex)
+        if self.avatar_header is not None:
+            self.avatar_header.set_custom_image(tex)
 
     def refresh_all(self) -> None:
         self._update_avatar()
         self.populate()
 
-    def refresh_library_async(self) -> None:
+    # ------------------------------------------------------------------ Erweiterungspunkte Bibliotheks-Abgleich / Store
+    def request_library_refresh(self, reason: str, force: bool = False) -> None:
+        """Bibliothek mit GOG abgleichen. ``reason``: "startup", "login", "manual", "timer", "focus", "store" …;
+        ``force`` = sofort, ohne Sperre/Prüfsummen-Abkürzung. Wird vom Bibliotheks-Abgleich ersetzt."""
+        log.info("Bibliotheksabgleich angefordert (%s%s)", reason, ", erzwungen" if force else "")
+        self.refresh_library_async(check_updates=True if reason == "manual" else None)
+
+    def open_store(self, path: str) -> None:
+        """Store-Seite öffnen (Pfad wie "/games", "/redeem" oder volle gog.com-Adresse) – vorerst im Browser,
+        in der Sprache der Oberfläche. Wird vom eingebetteten Store ersetzt."""
+        open_uri(store_url(path, store_lang(i18n.current())))
+
+    def refresh_library_async(self, check_updates: bool | None = None) -> None:
+        """Bibliothek von GOG laden; danach nach Spiel-Updates suchen (Vorgabe: Einstellung „Beim Start …“)."""
         if not self.backend.api.logged_in:
             self.do_login()
             return
@@ -937,7 +948,7 @@ class MainWindow(Adw.ApplicationWindow):
                 self.navigate(self.view if is_lib_view(self.view) else "all", push=False)
             self.update_nav_badges()
             self.toast(tr('{0} Spiele geladen').format(len(entries)))
-            if self.backend.settings.auto_check_updates:
+            if self.backend.settings.auto_check_updates if check_updates is None else check_updates:
                 self.check_updates_async(quiet=True)
 
         def fail(exc: Exception) -> None:
@@ -1153,7 +1164,7 @@ class MainWindow(Adw.ApplicationWindow):
     def _after_login(self, user: dict) -> None:
         self.toast(tr('Angemeldet als {0}').format(user.get('username', '')))
         self._update_avatar()
-        self.refresh_library_async()
+        self.request_library_refresh("login", force=True)
 
     def do_logout(self) -> None:
         self.backend.api.logout()

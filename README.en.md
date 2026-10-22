@@ -25,10 +25,11 @@ years, but there is no guarantee. This repository contains no code or artwork fr
 
 The layout follows GOG Galaxy 2.0:
 
-* **Title bar**: on the left Settings · avatar/account · search (above the sidebar); on the right
-  back/forward, bookmark (favourite), **Filter**, **+** (refresh library, check for updates, add game,
-  create library), the "Search games" field, the view menu (layout, sorting, cover size, titles) and the
-  window buttons.
+* **Title bar**: on the left the **gear menu** like in Galaxy 2.1 (Add games & friends ▸, **Refresh library** –
+  also F5/Ctrl+R –, Settings, Get help, What's new, Check for updates, Legal and privacy, Quit) · **avatar menu**
+  (Account management, Order history, Wallet, Sign out) · search (above the sidebar); on the right back/forward,
+  bookmark (favourite), **Filter**, **+** (add game, create library, scan folders, prefix maintenance), the
+  "Search games" field, the view menu (layout, sorting, cover size, titles) and the window buttons.
 * **Sidebar**: GAMES → Last played, All games (counter), Installed (counter), Downloads (counter);
   LIBRARIES → one entry with counter per custom library (like the platform entries in Galaxy 2.0), "+"
   creates a new one, right-click opens its menu; FRIENDS (activity, friends online, messages – not
@@ -78,6 +79,8 @@ saves, integration of other stores (Steam/Epic plugins), the in-game Galaxy over
 ---
 
 ## Installation on CachyOS / Arch Linux
+
+Current version: **0.2.0** (overhaul in progress) – changes in [CHANGELOG.md](CHANGELOG.md) (German).
 
 ```bash
 git clone https://github.com/Cue-System90/gog_like_client_Arch_linux.git

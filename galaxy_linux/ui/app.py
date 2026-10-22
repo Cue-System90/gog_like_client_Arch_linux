@@ -30,20 +30,8 @@ class GalaxyApp(Adw.Application):
         css.load_from_path(str(Path(__file__).parent / "style.css"))
         Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         self.backend = Backend()
-        for name, cb, accel in (
-            ("refresh", lambda *_: self.window and self.window.refresh_library_async(), "<primary>r"),
-            ("check-updates", lambda *_: self.window and self.window.check_updates_async(), None),
-            ("preferences", lambda *_: self.window and self.window.open_preferences(), "<primary>comma"),
-            ("login", lambda *_: self.window and self.window.do_login(), None),
-            ("logout", lambda *_: self.window and self.window.do_logout(), None),
-            ("about", lambda *_: self._about(), None),
-            ("quit", lambda *_: self.quit(), "<primary>q"),
-        ):
-            a = Gio.SimpleAction.new(name, None)
-            a.connect("activate", cb)
-            self.add_action(a)
-            if accel:
-                self.set_accels_for_action(f"app.{name}", [accel])
+        from .menus import install_actions
+        install_actions(self)      # Zahnrad-/Avatar-Menü, F5/Strg+R, Strg+Q …
 
     def do_activate(self) -> None:
         if self.window is None:

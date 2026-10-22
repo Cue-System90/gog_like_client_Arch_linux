@@ -6,7 +6,7 @@ Windows-Spiele wie Steam über ein frei wählbares Proton (per umu-launcher oder
 direkt), Wine oder nativ.
 """
 
-__version__ = "0.1.6"
+__version__ = "0.2.0"
 APP_ID = "org.galaxylinux.Client"
 APP_NAME = "galaxy-linux"
 USER_AGENT = f"galaxy-linux/{__version__} (Linux; CachyOS)"

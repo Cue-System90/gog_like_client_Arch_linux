@@ -264,6 +264,10 @@ class InstallManager:
             "files": sorted(new_paths), "redist": plan.redist, "dependencies": plan.dependency_names,
             "client_id": plan.manifest.client_id, "client_secret": plan.manifest.client_secret,
             "dlcs": plan.dlc_ids, "updated_at": time.time(),
+            # ab 0.2.0 (gleiches Format wie content/build_records.py)
+            "dependency_ids": list(plan.manifest.dependencies), "script_interpreter": plan.manifest.script_interpreter,
+            "products": [plan.product_id, *plan.dlc_ids], "support": list(plan.manifest.support),
+            "version_name": plan.build.version_name, "manifest_link": plan.build.link, "origin": "installer",
         })
         self.registry.set(game)
         log.info("Installiert: %s → %s (%s, Build %s, %s)", game.title, game.install_path, game.platform, game.build_id, total)

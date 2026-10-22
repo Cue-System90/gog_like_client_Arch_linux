@@ -18,7 +18,7 @@ from .backend import Backend, Job
 from .content.installer import InstallError
 from .launch import compat, goverlay, launch_options
 from .launch.launcher import LaunchError
-from .settings import format_bytes, format_minutes
+from .settings import InstalledGame, coerce_value, format_bytes, format_minutes
 from .ui.util import fmt_eta, fmt_speed
 
 
@@ -62,7 +62,7 @@ def _wait_job(job: Job) -> int:
             time.sleep(0.25)
     sys.stderr.write("\n")
     if job.state == "done":
-        g = job.result
+        g = job.result if isinstance(job.result, InstalledGame) else None
         print(tr('{0} abgeschlossen: {1} → {2}').format(job.label, g.title, g.install_path) if g else tr('{0} abgeschlossen').format(job.label))
         return 0
     print(f"{job.label} {job.status}: {job.error}", file=sys.stderr)
@@ -284,7 +284,7 @@ def cmd_launch(b: Backend, a) -> int:
         gs = b.game_settings.get(pid)
         task = b.launcher.select_task(g, gs, a.task) if g else None
     if a.dry_run:
-        plan = b.launcher.build_plan(pid, task, extra)
+        plan = b.launcher.preview_plan(pid, task, extra)
         print(plan.shell_preview())
         return 0
     done = {}
@@ -336,16 +336,15 @@ def cmd_config(b: Backend, a) -> int:
         if a.key is None:
             print(json.dumps(b.settings.__dict__, indent=2, ensure_ascii=False, default=str))
             return 0
-        if not hasattr(b.settings, a.key):
+        if not hasattr(b.settings, a.key) or a.key.startswith("_"):
             sys.exit(tr('Unbekannte Einstellung {0}').format(a.key))
-        cur = getattr(b.settings, a.key)
-        val: object = a.value
-        if isinstance(cur, bool):
-            val = str(a.value).lower() in ("1", "true", "ja", "yes", "on")
-        elif isinstance(cur, int):
-            val = int(a.value)
-        elif isinstance(cur, dict):
-            val = json.loads(a.value)
+        if a.value is None:
+            print(json.dumps(getattr(b.settings, a.key), ensure_ascii=False, default=str))
+            return 0
+        try:
+            val = coerce_value(getattr(b.settings, a.key), a.value)
+        except ValueError as exc:
+            sys.exit(str(exc))
         setattr(b.settings, a.key, val)
         b.save_settings()
         print(f"{a.key} = {val}")
@@ -389,12 +388,10 @@ def cmd_config(b: Backend, a) -> int:
     if a.what == "set":
         if not hasattr(gs, a.key):
             sys.exit(tr('Unbekannte Einstellung {0}').format(a.key))
-        cur = getattr(gs, a.key)
-        val: object = a.value
-        if isinstance(cur, bool):
-            val = str(a.value).lower() in ("1", "true", "ja", "yes", "on")
-        elif isinstance(cur, (list, dict)):
-            val = json.loads(a.value)
+        try:
+            val = coerce_value(getattr(gs, a.key), a.value)
+        except ValueError as exc:
+            sys.exit(str(exc))
         b.game_settings.update(pid, **{a.key: val})
         print(f"{a.key} = {val}")
         return 0
@@ -447,7 +444,31 @@ def cmd_prefix(b: Backend, a) -> int:
     if a.action == "path":
         print(b.launcher.prefix_for(pid))
         return 0
+    if a.action == "setup":
+        ctx = b.launcher.run_prepare_only(pid, status_cb=lambda t: print(t, file=sys.stderr))
+        print(tr('Einrichtung abgeschlossen: {0}').format(ctx.prefix))
+        return 0
     return 1
+
+
+def cmd_records(b: Backend, a) -> int:
+    """Installations-Datensätze (Build, Abhängigkeiten, Produkte) anzeigen und für übernommene Spiele anlegen."""
+    from .content import build_records
+    games = [b.registry.get(_resolve(b, a.game))] if a.game else b.registry.all()
+    rows = []
+    for g in games:
+        if g is None or g.method == "external":
+            continue
+        rec = build_records.ensure_record(b.api, g, force=a.force) if (a.create or a.force) else build_records.load_record(g.product_id)
+        rows.append(build_records.summary(g, rec))
+    if a.json:
+        print(json.dumps(rows, indent=2, ensure_ascii=False))
+        return 0
+    for r in rows:
+        state = tr('vollständig') if r["complete"] else (tr('unvollständig') if r["exists"] else tr('fehlt'))
+        print(f"{r['product_id']:>12}  {r['title'][:40]:<40}  {state:<13} {tr('Build')} {r['build_id'] or '–'}  "
+              f"{tr('Abhängigkeiten')}: {', '.join(r['dependencies']) or '–'}")
+    return 0
 
 
 def cmd_add(b: Backend, a) -> int:
@@ -654,7 +675,8 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("library"); c.add_argument("key"); c.add_argument("value", nargs=argparse.REMAINDER, help=tr('Wert (darf mit - beginnen)'))
     c = ls.add_parser("remove", help=tr('Bibliothek löschen (Spielordner und Prefixe bleiben)')); c.add_argument("library"); c.add_argument("-y", "--yes", action="store_true")
     s.set_defaults(fn=cmd_library)
-    s = sub.add_parser("prefix", help=tr('Prefix-Werkzeuge')); s.add_argument("action", choices=["create", "delete", "reset", "winetricks", "run", "path"]); s.add_argument("game"); s.add_argument("verbs", nargs="*"); s.set_defaults(fn=cmd_prefix)
+    s = sub.add_parser("prefix", help=tr('Prefix-Werkzeuge (setup = Einrichtung wie vor dem ersten Start erneut ausführen)')); s.add_argument("action", choices=["create", "delete", "reset", "winetricks", "run", "path", "setup"]); s.add_argument("game"); s.add_argument("verbs", nargs="*"); s.set_defaults(fn=cmd_prefix)
+    s = sub.add_parser("records", help=tr('Installations-Datensätze (Build, Abhängigkeiten) anzeigen oder anlegen')); s.add_argument("game", nargs="?"); s.add_argument("--create", action="store_true", help=tr('fehlende Datensätze über das GOG-Content-System anlegen')); s.add_argument("--force", action="store_true", help=tr('vorhandene Datensätze neu anlegen')); s.add_argument("--json", action="store_true"); s.set_defaults(fn=cmd_records)
     return p
 
 

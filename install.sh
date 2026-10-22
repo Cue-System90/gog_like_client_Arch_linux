@@ -42,6 +42,7 @@ case "${1:-}" in
     DEST="$HOME/.local/lib/galaxy-linux"
     rm -rf "$DEST" && mkdir -p "$DEST" "$HOME/.local/bin" "$HOME/.local/share/applications" "$HOME/.local/share/icons/hicolor/scalable/apps"
     cp -r "$HERE/galaxy_linux" "$DEST/"
+    install -m644 "$HERE/CHANGELOG.md" "$DEST/galaxy_linux/CHANGELOG.md"
     install -m755 "$HERE/scripts/galaxy-linux" "$HOME/.local/bin/galaxy-linux"
     install -m644 "$HERE/data/org.galaxylinux.Client.desktop" "$HOME/.local/share/applications/"
     install -m644 "$HERE/data/org.galaxylinux.Client.svg" "$HOME/.local/share/icons/hicolor/scalable/apps/"
