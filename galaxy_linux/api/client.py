@@ -190,18 +190,39 @@ class GogApi:
         d = self.get_json(f"{EMBED}/user/data/games")
         return {str(i) for i in d.get("owned", [])}
 
-    def library(self, progress: ProgressCb | None = None) -> list[LibraryEntry]:
-        page, entries = 1, []
+    def _filtered_products(self, hidden: bool, progress: ProgressCb | None = None,
+                           offset: int = 0) -> tuple[list[LibraryEntry], dict]:
+        """Alle Seiten von getFilteredProducts mit hiddenFlag 0 bzw. 1; liefert Einträge und die erste Antwort."""
+        page, entries, first = 1, [], {}
         while True:
             d = self.get_json(f"{EMBED}/account/getFilteredProducts",
-                              params={"mediaType": 1, "page": page, "sortBy": "title"})
-            entries.extend(LibraryEntry.from_embed(p) for p in d.get("products", []))
+                              params={"mediaType": 1, "page": page, "sortBy": "title", "hiddenFlag": int(hidden)})
+            if not isinstance(d, dict):
+                raise ApiError(tr('Ungültige JSON-Antwort von {0}').format(f"{EMBED}/account/getFilteredProducts"))
+            first = first or d
+            entries.extend(LibraryEntry.from_embed(p) for p in d.get("products") or [])
             total = int(d.get("totalPages", 1) or 1)
             if progress:
-                progress(page, total)
+                progress(offset + page, offset + total)
             if page >= total:
                 break
             page += 1
+        return entries, first
+
+    def library(self, progress: ProgressCb | None = None, include_hidden: bool = True) -> list[LibraryEntry]:
+        """Ganze Bibliothek: sichtbare und (zweiter Durchlauf) versteckte Produkte, wie gog-apis.md §4."""
+        from .library_sync import merge_hidden
+        visible, first = self._filtered_products(False, progress)
+        hidden: list[LibraryEntry] = []
+        if include_hidden and first.get("hasHiddenProducts", True) is not False:
+            try:
+                hidden, _ = self._filtered_products(True, progress, offset=int(first.get("totalPages", 1) or 1))
+            except NotLoggedIn:
+                raise
+            except ApiError as exc:     # versteckte Spiele aus dem Cache behalten, statt sie als „entfernt“ zu verlieren
+                log.warning("Versteckte Spiele konnten nicht geladen werden: %s", exc)
+                hidden = [e for e in (self.cached_library() or []) if e.is_hidden]
+        entries = merge_hidden(visible, hidden)
         write_json(paths.API_CACHE_DIR / "library.json", [e.to_dict() for e in entries])
         return entries
 

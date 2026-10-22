@@ -38,6 +38,8 @@ window.galaxy { background-color: #1b1b20; color: #d9d9de; }
 .cover-badge { border-radius: 4px; padding: 1px 6px; font-size: 7.5pt; font-weight: 700; background-color: rgba(20,20,24,0.85); color: #fff; }
 .cover-badge.update { background-color: #c57be3; color: #1b1b20; }
 .cover-badge.running { background-color: #6bcf8a; color: #1b1b20; }
+/* NEU: violette Pille wie Galaxys „New“-Kennzeichen – Spiele, die der Bibliotheks-Abgleich neu gefunden hat */
+.new-badge { background-color: #8b4fd6; color: #ffffff; border-radius: 999px; padding: 0 7px; min-height: 15px; font-size: 7pt; font-weight: 800; letter-spacing: 1px; box-shadow: 0 1px 4px rgba(0,0,0,0.5); }
 .cover-progress { min-height: 4px; }
 .cover-progress trough { background-color: rgba(0,0,0,0.6); min-height: 4px; border-radius: 0; }
 .cover-progress progress { background-color: #c57be3; min-height: 4px; border-radius: 0; }

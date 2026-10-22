@@ -12,7 +12,7 @@ import sys
 import time
 
 from . import __version__, paths
-from .api import auth
+from .api import auth, library_sync
 from .api.client import ApiError, NotLoggedIn
 from .backend import Backend, Job
 from .content.installer import InstallError
@@ -108,8 +108,14 @@ def cmd_whoami(b: Backend, a) -> int:
 
 def cmd_list(b: Backend, a) -> int:
     if a.refresh:
-        b.refresh_library(lambda p, t: sys.stderr.write("\r" + tr("Bibliothek: Seite {0}/{1}").format(p, t)))
+        res = b.sync_library("cli", force=True,
+                             progress=lambda p, t: sys.stderr.write("\r" + tr("Bibliothek: Seite {0}/{1}").format(p, t)))
         sys.stderr.write("\n")
+        out = sys.stderr if a.json else sys.stdout          # JSON auf stdout bleibt lesbar
+        if res.new_ids:
+            print(tr('{0} neue(s) Spiel(e): {1}').format(len(res.new_ids), ", ".join(res.new_titles)), file=out)
+        elif not res.first:
+            print(tr('Bibliothek ist aktuell'), file=out)
     if a.external or a.library:
         libs = [b.find_library(a.library)] if a.library else b.libraries()
         if a.json:
@@ -135,14 +141,15 @@ def cmd_list(b: Backend, a) -> int:
         for pid, g in installed.items():
             if pid not in {e.id for e in entries}:
                 entries.append(b.entry(pid))
+    new = {e.id for e in entries if library_sync.is_new(b.settings.library_new_ids, e.id)}   # NEU wie in der Oberfläche
     if a.json:
-        print(json.dumps([{**e.to_dict(), "installed": e.id in installed,
+        print(json.dumps([{**e.to_dict(), "installed": e.id in installed, "new": e.id in new,
                            "install_path": installed[e.id].install_path if e.id in installed else None} for e in entries], indent=2, ensure_ascii=False))
         return 0
     for e in sorted(entries, key=lambda x: x.title.lower()):
         mark = "✔" if e.id in installed else " "
         plat = "/".join(p.replace("osx", "mac") for p in e.platforms) or "–"
-        print(f"{mark} {e.id:>11}  {e.title}  [{plat}]")
+        print(f"{mark} {e.id:>11}  {e.title}  [{plat}]" + (f"  {tr('NEU')}" if e.id in new else ""))
     print(tr('{0} Einträge, {1} installiert.').format(len(entries), len([e for e in entries if e.id in installed])))
     return 0
 

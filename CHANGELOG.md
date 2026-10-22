@@ -10,6 +10,10 @@ Fundament; weitere Bausteine folgen.
 - **Zahnrad-Menü wie in Galaxy 2.1**: Spiele & Freunde hinzufügen (Spiel manuell hinzufügen, GOG-Code einlösen,
   Nach GOG-Spielen durchsuchen, Bibliothek anlegen), **Bibliothek aktualisieren** (F5 / Strg+R), Einstellungen,
   Hilfe erhalten, Neu bei uns, Nach Updates suchen, Rechtliches und Datenschutz, Beenden.
+- **Bibliotheks-Abgleich**: neue Käufe erscheinen ohne Neustart – kurz nach dem Start, alle 10 Minuten (einstellbar),
+  beim Wechsel ins Fenster, nach dem Login und nach einem Kauf. GOGs Prüfsumme spart den Vollabruf, solange sich
+  nichts geändert hat. Neue Spiele tragen 14 Tage lang „NEU“ (bis zum ersten Öffnen) und stehen oben unter
+  „Neu in der Bibliothek“; versteckte Spiele werden mitgeladen. `galaxy-linux list --refresh` nennt neue Spiele.
 - **Avatar-Menü wie in Galaxy**: Kontoverwaltung, Bisherige Bestellungen, Geldbeutel, Ausloggen (mit Rückfrage,
   laufende Downloads werden abgebrochen); abgemeldet nur „Bei GOG anmelden“.
 - Das „+“ in der Titelleiste enthält nur noch Hinzufügen und Prefix-Pflege.
