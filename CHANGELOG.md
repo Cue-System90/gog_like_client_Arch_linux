@@ -21,6 +21,9 @@ Fundament; weitere Bausteine folgen.
 - Neue Einstellungsseite **Spielfunktionen**: Spiele automatisch aktualisieren, Cloud-Spielstände, Erfolge,
   Galaxy-Dienste im Spiel (comet), Erfassung der Spielzeit, GOverlay-Profile pro Spiel; pro Spiel abweichend unter
   Eigenschaften → Spielfunktionen. (Die Schalter wirken, sobald die zugehörigen Bausteine fertig sind.)
+- **GOverlay pro Spiel**: Die Spiele-Ordner erscheinen in GOverlay (Eintrag in `nonsteam_folders.txt`, Cover werden
+  mitgeliefert); das dort angelegte Profil eines Spiels wird beim Start über `bgmod` angewendet statt der globalen
+  MangoHud-Konfiguration. Die Spielseite zeigt das Profil, „GOverlay öffnen“ ersetzt „Aus GOverlay“.
 - Unter der Haube: Erweiterungspunkte für den Spielstart (Launch-Hooks), für Einstellungsdialoge, Spielansicht und
   Auftragsarten; die Redistributables beim ersten Start laufen jetzt als Hook.
 - Installations-Datensätze (Build, Abhängigkeiten, Client-ID) lassen sich für übernommene Spiele nachträglich

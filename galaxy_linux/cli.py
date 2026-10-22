@@ -16,7 +16,7 @@ from .api import auth, library_sync
 from .api.client import ApiError, NotLoggedIn
 from .backend import Backend, Job
 from .content.installer import InstallError
-from .launch import compat, goverlay, launch_options
+from .launch import compat, goverlay, goverlay_profiles, launch_options
 from .launch.launcher import LaunchError
 from .settings import InstalledGame, coerce_value, format_bytes, format_minutes
 from .ui.util import fmt_eta, fmt_speed
@@ -406,13 +406,43 @@ def cmd_config(b: Backend, a) -> int:
 
 
 def cmd_goverlay(b: Backend, a) -> int:
-    text = goverlay.import_from_goverlay()
-    if a.game:
-        pid = _resolve(b, a.game)
-        b.game_settings.update(pid, launch_options=text)
-        print(tr('Startoptionen für {0} gesetzt: {1}').format(pid, text))
-    else:
-        print(text)
+    if not a.game:
+        print(goverlay.import_from_goverlay())
+        return 0
+    pid = _resolve(b, a.game)
+    prof = goverlay_profiles.profile_for_game(b, pid)
+    active = prof is not None and prof.active
+    if active:
+        print(goverlay_profiles.describe(prof))      # bgmod kommt beim Start dazu – keine mangohud-Zeile
+    text = goverlay.import_from_goverlay(b.game_settings.get(pid).launch_options, active)
+    b.game_settings.update(pid, launch_options=text)
+    print(tr('Startoptionen für {0} gesetzt: {1}').format(pid, text))
+    return 0
+
+
+def cmd_goverlay_status(b: Backend, a) -> int:
+    """GOverlay: eingetragene Ordner und Profil pro Spiel; ``--sync`` gleicht die Ordnerliste ab und legt Cover an."""
+    gp = goverlay_profiles
+    if not gp.goverlay_installed():
+        print(tr('GOverlay nicht gefunden ({0} fehlt).').format(gp.config_dir()))
+        return 1
+    if a.sync:
+        rep = gp.sync_all(b)
+        f = rep.folders
+        print(tr('Ordnerliste abgeglichen: {0} eingetragen, {1} entfernt, {2} Cover angelegt').format(
+            len(f.added) if f else 0, len(f.removed) if f else 0, rep.covers))
+    ours = {gp.normalize_folder(x) for x in b.settings.goverlay_added_folders}
+    print(f"{gp.folders_file()}:")
+    for line in gp.read_lines(gp.folders_file()):
+        if line.strip():
+            print(f"  {line.strip()}" + ("  (galaxy-linux)" if gp.normalize_folder(line) in ours else ""))
+    games = [b.registry.get(_resolve(b, a.game))] if a.game else sorted(b.registry.all(), key=lambda g: g.title.lower())
+    for g in games:
+        if g is None:
+            continue
+        prof = gp.profile_for_game(b, g.product_id)
+        extra = f"  [{prof.bgmod}]" if prof is not None and prof.active else ""
+        print(f"{g.product_id:>14}  {g.title}: {gp.status_for(b, g.product_id)}{extra}")
     return 0
 
 
@@ -667,6 +697,7 @@ def build_parser() -> argparse.ArgumentParser:
     c = cs.add_parser("locations", help=tr('Installationsorte anzeigen/ergänzen')); c.add_argument("--add"); c.add_argument("--remove")
     s.set_defaults(fn=cmd_config)
     s = sub.add_parser("goverlay-import", help=tr('Startoptionen aus GOverlay/MangoHud ableiten')); s.add_argument("game", nargs="?"); s.set_defaults(fn=cmd_goverlay)
+    s = sub.add_parser("goverlay", help=tr('GOverlay: eingetragene Spiele-Ordner und Profil pro Spiel anzeigen')); s.add_argument("game", nargs="?"); s.add_argument("--sync", action="store_true", help=tr('Spiele-Ordner in GOverlay eintragen (bzw. austragen) und Cover anlegen')); s.set_defaults(fn=cmd_goverlay_status)
     s = sub.add_parser("updates", help=tr('nach Spiel-Updates suchen')); s.add_argument("--install", action="store_true"); s.set_defaults(fn=cmd_updates)
     s = sub.add_parser("log", help=tr('Protokoll anzeigen (für die Auswertung)')); s.add_argument("--tail", type=int, default=200); s.add_argument("--path", action="store_true"); s.add_argument("--clear", action="store_true"); s.set_defaults(fn=cmd_log)
     s = sub.add_parser("library", help=tr('eigene Bibliotheken anlegen, umbenennen, ändern, löschen')); ls = s.add_subparsers(dest="action", required=True)

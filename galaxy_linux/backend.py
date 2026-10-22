@@ -79,6 +79,17 @@ def is_network_job(kind: str) -> bool:
     return kind in NETWORK_JOB_KINDS or bool(jk and jk.network)
 
 
+# vor Änderungen an den Spieldateien („verify“, „update“, „move“, „uninstall“): fn(backend, product_id, action, status)
+# – z. B. GOverlay: bgmod-Änderungen im Spielordner zurücknehmen (launch/hook_goverlay.py)
+_files_change_hooks: list[Callable[..., Any]] = []
+
+
+def on_before_files_change(fn: Callable[..., Any]) -> Callable[..., Any]:
+    if fn not in _files_change_hooks:
+        _files_change_hooks.append(fn)
+    return fn
+
+
 @dataclass
 class Job:
     kind: str                     # install | update | verify | install-linux | install-offline | move | prefix | JOB_KINDS
@@ -210,6 +221,8 @@ class JobQueue:
 
         inst = self.backend.installer
         try:
+            if job.kind in ("update", "verify", "move"):
+                self.backend.before_files_change(job.product_id, job.kind, status)
             if job.kind == "install":
                 try:
                     plan = inst.plan(job.product_id, job.title, job.platform, job.language or None,
@@ -864,6 +877,7 @@ class Backend:
             if path.is_dir():
                 if not self._safe_to_delete(path):
                     raise InstallError(tr('Ordner wird aus Sicherheitsgründen nicht gelöscht: {0}').format(path))
+                self.before_files_change(pid, "uninstall")
                 import shutil
                 shutil.rmtree(path, ignore_errors=True)
             try:
@@ -876,6 +890,14 @@ class Backend:
         self._forget(pid)
         log.info("Spiel entfernt: %s (Dateien %s, Prefix %s)", g.title, "gelöscht" if delete_files else "behalten",
                  "gelöscht" if delete_prefix else "behalten")
+
+    def before_files_change(self, product_id: str, action: str, status: Callable[[str], None] | None = None) -> None:
+        """Rückrufe vor Änderungen an den Spieldateien (``on_before_files_change``); Fehler werden nur protokolliert."""
+        for fn in list(_files_change_hooks):
+            try:
+                fn(self, str(product_id), action, status)
+            except Exception:
+                log.exception("Rückruf vor „%s“ für %s fehlgeschlagen", action, product_id)
 
     def rename_external(self, product_id: str, title: str) -> None:
         g = self.registry.get(product_id)

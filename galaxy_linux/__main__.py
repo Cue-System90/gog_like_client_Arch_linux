@@ -9,7 +9,7 @@ import sys
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     from . import logsetup
-    quiet = bool(argv) and (argv[0] in ("log", "--version", "-h", "--help", "tools", "search", "list", "whoami", "info", "config", "goverlay-import", "prefix", "login", "logout"))
+    quiet = bool(argv) and (argv[0] in ("log", "--version", "-h", "--help", "tools", "search", "list", "whoami", "info", "config", "goverlay-import", "goverlay", "prefix", "login", "logout"))
     logsetup.setup(log_env=not quiet)
     from . import i18n
     lang = i18n.setup()   # vor dem Import von Oberfläche/CLI – deren Modulkonstanten werden beim Import übersetzt

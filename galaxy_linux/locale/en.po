@@ -490,6 +490,14 @@ msgid "GOG-Spiel"
 msgstr "GOG game"
 
 #: galaxy_linux/cli.py
+msgid "GOverlay nicht gefunden ({0} fehlt)."
+msgstr "GOverlay not found ({0} is missing)."
+
+#: galaxy_linux/cli.py
+msgid "GOverlay: eingetragene Spiele-Ordner und Profil pro Spiel anzeigen"
+msgstr "GOverlay: show the registered game folders and the profile of each game"
+
+#: galaxy_linux/cli.py
 msgid "Gestartet (PID {0}, {1}); Protokoll: {2}"
 msgstr "Started (PID {0}, {1}); log: {2}"
 
@@ -582,6 +590,10 @@ msgid "Ordner oder Vorgabe ändern: games_dir, prefix_dir, tool, options, waylan
 msgstr "change folder or default: games_dir, prefix_dir, tool, options, wayland (on/off/default), dpi, watch"
 
 #: galaxy_linux/cli.py
+msgid "Ordnerliste abgeglichen: {0} eingetragen, {1} entfernt, {2} Cover angelegt"
+msgstr "Folder list synchronised: {0} added, {1} removed, {2} covers created"
+
+#: galaxy_linux/cli.py
 msgid "Prefix für {0} …"
 msgstr "Prefix for {0}…"
 
@@ -640,6 +652,10 @@ msgstr "show games of all custom libraries"
 #: galaxy_linux/cli.py galaxy_linux/ui/dialogs.py
 msgid "Spiele-Ordner"
 msgstr "Games folder"
+
+#: galaxy_linux/cli.py
+msgid "Spiele-Ordner in GOverlay eintragen (bzw. austragen) und Cover anlegen"
+msgstr "Add (or remove) the game folders in GOverlay and create covers"
 
 #: galaxy_linux/cli.py
 msgid "Spiele-Ordner nach kopierten Spielen durchsuchen und fehlende Prefixe anlegen"
@@ -1201,9 +1217,37 @@ msgstr "Enable Proton log"
 msgid "Wayland nativ (Proton 9+)"
 msgstr "Native Wayland (Proton 9+)"
 
-#: galaxy_linux/launch/goverlay.py
-msgid "gamescope {0} --"
-msgstr "gamescope {0} --"
+#: galaxy_linux/launch/goverlay_profiles.py
+msgid "GOverlay-Profil „{0}“ wird eingerichtet …"
+msgstr "Setting up GOverlay profile “{0}” …"
+
+#: galaxy_linux/launch/goverlay_profiles.py
+msgid "GOverlay-Profil: aus"
+msgstr "GOverlay profile: off"
+
+#: galaxy_linux/launch/goverlay_profiles.py
+msgid "GOverlay-Profil: {0} (pro Spiel)"
+msgstr "GOverlay profile: {0} (per game)"
+
+#: galaxy_linux/launch/goverlay_profiles.py
+msgid "GOverlay-Änderungen werden zurückgenommen …"
+msgstr "Undoing GOverlay changes …"
+
+#: galaxy_linux/launch/goverlay_profiles.py
+msgid "globales GOverlay-Profil"
+msgstr "global GOverlay profile"
+
+#: galaxy_linux/launch/goverlay_profiles.py
+msgid "kein Profil – Spiele-Ordner ist nicht in GOverlay eingetragen"
+msgstr "no profile – the games folder is not registered in GOverlay"
+
+#: galaxy_linux/launch/goverlay_profiles.py
+msgid "kein Profil – in GOverlay das Spiel anklicken"
+msgstr "no profile – click the game in GOverlay"
+
+#: galaxy_linux/launch/hook_goverlay.py galaxy_linux/ui/ext_goverlay.py
+msgid "GOverlay-Profil"
+msgstr "GOverlay profile"
 
 #: galaxy_linux/launch/hook_redist.py
 msgid "Installiere {0} …"
@@ -1413,21 +1457,13 @@ msgstr "Type"
 msgid "Auf dem Schreibtisch"
 msgstr "On the desktop"
 
-#: galaxy_linux/ui/dialogs.py
+#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/ext_goverlay.py
 msgid "Aus"
 msgstr "Off"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Aus (XWayland)"
 msgstr "Off (XWayland)"
-
-#: galaxy_linux/ui/dialogs.py
-msgid "Aus GOverlay übernehmen"
-msgstr "Import from GOverlay"
-
-#: galaxy_linux/ui/dialogs.py
-msgid "Aus GOverlay übernommen: {0}"
-msgstr "Imported from GOverlay: {0}"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Aus der Zwischenablage einfügen"
@@ -1638,10 +1674,6 @@ msgid "GOG-Spiel (goggame-Daten gefunden)"
 msgstr "GOG game (goggame data found)"
 
 #: galaxy_linux/ui/dialogs.py
-msgid "GOverlay öffnen (MangoHud konfigurieren)"
-msgstr "Open GOverlay (configure MangoHud)"
-
-#: galaxy_linux/ui/dialogs.py
 msgid "GOverlay-Profile pro Spiel"
 msgstr "GOverlay profiles per game"
 
@@ -1666,8 +1698,8 @@ msgid "Gefundene Werkzeuge"
 msgstr "Detected tools"
 
 #: galaxy_linux/ui/dialogs.py
-msgid "Genau wie im Steam-Client: z. B. „mangohud %command%“, „ENABLE_VKBASALT=1 mangohud %command%“ oder „gamescope -f -- %command% -novid“. GOverlay zeigt diese Zeile unter „Steam launch options“ an."
-msgstr "Same as in the Steam client: e.g. “mangohud %command%”, “ENABLE_VKBASALT=1 mangohud %command%” or “gamescope -f -- %command% -novid”. GOverlay shows this line under “Steam launch options”."
+msgid "Genau wie im Steam-Client: z. B. „mangohud %command%“, „ENABLE_VKBASALT=1 mangohud %command%“ oder „gamescope -f -- %command% -novid“. Ein GOverlay-Profil braucht keine Zeile – es wird beim Start eingesetzt (Eigenschaften → Kompatibilität)."
+msgstr "Same as in the Steam client: e.g. “mangohud %command%”, “ENABLE_VKBASALT=1 mangohud %command%” or “gamescope -f -- %command% -novid”. A GOverlay profile needs no line – it is applied at launch (Properties → Compatibility)."
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Gilt für alle Windows-Spiele ohne eigene Auswahl."
@@ -2441,6 +2473,70 @@ msgstr "Remove “{0}” from the library?"
 msgid "„{0}“ gelöscht – {1} Spiel(e) ausgetragen, Dateien bleiben"
 msgstr "“{0}” deleted – {1} game(s) removed from the library, files kept"
 
+#: galaxy_linux/ui/ext_goverlay.py
+msgid "Automatisch (Ordner „{0}“)"
+msgstr "Automatic (folder “{0}”)"
+
+#: galaxy_linux/ui/ext_goverlay.py
+msgid "GOverlay findet außer Steam-Spielen nur Spiele in eingetragenen Ordnern. Ein Klick auf das Spiel in GOverlay legt sein Profil an (MangoHud, vkBasalt, OptiScaler …); galaxy-linux startet das Spiel dann mit diesem Profil statt mit der globalen Konfiguration."
+msgstr "Apart from Steam games, GOverlay only finds games in registered folders. Clicking the game in GOverlay creates its profile (MangoHud, vkBasalt, OptiScaler …); galaxy-linux then launches the game with this profile instead of the global configuration."
+
+#: galaxy_linux/ui/ext_goverlay.py galaxy_linux/ui/game_page.py
+msgid "GOverlay ist nicht installiert."
+msgstr "GOverlay is not installed."
+
+#: galaxy_linux/ui/ext_goverlay.py
+msgid "GOverlay nicht gefunden"
+msgstr "GOverlay not found"
+
+#: galaxy_linux/ui/ext_goverlay.py
+msgid "GOverlay nicht gefunden – eingetragen wird nach dem ersten Start von GOverlay."
+msgstr "GOverlay not found – the folders are added once GOverlay has been started."
+
+#: galaxy_linux/ui/ext_goverlay.py galaxy_linux/ui/game_page.py
+msgid "GOverlay öffnen"
+msgstr "Open GOverlay"
+
+#: galaxy_linux/ui/ext_goverlay.py
+msgid "GOverlay-Ordnerliste nicht geschrieben: {0}"
+msgstr "GOverlay folder list not written: {0}"
+
+#: galaxy_linux/ui/ext_goverlay.py
+msgid "GOverlay-Profile pro Spiel verwenden"
+msgstr "Use GOverlay profiles per game"
+
+#: galaxy_linux/ui/ext_goverlay.py
+msgid "Globales GOverlay-Profil als Rückfall"
+msgstr "Global GOverlay profile as fallback"
+
+#: galaxy_linux/ui/ext_goverlay.py
+msgid "Mit diesem GOverlay-Profil (MangoHud, vkBasalt, OptiScaler …) startet das Spiel. Automatisch = das Profil mit dem Namen des Spielordners, das GOverlay beim Anklicken des Spiels anlegt."
+msgstr "The game launches with this GOverlay profile (MangoHud, vkBasalt, OptiScaler …). Automatic = the profile named after the game folder, which GOverlay creates when you click the game."
+
+#: galaxy_linux/ui/ext_goverlay.py
+msgid "Spiele ohne eigenes Profil starten mit dem globalen GOverlay-Profil."
+msgstr "Games without their own profile launch with the global GOverlay profile."
+
+#: galaxy_linux/ui/ext_goverlay.py
+msgid "Spiele-Ordner in GOverlay eintragen"
+msgstr "Register game folders in GOverlay"
+
+#: galaxy_linux/ui/ext_goverlay.py
+msgid "Startet jedes Spiel mit dem bgmod-Wrapper seines GOverlay-Profils. Die eigenen Schalter MangoHud und vkBasalt entfallen dann (MangoHud bleibt bei Linux-Spielen)."
+msgstr "Launches every game with the bgmod wrapper of its GOverlay profile. The client’s own MangoHud and vkBasalt toggles are then skipped (MangoHud stays for Linux games)."
+
+#: galaxy_linux/ui/ext_goverlay.py
+msgid "Trägt den GOG-Spiele-Ordner, weitere Installationsorte und die Spiele-Ordner eigener Bibliotheken in GOverlays Ordnerliste ein (nie einzelne Spiele). Danach in GOverlay „Refresh game library“ wählen oder GOverlay neu starten."
+msgstr "Adds the GOG games folder, additional install locations and the games folders of custom libraries to GOverlay’s folder list (never single games). Then choose “Refresh game library” in GOverlay or restart GOverlay."
+
+#: galaxy_linux/ui/ext_goverlay.py
+msgid "Von galaxy-linux eingetragene Ordner"
+msgstr "Folders registered by galaxy-linux"
+
+#: galaxy_linux/ui/ext_goverlay.py
+msgid "keine (von galaxy-linux)"
+msgstr "none (from galaxy-linux)"
+
 #: galaxy_linux/ui/game_page.py
 msgid "\nFreigeschaltet: {0}"
 msgstr "\nUnlocked: {0}"
@@ -2468,10 +2564,6 @@ msgstr "Open on GOG.com"
 #: galaxy_linux/ui/game_page.py
 msgid "Aus Bibliothek entfernen …"
 msgstr "Remove from library…"
-
-#: galaxy_linux/ui/game_page.py
-msgid "Aus GOverlay"
-msgstr "From GOverlay"
 
 #: galaxy_linux/ui/game_page.py
 msgid "BEENDEN"
@@ -2524,6 +2616,10 @@ msgstr "Genre"
 #: galaxy_linux/ui/game_page.py
 msgid "INSTALLIEREN"
 msgstr "INSTALL"
+
+#: galaxy_linux/ui/game_page.py
+msgid "In GOverlay das Spiel anklicken, um sein Profil (MangoHud, vkBasalt …) einzurichten"
+msgstr "Click the game in GOverlay to set up its profile (MangoHud, vkBasalt …)"
 
 #: galaxy_linux/ui/game_page.py galaxy_linux/ui/window.py
 msgid "Installiert"
@@ -2628,10 +2724,6 @@ msgstr "application menu"
 #: galaxy_linux/ui/game_page.py
 msgid "Startmenü-Verknüpfung entfernen"
 msgstr "Remove application menu shortcut"
-
-#: galaxy_linux/ui/game_page.py
-msgid "Startoptionen aus der aktuellen GOverlay-/MangoHud-Konfiguration übernehmen"
-msgstr "Import launch options from the current GOverlay/MangoHud configuration"
 
 #: galaxy_linux/ui/game_page.py galaxy_linux/ui/window.py
 msgid "Status"

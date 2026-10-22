@@ -1,15 +1,16 @@
 """Anbindung an GOverlay / MangoHud / vkBasalt / GameMode / Gamescope.
 
-GOverlay (ab 1.x) erzeugt für Steam eine Startoptionszeile wie
-``ENABLE_VKBASALT=1 mangohud %command%`` und bittet den Nutzer, sie in die
-Startoptionen des Spiels zu kopieren. Dieser Client versteht exakt diese Zeile
-und kann sie zusätzlich aus der vorhandenen GOverlay-/MangoHud-Konfiguration ableiten.
+Ältere GOverlay-Versionen schlugen für Steam eine Startoptionszeile wie ``ENABLE_VKBASALT=1 mangohud %command%`` vor;
+diese Zeile versteht der Client weiterhin. GOverlay 1.9 arbeitet dagegen mit Profilen pro Spiel (Wrapper ``bgmod``) –
+die setzt galaxy-linux beim Start selbst ein (``goverlay_profiles``), eine mangohud-Zeile ist dann überflüssig und
+würde nur die globale MangoHud-Konfiguration nutzen.
 """
 from __future__ import annotations
 
 from ..i18n import tr
 
 import os
+import shlex
 import shutil
 import subprocess
 from dataclasses import dataclass
@@ -71,7 +72,7 @@ def build_launch_options(mangohud: bool = True, vkbasalt: bool = False, gamemode
     for k, v in (extra_env or {}).items():
         parts.append(f"{k}={v}")
     if gamescope_args:
-        parts.append(tr('gamescope {0} --').format(gamescope_args.strip()))
+        parts.append(f"gamescope {gamescope_args.strip()} --")
     if gamemode:
         parts.append("gamemoderun")
     if mangohud:
@@ -82,13 +83,34 @@ def build_launch_options(mangohud: bool = True, vkbasalt: bool = False, gamemode
     return " ".join(parts)
 
 
-def import_from_goverlay() -> str:
+PROFILE_ENV = ("MANGOHUD", "MANGOHUD_CONFIGFILE", "ENABLE_VKBASALT", "VKBASALT_CONFIG_FILE")
+
+
+def strip_profile_parts(text: str) -> str:
+    """Startoptionen ohne die Teile, die ein GOverlay-Profil (bgmod) selbst übernimmt: Wrapper ``mangohud``, ``bgmod``,
+    ``fgmod`` (samt folgendem ``--``) und die MangoHud-/vkBasalt-Variablen; alles andere bleibt."""
+    from .goverlay_profiles import drop_goverlay_wrappers
+    o = launch_options.parse(text)
+    env = {k: v for k, v in o.env.items() if k not in PROFILE_ENV}
+    wrapper = [w for w in drop_goverlay_wrappers(o.wrapper)[0] if os.path.basename(w) != "mangohud"]
+    parts = [f"{k}={shlex.quote(v)}" if v else f"{k}=" for k, v in env.items()]
+    parts += [shlex.quote(w) for w in wrapper]
+    if env or wrapper:
+        parts.append(launch_options.COMMAND_TOKEN)
+    parts += [shlex.quote(a) for a in o.args]
+    return " ".join(parts)
+
+
+def import_from_goverlay(current: str = "", profile_active: bool = False) -> str:
     """Leitet die Startoptionen aus der aktuellen GOverlay-/MangoHud-Konfiguration ab.
 
-    GOverlay schreibt ~/.config/MangoHud/MangoHud.conf (und bei aktivem vkBasalt
-    ~/.config/vkBasalt/vkBasalt.conf). Daraus ergibt sich dieselbe Zeile, die GOverlay
-    unter "Steam launch options" anzeigt.
+    Hat das Spiel ein GOverlay-Profil (``profile_active``), setzt galaxy-linux dessen ``bgmod`` beim Start selbst ein:
+    dann bleiben die vorhandenen Startoptionen ``current`` ohne mangohud-/bgmod-/vkBasalt-Teile – es wird keine
+    „mangohud %command%“-Zeile geschrieben. Sonst wie bisher die Zeile aus der globalen Konfiguration
+    (~/.config/MangoHud/MangoHud.conf, ~/.config/vkBasalt/vkBasalt.conf).
     """
+    if profile_active:
+        return strip_profile_parts(current)
     st = status()
     use_mangohud = st.mangohud and (st.mangohud_config or st.goverlay)
     use_vkbasalt = st.vkbasalt and st.vkbasalt_config

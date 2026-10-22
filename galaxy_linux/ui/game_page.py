@@ -10,7 +10,7 @@ import time
 
 from .. import paths
 from ..jsonstore import read_json
-from ..launch import goverlay, launch_options
+from ..launch import goverlay, goverlay_profiles, launch_options
 from ..content.installer import InstallError
 from ..launch.launcher import LaunchError
 from ..settings import format_bytes, format_minutes
@@ -202,16 +202,18 @@ class GamePage(Gtk.Box):
         ob = Gtk.Box(spacing=6)
         apply = Gtk.Button(label=tr('Übernehmen'))
         apply.connect("clicked", self._on_opts_apply)
-        gov = Gtk.Button(label=tr('Aus GOverlay'))
-        gov.set_tooltip_text(tr('Startoptionen aus der aktuellen GOverlay-/MangoHud-Konfiguration übernehmen'))
-        st = goverlay.status()
-        gov.set_sensitive(st.mangohud or st.goverlay)
+        gov = Gtk.Button(label=tr('GOverlay öffnen'))
+        gov.set_tooltip_text(tr('In GOverlay das Spiel anklicken, um sein Profil (MangoHud, vkBasalt …) einzurichten'))
+        gov.set_sensitive(goverlay.status().goverlay)
         gov.connect("clicked", self._on_goverlay)
         more = Gtk.Button(label=tr('Eigenschaften …'))
         more.connect("clicked", self._on_settings)
         for b in (apply, gov, more):
             ob.append(b)
         comp.append(ob)
+        self.gov_lbl = label("", css=["dim"], wrap=True)       # GOverlay-Profil des Spiels
+        self.gov_lbl.set_visible(False)
+        comp.append(self.gov_lbl)
         self.cmd_preview = label("", css=["mono"], wrap=True, selectable=True)
         self.cmd_preview.set_max_width_chars(44)
         self.cmd_preview.set_natural_wrap_mode(Gtk.NaturalWrapMode.WORD)
@@ -469,6 +471,9 @@ class GamePage(Gtk.Box):
             for k in (tr('Version'), tr('Größe'), tr('Ordner'), tr('Prefix')):
                 d[k].set_text("–")
             d[tr('Sprache')].set_text(self.backend.settings.language)
+        gov = goverlay_profiles.status_for(self.backend, self.pid)
+        self.gov_lbl.set_text(gov or "")
+        self.gov_lbl.set_visible(bool(gov))
         self._update_preview()
         ui_registry.notify_sections(self._ext_sections, "refresh_state", self.pid)
 
@@ -582,9 +587,8 @@ class GamePage(Gtk.Box):
         self.win.toast(tr('Startoptionen gespeichert'))
 
     def _on_goverlay(self, *_: object) -> None:
-        text = goverlay.import_from_goverlay()
-        self.opts_entry.set_text(text)
-        self._on_opts_apply()
+        if not goverlay.open_goverlay():
+            self.win.toast(tr('GOverlay ist nicht installiert.'))
 
     def _on_winetricks(self, *_: object) -> None:
         try:
