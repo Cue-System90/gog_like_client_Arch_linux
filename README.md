@@ -32,14 +32,18 @@ Der Aufbau folgt GOG Galaxy 2.0:
   (über der Seitenleiste); rechts Zurück/Vor, Lesezeichen (Favorit), **Filter**, **+** (Spiel hinzufügen, Bibliothek
   anlegen, Ordner durchsuchen, Prefix-Pflege), Suchfeld „Spiele suchen“, Ansicht (Sortierung, Covergröße, Titel
   ein/aus) und die Fensterknöpfe.
-* **Seitenleiste**: SPIELE → Zuletzt gespielt, Alle Spiele (Zähler), Installiert (Zähler), Downloads (Zähler);
+* **Seitenleiste** in der Reihenfolge des Originals: GOG STORE → Startseite, Alle Spiele, Einkaufen (Angebote ohne
+  eigene Spiele), Wunschliste (Zähler), Warenkorb, Bisherige Bestellungen (ausblendbar: Einstellungen → Oberfläche →
+  Bevorzugter Store); SPIELE → Zuletzt gespielt, Alle Spiele (Zähler), Installiert (Zähler), Downloads (Zähler);
   BIBLIOTHEKEN → je eigene Bibliothek ein Eintrag mit Zähler (wie die Plattform-Einträge in Galaxy 2.0), „+“ legt eine
   neue an, Rechtsklick öffnet ihr Menü; FREUNDE (Aktivität, Freunde online, Nachrichten – im Port nicht verfügbar,
-  daher ausgegraut); STORE → Empfohlen, Angebote.
+  daher ausgegraut).
+* **Store**: wie im Original die echten gog.com-Seiten im Inhaltsbereich, mit schmaler Leiste (Zurück, Vor, Neu laden,
+  Startseite, Adresse). Login und Store teilen sich die Cookies.
 * **Bibliothek**: Hochkant-Cover ohne Beschriftung in Abschnitten („Als Nächstes spielen“, „Alle Spiele“,
   „Zuletzt gespielt“, „Kürzlich installiert“), Tooltip mit Titel, Fortschrittsbalken auf dem Cover während des Downloads.
 * **Spielansicht**: Hero-Artwork mit transparentem Spiel-Logo, darunter der violette **SPIELEN**/**INSTALLIEREN**-Knopf,
-  „⋯“-Menü (Prüfen, Ordner, Prefix, Winetricks, Protokoll, GOG.com, Verstecken, Deinstallieren), Kennzahlen
+  „⋯“-Menü (Prüfen, Ordner, Prefix, Winetricks, Protokoll, Im Store anzeigen, Verstecken, Deinstallieren), Kennzahlen
   SPIELZEIT · ZULETZT GESPIELT · ERFOLGE · KOMPATIBILITÄT, dann „Über das Spiel“ (Genres, Beschreibung, DLCs),
   Erfolge als Symbolreihe und „Spieldetails“. Zusätzlich – wie bei Steam – ein Block **Kompatibilität** mit
   Proton-Auswahl, Startoptionen, GOverlay-Profil des Spiels, „GOverlay öffnen“ und Befehlsvorschau; das Zahnrad öffnet
@@ -55,6 +59,7 @@ Der Aufbau folgt GOG Galaxy 2.0:
 | Bereich | Umsetzung |
 |---|---|
 | Login | OAuth wie im Galaxy-Client (Browser-Login, Weiterleitungs-URL einfügen, 2FA funktioniert). Token-Refresh automatisch. |
+| Store | **Eingebetteter GOG-Store** wie in Galaxy (WebKitGTK 6.0, gleiche Sitzung wie der Login): Seitenleiste GOG STORE, Seiten in der Sprache der Oberfläche, Wunschlisten-Zähler. Kauf und Bezahlung im Client (Zahlungs-Fenster wie PayPal öffnen in einem eigenen Fenster); nach dem **Kaufabschluss** wird die Bibliothek sofort abgeglichen. Offline-Installer und Goodies landen im Download-Ordner, Links auf fremde Seiten öffnen im Browser. Ist die Website nicht angemeldet, bietet ein Hinweis „Im Store anmelden“ an. Spielansicht „⋯“ → **Im Store anzeigen**. Ausloggen meldet auch den Store ab. Kein eigener User-Agent, keine Partner-Links. |
 | Bibliothek | Alle gekauften Spiele mit Cover, Hintergrund, Beschreibung, Genres, Entwickler/Publisher, Release, DLC-Besitz (GamesDB + api.gog.com). Suche, Filter (installiert, Favoriten, Updates, Windows, Linux-nativ), Verstecken. **Abgleich mit GOG** wie bei Galaxy ohne Neustart: kurz nach dem Start, alle 10 Minuten, beim Wechsel ins Fenster (frühestens alle 5 Minuten), nach dem Login und nach einem Kauf (dann erneut nach 5/15/60 s); von Hand über Zahnrad → „Bibliothek aktualisieren“ (F5). Die Prüfsumme aus `userData.json` spart den Vollabruf, solange sich nichts geändert hat; auf GOG versteckte Spiele werden mitgeladen. Neue Spiele tragen 14 Tage (bis zum ersten Öffnen) ein violettes **NEU** und stehen oben unter „Neu in der Bibliothek“. Einstellbar unter Einstellungen → Allgemein → Abgleich mit GOG. |
 | Installationsort | Wie im Windows-Client: globaler Spiele-Ordner in den Einstellungen (Standard `~/Games/GOG`), Spiele landen dort unter `<Ordner>/<Spielname>`. Im Installations-Dialog wählbar: Standard, gemerkte weitere Orte oder „Anderer Ordner …“; der fertige Zielpfad wird angezeigt. **Installation verschieben** (Spielseite-Menü, Eigenschaften, CLI `move`) – sofort auf demselben Laufwerk, sonst Kopie mit Fortschritt. |
 | Kopierte Spiele | Spiele, die von Hand in den Spiele-Ordner (oder einen weiteren Installationsort) kopiert werden – z. B. aus einer Windows-Installation von GOG Galaxy – erkennt der Client automatisch an ihrer `goggame-<ID>.info`, auch eine Ebene tiefer (kopierter Sammelordner „GOG Games“). Er wartet, bis der Kopiervorgang abgeschlossen ist, übernimmt Spiel und DLCs als installiert (Zähler „Installiert“ passt sich an) und legt fehlende Wine-Prefixe im Prefix-Ordner an, mit der DPI der Desktop-Skalierung (225 % → 216). Gelöschte Spielordner werden wieder ausgetragen, der Prefix mit Spielständen bleibt. Manuell: „+“ → „Spiele-Ordner nach Spielen durchsuchen“ oder `galaxy-linux scan`. Abschaltbar in den Einstellungen. |
@@ -96,9 +101,9 @@ pacman-Paket nach `../dist/` (neben dem geklonten Ordner), entfernt eine vorhand
 (Einstellungen, Zugangsdaten und Spiele bleiben) und installiert per `sudo pacman -U`.
 **Update:** `git pull && ./install.sh`.
 
-Pflicht: `python python-requests python-gobject gtk4 libadwaita unzip xdg-utils`.
-Empfohlen: `webkitgtk-6.0 umu-launcher proton-cachyos mangohud lib32-mangohud goverlay winetricks gamescope innoextract python-vdf`
-(`webkitgtk-6.0` = GOG-Login direkt im Client).
+Pflicht: `python python-requests python-gobject gtk4 libadwaita webkitgtk-6.0 unzip xdg-utils`
+(`webkitgtk-6.0` = eingebetteter GOG-Store und GOG-Login direkt im Client; fehlt es, öffnen Store und Login im Browser).
+Empfohlen: `umu-launcher proton-cachyos mangohud lib32-mangohud goverlay winetricks gamescope innoextract python-vdf`
 
 ```bash
 ./install.sh --purge   # wie oben, löscht vorher zusätzlich Einstellungen, Zugangsdaten und Logs (Spiele bleiben)

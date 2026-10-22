@@ -17,6 +17,6 @@ fi
 echo "Installiere $(basename "$PKG") …"
 sudo pacman -U --noconfirm "$PKG"
 MISSING=""
-for p in umu-launcher proton-cachyos mangohud lib32-mangohud goverlay winetricks webkitgtk-6.0; do pacman -Qq "$p" >/dev/null 2>&1 || MISSING="$MISSING $p"; done
+for p in umu-launcher proton-cachyos mangohud lib32-mangohud goverlay winetricks; do pacman -Qq "$p" >/dev/null 2>&1 || MISSING="$MISSING $p"; done
 [ -z "$MISSING" ] || echo "Empfohlene Pakete fehlen:$MISSING   (sudo pacman -S --needed$MISSING)"
 echo "Fertig: galaxy-linux $(pacman -Q galaxy-linux | awk '{print $2}') installiert. Start: galaxy-linux · Protokoll: ~/.local/share/galaxy-linux/logs/galaxy-linux.log"

@@ -7,9 +7,8 @@ pkgdesc="Inoffizieller nativer Client für GOG.com mit Proton-Auswahl pro Spiel 
 arch=('any')
 url="https://www.gog.com/galaxy"
 license=('MIT')
-depends=('python>=3.11' 'python-requests' 'python-gobject' 'gtk4' 'libadwaita' 'unzip' 'xdg-utils')
+depends=('python>=3.11' 'python-requests' 'python-gobject' 'gtk4' 'libadwaita' 'webkitgtk-6.0' 'unzip' 'xdg-utils')
 optdepends=(
-  'webkitgtk-6.0: eingebetteter GOG-Login im Client (sonst Adresse aus dem Browser einfügen)'
   'umu-launcher: Proton außerhalb von Steam (empfohlen, nötig für proton-cachyos-slr)'
   'proton-cachyos: CachyOS-Proton-Build'
   'wine: System-Wine als Alternative zu Proton'

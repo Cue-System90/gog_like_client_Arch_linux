@@ -16,7 +16,7 @@ from ..launch.launcher import LaunchError
 from ..settings import format_bytes, format_minutes
 from .dialogs import (GameSettingsDialog, InstallDialog, confirm_destructive, confirm_remove_game, confirm_uninstall,
                       move_installation)
-from . import ui_registry
+from . import store, ui_registry
 from .util import Adw, Gtk, Pango, fmt_eta, fmt_speed, icon_button, idle, label, pick_icon, relative_time, run_async
 
 
@@ -244,7 +244,7 @@ class GamePage(Gtk.Box):
             (tr('Wine-Prefix öffnen'), lambda *_: self.backend.launcher.open_path(self.backend.launcher.prefix_for(self.pid))),
             (tr('Winetricks'), self._on_winetricks),
             (tr('Protokoll öffnen'), lambda *_: self.backend.launcher.open_path(paths.game_log_file(self.pid))),
-            (tr('Auf GOG.com öffnen'), lambda *_: self.win.open_store((self.meta.gog_url if self.meta and self.meta.gog_url else None) or (self.entry.gog_url if self.entry and self.entry.gog_url else "/"))),
+            (tr('Im Store anzeigen'), lambda *_: store.show_product(self.win, self.pid, self.meta, self.entry)),
             (tr('Prefix anlegen'), lambda *_: self._prefix_action("create")),
             (tr('Prefix neu anlegen …'), lambda *_: self._prefix_action("reset")),
             (tr('Prefix löschen …'), lambda *_: self._prefix_action("delete")),
@@ -262,8 +262,8 @@ class GamePage(Gtk.Box):
             elif text == "__shortcut_desktop__":
                 self.desktop_shortcut_btn = b
             box.append(b)
-        # Einträge der Erweiterungen (ui_registry.register_game_action) nach „Auf GOG.com öffnen“
-        anchor = self._menu_btns.get(tr('Auf GOG.com öffnen'))
+        # Einträge der Erweiterungen (ui_registry.register_game_action) nach „Im Store anzeigen“
+        anchor = self._menu_btns.get(tr('Im Store anzeigen'))
         self._ext_actions: list[tuple[object, Gtk.Button]] = []
         for act in ui_registry.game_actions():
             b = Gtk.Button(label=act.label)
@@ -295,7 +295,7 @@ class GamePage(Gtk.Box):
         ext = bool(g and g.method == "external")
         win = bool(g and g.platform == "windows")
         has_prefix = win and self.backend.launcher.prefix_exists(self.pid)
-        vis = {tr('Dateien prüfen / reparieren'): installed and not ext, tr('Auf GOG.com öffnen'): not ext,
+        vis = {tr('Dateien prüfen / reparieren'): installed and not ext, tr('Im Store anzeigen'): not ext and self.pid.isdigit(),
                tr('Installation verschieben …'): installed and not ext, tr('Prefix anlegen'): win and not has_prefix,
                tr('Prefix neu anlegen …'): has_prefix, tr('Prefix löschen …'): has_prefix,
                tr('Aus Bibliothek entfernen …'): installed, tr('Deinstallieren'): installed and not ext}

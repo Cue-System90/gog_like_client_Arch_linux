@@ -10,8 +10,8 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PKGVER="$(sed -n 's/^version = "\(.*\)"/\1/p' "$HERE/pyproject.toml")"
 
-REQUIRED=(python python-requests python-gobject gtk4 libadwaita unzip xdg-utils)
-RECOMMENDED=(webkitgtk-6.0 umu-launcher proton-cachyos mangohud lib32-mangohud goverlay winetricks gamescope innoextract python-vdf)
+REQUIRED=(python python-requests python-gobject gtk4 libadwaita webkitgtk-6.0 unzip xdg-utils)
+RECOMMENDED=(umu-launcher proton-cachyos mangohud lib32-mangohud goverlay winetricks gamescope innoextract python-vdf)
 
 missing() {
   local m=()
