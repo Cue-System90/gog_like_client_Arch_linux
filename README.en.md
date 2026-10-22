@@ -68,6 +68,7 @@ The layout follows GOG Galaxy 2.0:
 | Properties dialog | Like Steam: compatibility, launch options, environment variables, executable (playTask), pre/post commands, redistributables, Winetricks, open prefix/folder/log, favourite, hide. |
 | Playtime | Measured locally, optionally sent to GOG (appears in the GOG profile like with Galaxy). |
 | Achievements | Per game via the gameplay API (game-specific token from the build manifest, like Galaxy). |
+| Galaxy services (comet) | Games with the GOG Galaxy SDK unlock achievements and use stats and leaderboards in game: like Heroic, galaxy-linux sets up the placeholder service `GalaxyCommunication.exe` in the prefix (`sc create`, Galaxy client registry entry) and starts **comet** (a re-implementation of the Galaxy communication service on `127.0.0.1:9977`) before the game, stopping it afterwards. Tokens are never put on the command line but briefly into a private file (0600). If a comet is already running (e.g. Heroic's), it is shared. comet is searched for (own path → PATH → Heroic package → own download), otherwise downloaded once from the official release on first use (SHA-256 verified). Switches: Settings → Game features, per game Properties → Game features; status, download/update and own path under Settings → Compatibility → Galaxy services. Log: `…/logs/comet.log` (masked). |
 | Settings | **General**: interface language, games and prefix folders, additional install locations, excluded game folders, preferred game language, parallel download connections, folder watching, automatic prefixes, shortcut defaults, update check at start, send playtime to GOG, show hidden games, store credentials in the system keyring. **Libraries**: create, edit and delete custom libraries. **Compatibility**: default compatibility tool, prefer umu-launcher, Wayland driver as default, redistributables, DPI for new prefixes (0 = from the desktop scaling), global launch options, overview of detected tools (umu, GOverlay, MangoHud, vkBasalt, GameMode, Gamescope). |
 | Language | Interface in **German** and **English**, follows the system language; can be changed in the settings (see [Language](#language)). |
 | Log | Detailed log for troubleshooting, credentials and tokens masked (see [Logging](#logging)). |
@@ -211,6 +212,7 @@ galaxy-linux config tool <game> cachyos  # compatibility tool (ID or part of the
 galaxy-linux config options <game> "ENABLE_VKBASALT=1 mangohud %command%"
 galaxy-linux goverlay [<game>] [--sync]  # GOverlay: registered folders and the profile of each game (--sync: register)
 galaxy-linux goverlay-import <game>      # derive launch options from GOverlay (with a profile: no mangohud line)
+galaxy-linux comet [--download] [--json]   # Galaxy services: comet status, download/update
 galaxy-linux config env <game> DXVK_ASYNC=1
 galaxy-linux launch <game> --dry-run     # only show the command
 galaxy-linux launch <game> -- -windowed  # launch, arguments for the game
@@ -240,7 +242,7 @@ MD5 sums – this verifies the download path against GOG's CDN. Installing real 
   `~/.local/share/umu`; Proton creates the prefix; redistributables are installed.
 * **MangoHud does not show up** – `lib32-mangohud` for 32-bit games; with umu `MANGOHUD=1 %command%` is enough.
 * **Game without a Galaxy build** – installed automatically via the offline installer (`innoextract` required).
-* **Logs** – `~/.local/share/galaxy-linux/logs/galaxy-linux.log` (client) and `…/logs/<id>.log` (game/Proton); `galaxy-linux log`.
+* **Logs** – `~/.local/share/galaxy-linux/logs/galaxy-linux.log` (client) and `…/logs/<id>.log` (game/Proton), `…/logs/comet.log` (Galaxy services); `galaxy-linux log`.
 
 ## Project structure
 
@@ -258,5 +260,13 @@ tests/        unit tests (fake CDN) + network tests
 data/         .desktop file, icon        PKGBUILD, install.sh
 scripts/      build-package.sh, uninstall.sh, i18n-update.py (maintain translations), install-official-galaxy-wine.sh
 ```
+
+## Third-party tools
+
+* **comet** – https://github.com/imLinguin/comet, copyright imLinguin and contributors, licensed under **Apache-2.0**
+  (https://www.apache.org/licenses/LICENSE-2.0). galaxy-linux does not bundle comet: on request or on first use it
+  downloads the unmodified files `comet-x86_64-unknown-linux-gnu` and `GalaxyCommunication-dummy.exe` from the
+  official v0.3.2 release, verifies their SHA-256 sums and stores them with a NOTICE file under
+  `~/.local/share/galaxy-linux/tools/comet/<version>/`.
 
 License: MIT.
