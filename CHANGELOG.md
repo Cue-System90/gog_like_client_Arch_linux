@@ -19,6 +19,10 @@ Fundament; weitere Bausteine folgen.
   Eigenschaften → Spielfunktionen. (Die Schalter wirken, sobald die zugehörigen Bausteine fertig sind.)
 - Unter der Haube: Erweiterungspunkte für den Spielstart (Launch-Hooks), für Einstellungsdialoge, Spielansicht und
   Auftragsarten; die Redistributables beim ersten Start laufen jetzt als Hook.
+- **Cloud-Speicherstände wie in Galaxy**: vor jedem Start herunterladen, nach dem Beenden hochladen; Konfliktdialog
+  (GOG Galaxy-Cloud / Dieser Computer / Ignorieren) und Kontingent-Hinweis wie im Original; Sicherung der lokalen
+  Stände, bevor sie ersetzt werden. Zustand als Kennzahl in der Spielansicht; „Jetzt hochladen“, „Jetzt
+  herunterladen“, Sicherungen und Speicherorte unter Eigenschaften → Spielfunktionen; `galaxy-linux cloud <spiel>`.
 - Installations-Datensätze (Build, Abhängigkeiten, Client-ID) lassen sich für übernommene Spiele nachträglich
   anlegen: `galaxy-linux records --create`. Prefix-Einrichtung erneut ausführen: `galaxy-linux prefix setup <spiel>`.
 

@@ -10,7 +10,8 @@ Funktionen hängen sich hier ein, ohne ``window.py``/``game_page.py`` zu ändern
 * Spiel-Aktionen erscheinen im „⋯“-Menü der Spielansicht (nach „Auf GOG.com öffnen“); ``visible`` wird bei jedem
   Öffnen des Menüs geprüft.
 * Spiel-Abschnitte: ``builder(page)`` liefert einmalig ein Gtk.Widget für die linke (``left``: unter „Über das Spiel“
-  und „Erfolge“) oder rechte Spalte (``right``: unter „Kompatibilität“). Hat das Widget ``set_game(pid)`` bzw.
+  und „Erfolge“) oder rechte Spalte (``right``: unter „Kompatibilität“) oder eine kleine Kennzahl in der Play-Leiste
+  (``stats``: nach SPIELZEIT · ZULETZT GESPIELT · ERFOLGE · KOMPATIBILITÄT). Hat das Widget ``set_game(pid)`` bzw.
   ``refresh_state(pid)``, ruft die Spielansicht sie beim Spielwechsel bzw. bei Zustandsänderungen auf.
 * Fenster-Hooks laufen einmal am Ende von ``MainWindow.__init__`` (Timer, Fokus-Signale, eigene Stack-Seiten).
 
@@ -27,7 +28,7 @@ from typing import Any, Callable
 
 log = logging.getLogger(__name__)
 
-COLUMNS = ("left", "right")
+COLUMNS = ("left", "right", "stats")
 
 
 @dataclass

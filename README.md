@@ -40,7 +40,7 @@ Der Aufbau folgt GOG Galaxy 2.0:
   „Zuletzt gespielt“, „Kürzlich installiert“), Tooltip mit Titel, Fortschrittsbalken auf dem Cover während des Downloads.
 * **Spielansicht**: Hero-Artwork mit transparentem Spiel-Logo, darunter der violette **SPIELEN**/**INSTALLIEREN**-Knopf,
   „⋯“-Menü (Prüfen, Ordner, Prefix, Winetricks, Protokoll, GOG.com, Verstecken, Deinstallieren), Kennzahlen
-  SPIELZEIT · ZULETZT GESPIELT · ERFOLGE · KOMPATIBILITÄT, dann „Über das Spiel“ (Genres, Beschreibung, DLCs),
+  SPIELZEIT · ZULETZT GESPIELT · ERFOLGE · KOMPATIBILITÄT · CLOUD-SPEICHERSTÄNDE, dann „Über das Spiel“ (Genres, Beschreibung, DLCs),
   Erfolge als Symbolreihe und „Spieldetails“. Zusätzlich – wie bei Steam – ein Block **Kompatibilität** mit
   Proton-Auswahl, Startoptionen, „Aus GOverlay“ und Befehlsvorschau; das Zahnrad öffnet die vollständigen Eigenschaften.
 * **Downloads**: Warteschlange mit Fortschritt, Geschwindigkeit, Restzeit, Abbrechen und Verlauf.
@@ -69,12 +69,13 @@ Der Aufbau folgt GOG Galaxy 2.0:
 | Eigenschaften-Dialog | wie Steam: Kompatibilität, Startoptionen, Umgebungsvariablen, Startdatei (playTask), Pre-/Post-Befehle, Redistributables, Winetricks, Prefix/Ordner/Protokoll öffnen, Favorit, verstecken. |
 | Spielzeit | lokal gemessen, optional an GOG übertragen (erscheint im GOG-Profil wie bei Galaxy). |
 | Erfolge | pro Spiel über die Gameplay-API (spiel-spezifisches Token aus dem Build-Manifest, wie Galaxy). |
+| Cloud-Speicherstände | Wie Galaxy über `cloudstorage.gog.com`: vor jedem Start werden neuere Spielstände aus der Cloud in den Prefix geladen, nach dem Beenden die eigenen hochgeladen. Die Speicherorte kommen aus GOGs Spielkonfiguration (`<?DOCUMENTS?>`, `<?APPLICATION_DATA_ROAMING?>` … → `drive_c/users/steamuser/…` im Prefix). Bei einem Konflikt fragt der Client wie Galaxy (GOG Galaxy-Cloud / Dieser Computer / Ignorieren), bei mehr als 200 MB erscheint Galaxys Kontingent-Hinweis. Bevor Cloud-Dateien lokale ersetzen, wird eine Sicherung `~/.local/share/galaxy-linux/cloudsave-backups/<id>/<zeit>.tar.gz` angelegt (die letzten fünf bleiben). Global unter Einstellungen → Spielfunktionen, pro Spiel unter Eigenschaften → Spielfunktionen (dort auch „Jetzt hochladen“, „Jetzt herunterladen“, Sicherungen und Speicherorte); Zustand als Kennzahl in der Spielansicht. Nur GOG-Windows-Spiele (Linux-Versionen haben bei GOG keine Cloud-Speicherstände). |
 | Einstellungen | **Allgemein**: Sprache der Oberfläche, Spiele- und Prefix-Ordner, weitere Installationsorte, ausgeschlossene Spielordner, bevorzugte Spielsprache, parallele Download-Verbindungen, Ordnerüberwachung, automatische Prefixe, Verknüpfungs-Vorgaben, Update-Suche beim Start, Spielzeit an GOG übertragen, versteckte Spiele anzeigen, Zugangsdaten im System-Schlüsselbund. **Bibliotheken**: eigene Bibliotheken anlegen, bearbeiten, löschen. **Kompatibilität**: Standard-Kompatibilitätstool, umu-launcher bevorzugen, Wayland-Treiber als Vorgabe, Redistributables, DPI für neue Prefixe (0 = aus der Desktop-Skalierung), globale Startoptionen, Übersicht der gefundenen Werkzeuge (umu, GOverlay, MangoHud, vkBasalt, GameMode, Gamescope). |
 | Sprache | Oberfläche auf **Deutsch** und **Englisch**, folgt der Systemsprache; umstellbar in den Einstellungen (siehe [Sprache](#sprache)). |
 | Protokoll | Ausführliches Log für die Fehlersuche, Zugangsdaten und Tokens maskiert (siehe [Protokollierung](#protokollierung-für-die-auswertung)). |
 | CLI | alles auch im Terminal/Skript: `galaxy-linux install|launch|config|tools|…`. URI-Schema `galaxy-linux://launch/<id>`. |
 
-**Noch nicht umgesetzt** (Galaxy-Funktionen, die ein eigenes Projekt wären): Freunde/Chat, Cloud-Saves,
+**Noch nicht umgesetzt** (Galaxy-Funktionen, die ein eigenes Projekt wären): Freunde/Chat,
 Integration anderer Stores (Steam/Epic-Plugins), Galaxy-Overlay im Spiel, Auto-Updater des Clients.
 
 ---
@@ -211,6 +212,8 @@ galaxy-linux config env <spiel> DXVK_ASYNC=1
 galaxy-linux launch <spiel> --dry-run    # Befehl nur anzeigen
 galaxy-linux launch <spiel> -- -windowed # starten, Argumente ans Spiel
 galaxy-linux prefix winetricks <spiel> vcrun2019
+galaxy-linux cloud <spiel> [--status]     # Cloud-Speicherstände abgleichen (beide Richtungen) bzw. Zustand zeigen
+galaxy-linux cloud <spiel> --upload|--download [--force]   # nur eine Richtung; --force: eine Seite ersetzt die andere
 galaxy-linux uninstall <spiel> [--prefix]
 ```
 
