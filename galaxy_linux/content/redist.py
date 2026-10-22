@@ -146,6 +146,11 @@ def record_products(record: dict, product_id: str) -> list[str]:
     return [pid, *dict.fromkeys(products)]
 
 
+def manifest_product_names(manifest: BuildManifest) -> dict[str, str]:
+    """Namen der Produkte (Basisspiel, DLCs) aus dem Build-Manifest – für die Anzeige der Einrichtungsschritte."""
+    return {p["productId"]: p["name"] for p in manifest.products if p.get("productId") and p.get("name")}
+
+
 def record_dependency_ids(record: dict | None) -> list[str]:
     """Abhängigkeiten laut Datensatz; ältere Datensätze (bis 0.1.6) kennen nur ``redist``."""
     record = record or {}
@@ -449,6 +454,7 @@ def upgrade_record(api, game, record: dict) -> dict | None:
     rec.setdefault("dependency_ids", list(manifest.dependencies))
     rec["script_interpreter"] = manifest.script_interpreter
     rec["support"] = list(manifest.support)
+    rec.setdefault("product_names", manifest_product_names(manifest))
     rec.setdefault("products", [pid, *[str(x) for x in rec.get("dlcs") or []]])
     rec.setdefault("version_name", build.version_name or getattr(game, "version_name", ""))
     rec.setdefault("manifest_link", build.link)
@@ -584,7 +590,7 @@ def resolve_support_exe(product_id: str, owner: str, path: str, install_dir: Pat
 
 @dataclass
 class SetupStep:
-    key: str            # isi:<produkt>:<build> | temp:… | v1:… | redist:<ID>
+    key: str            # isi:<produkt>:<build> | temp:<produkt>:<build> | v1:<produkt>:<build>:<programm> | redist:<ID>
     kind: str           # isi | temp | v1 | redist
     title: str
     argv: list[str]
@@ -607,6 +613,9 @@ def build_steps(product_id: str, title: str, record: dict, install_dir: Path | s
     game_win = to_windows_path(install_dir)
     names = dict(product_names or {})
     names.setdefault(pid, title)
+    for k, v in (record.get("product_names") or {}).items():
+        if v:
+            names.setdefault(str(k), str(v))
     for s in record.get("support") or []:
         if isinstance(s, dict) and s.get("product_id") and s.get("name"):
             names.setdefault(str(s["product_id"]), str(s["name"]))
@@ -639,8 +648,9 @@ def build_steps(product_id: str, title: str, record: dict, install_dir: Path | s
                 continue
             prod = str(cmd.get("gameID") or pid)
             exe = str(resolve_support_exe(pid, prod, str(cmd["executable"]), install_dir))
-            steps.append(SetupStep(
-                f"v1:{prod}:{build_id}", "v1", tr('Setup-Programm für {0}').format(names.get(prod, prod)),
+            steps.append(SetupStep(       # ein Produkt kann mehrere support_commands haben → Programm im Schlüssel
+                f"v1:{prod}:{build_id}:{to_posix(str(cmd['executable']))}", "v1",
+                tr('Setup-Programm für {0}').format(names.get(prod, prod)),
                 v1_support_argv(exe, game_win, lang_name, prod, build_id, version_name),
                 str(install_dir), exe, product_id=prod))
     for e in redist or []:

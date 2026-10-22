@@ -11,9 +11,9 @@ Wunsch – „Einrichtung erneut ausführen“, ``galaxy-linux prefix setup``):
      ISI-Skripte bzw. Support-Programme je Produkt, dann die Redistributables des Spiels.
 Zustand je Prefix in ``<prefix>/galaxy-linux-setup.json`` (Exit-Codes, Fehlversuche), fertige Builds zusätzlich in
 ``GameSettings.setup_done``. Ein fehlgeschlagener Schritt läuft beim nächsten Start erneut (höchstens
-``redist.MAX_RETRIES``-mal) und wird danach einmal gemeldet. Fehlt ein Programm, weil Netz oder Anmeldung fehlen,
-bleibt der Schritt offen, ohne als Fehlversuch zu zählen. ``install_redist`` (global und pro Spiel) schaltet nur die
-Redistributables ab, die Installationsskripte laufen immer (wie in Galaxy).
+``redist.MAX_RETRIES``-mal) und wird danach einmal gemeldet. Fehlt ein Programm (oder für ISI die Support-Dateien),
+weil Netz oder Anmeldung fehlen, bleibt der Schritt offen, ohne als Fehlversuch zu zählen. ``install_redist`` (global
+und pro Spiel) schaltet nur die Redistributables ab, die Installationsskripte laufen immer (wie in Galaxy).
 
 Außerdem hier: Auftragsart ``redist`` und nach jeder Installation/Aktualisierung die Prüfung, ob Redistributables
 fehlen; ``ui/ext_redist.py`` prüft beim Start der Oberfläche, ob der gemeinsame Ordner veraltet ist.
@@ -70,7 +70,8 @@ def attached_backend() -> Any:
     return _backend_ref() if _backend_ref is not None else None
 
 
-def _is_gog_windows(game: Any) -> bool:
+def is_gog_windows(game: Any) -> bool:
+    """Installiertes Windows-Spiel aus der GOG-Bibliothek (nur dafür gibt es Einrichtung und Redistributables)."""
     return (game is not None and game.platform == "windows" and game.method != "external"
             and not str(game.product_id).startswith("ext-"))
 
@@ -79,7 +80,7 @@ def installed_records(backend: Any) -> list[dict]:
     """Installations-Datensätze aller installierten GOG-Windows-Spiele (ohne Netz)."""
     out = []
     for g in backend.registry.all():
-        if _is_gog_windows(g):
+        if is_gog_windows(g):
             rec = build_records.load_record(g.product_id)
             if rec:
                 out.append(rec)
@@ -117,19 +118,20 @@ def queue_redist_job(backend: Any, ids: list[str] | None = None) -> Job:
 
 def redist_update_needed(backend: Any) -> bool:
     """Beim Start der Oberfläche (Arbeits-Thread): fehlen benötigte Redistributables oder hat GOG das Repository
-    geändert? Ohne installierte GOG-Windows-Spiele: nein."""
+    geändert? Nur wenn GOG erreichbar ist (das Repository ist öffentlich, Anmeldung unnötig) – offline wird kein
+    Auftrag eingereiht, der nur fehlschlagen würde. Ohne installierte GOG-Windows-Spiele: nein."""
     if not backend.settings.install_redist:
         return False
     recs = installed_records(backend)
     if not recs:
         return False
-    if redist.missing_ids(redist.required_ids(recs, redist.cached_repository())):
-        return True
     try:
         info = redist.repository_info(backend.api)
-    except (ApiError, NotLoggedIn, OSError) as exc:
+    except (ApiError, NotLoggedIn, OSError, ValueError) as exc:
         log.info("Abhängigkeits-Repository nicht erreichbar: %s", exc)
         return False
+    if redist.missing_ids(redist.required_ids(recs, redist.cached_repository())):
+        return True
     return redist.cache_outdated(str(info.get("build_id") or ""))
 
 
@@ -166,7 +168,7 @@ def _after_job(backend: Any, job: Job) -> None:
     if job.kind not in ("install", "update", "verify") or job.state != "done" or not backend.settings.install_redist:
         return
     g = backend.registry.get(job.product_id)
-    if not _is_gog_windows(g):
+    if not is_gog_windows(g):
         return
     rec = build_records.load_record(g.product_id)
     ids = [e["id"] for e in redist.record_global_entries(rec, redist.cached_repository())]
@@ -235,7 +237,8 @@ def ensure_support(ctx: LaunchContext, record: dict, build_id: str) -> bool:
     """Support-Dateien des Builds sicherstellen (Nachladen braucht die GOG-Anmeldung). True = vorhanden."""
     if redist.support_ready(ctx.product_id, build_id):
         return True
-    if ctx.api is None:
+    if ctx.api is None or not getattr(ctx.api, "logged_in", True):
+        log.info("Support-Dateien für %s fehlen – ohne GOG-Anmeldung nicht ladbar", ctx.product_id)
         return False
     try:
         redist.download_support_files(ctx.api, ctx.product_id, record, workers=ctx.settings.max_workers,
@@ -339,6 +342,11 @@ def setup_prefix(ctx: LaunchContext) -> dict[str, Any]:
     steps = make_steps(ctx, record, with_redist)       # Pfade neu auflösen (jetzt im gemeinsamen Ordner)
     due = [s for s in steps if redist.step_due(state, s.key)]
     for i, step in enumerate(due, 1):
+        if step.kind == "isi" and not support_ok:
+            # ISI liest die Skripte aus /supportDir – ohne Support-Dateien bliebe es wirkungslos
+            log.info("Einrichtung %s: %s bleibt offen (Support-Dateien fehlen)", pid, step.key)
+            out["pending"].append(step.key)
+            continue
         if not Path(step.exe).is_file():
             unavailable = not cache_ok if step.kind in ("isi", "redist") else not support_ok
             if unavailable:
@@ -377,7 +385,7 @@ def prefix_status(launcher: Any, product_id: str) -> list[dict[str, Any]]:
     """Zeilen für „Status im Prefix“ (Eigenschaften, CLI) – ohne Netz."""
     pid = str(product_id)
     game = launcher.registry.get(pid)
-    if not _is_gog_windows(game):
+    if not is_gog_windows(game):
         return []
     gs = launcher.game_settings.get(pid)
     prefix = launcher.prefix_for(pid, gs)

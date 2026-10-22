@@ -27,14 +27,15 @@ def game_group(dlg: Any, pid: str) -> Any:
     """Eigenschaften → Kompatibilität (nur GOG-Windows-Spiele)."""
     backend = dlg.backend
     game = backend.registry.get(pid)
-    if not hook_redist._is_gog_windows(game):
+    if not hook_redist.is_gog_windows(game):
         return None
     grp = Adw.PreferencesGroup(title=tr('Einrichtung im Prefix'),
                                description=tr('Wie in GOG Galaxy laufen vor dem ersten Start die Installationsskripte '
                                               'des Spiels und die nötigen Redistributables (DirectX, Visual C++, .NET …) '
                                               'einmal je Prefix.'))
     rec = build_records.load_record(pid) or {}
-    deps = ", ".join(rec.get("dependencies") or []) or tr('keine laut Manifest')
+    entries = redist.record_global_entries(rec, redist.cached_repository())
+    deps = ", ".join(e["name"] for e in entries) or tr('keine laut Manifest')
     sw = Adw.SwitchRow(title=tr('Redistributables im Prefix installieren'), subtitle=deps, active=dlg.gs.install_redist)
     sw.connect("notify::active", lambda r, _: dlg._save(install_redist=r.get_active()))
     grp.add(sw)

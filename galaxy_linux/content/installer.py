@@ -290,6 +290,7 @@ class InstallManager:
             # ab 0.2.0 (gleiches Format wie content/build_records.py)
             "dependency_ids": list(plan.manifest.dependencies), "script_interpreter": plan.manifest.script_interpreter,
             "products": [plan.product_id, *plan.dlc_ids], "support": list(plan.manifest.support),
+            "product_names": deps.manifest_product_names(plan.manifest),
             "version_name": plan.build.version_name, "manifest_link": plan.build.link, "origin": "installer",
             "game_dependencies": list(plan.game_dependencies),
         })

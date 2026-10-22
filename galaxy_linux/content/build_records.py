@@ -10,8 +10,8 @@ comet) und die Abhängigkeiten (Redistributables, ISI). ``ensure_record()`` legt
 
 Felder (wie ``InstallManager.install()``, ergänzt): product_id, build_id, platform, language, install_dir, files,
 redist [{id, name, path, arguments}], dependencies (lesbare Namen), dependency_ids, client_id, client_secret, dlcs,
-products, script_interpreter, support [{product_id, name, temp_executable, temp_arguments}], version_name,
-manifest_link, origin, updated_at.
+products, product_names {id: name}, script_interpreter, support [{product_id, name, temp_executable, temp_arguments}],
+version_name, manifest_link, origin, updated_at.
 
 Client-Secrets werden nie protokolliert.
 """
@@ -28,7 +28,7 @@ from ..api.auth import AuthError
 from ..api.client import ApiError
 from ..jsonstore import read_json, write_json
 from .manifest import Build, BuildManifest, DependencyDepot, ManifestError, parse_dependency_repository
-from .redist import ISI_ID, is_global
+from .redist import ISI_ID, is_global, manifest_product_names
 from .scanner import read_info
 
 log = logging.getLogger(__name__)
@@ -153,6 +153,7 @@ def make_record(product_id: str, install_dir: str, build: Build, manifest: Build
         "client_id": manifest.client_id or info.get("client_id") or "", "client_secret": manifest.client_secret,
         "dlcs": [p for p in products if p != pid], "products": products,
         "script_interpreter": manifest.script_interpreter, "support": list(manifest.support),
+        "product_names": manifest_product_names(manifest),
         "version_name": build.version_name, "manifest_link": build.link, "origin": ORIGIN,
         "updated_at": time.time(),
     }

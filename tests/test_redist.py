@@ -10,6 +10,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
+from galaxy_linux.api.client import ApiError
 from galaxy_linux.backend import JOB_KINDS, Job, JobQueue
 from galaxy_linux.content import build_records, redist
 from galaxy_linux.content.downloader import FileJob
@@ -105,6 +106,24 @@ class ClassificationTest(Base):
         self.assertEqual(entries[0], {"id": "MSVC2017", "name": "Visual C++ Redist 2017",
                                       "path": "__redist/MSVC2017/VC_redist.x86.exe",
                                       "arguments": "/install /quiet /norestart"})
+
+    def test_full_repository_68_ids(self):
+        """Vollständiges Repository (Build 59705672826648994, nur IDs/Pfade/Argumente): 49 global, 19 Spielordner."""
+        raw = json.loads((Path(__file__).parent / "data" / "gog_redist_repository.json").read_text(encoding="utf-8"))
+        repo = parse_dependency_repository(raw)
+        self.assertEqual(len(repo), 68)
+        glob, game, unknown = redist.split_dependencies(list(repo), repo)
+        self.assertEqual((len(glob), len(game), unknown), (49, 19, []))
+        self.assertIn("ISI", glob)
+        self.assertTrue({"MSVC2005", "MSVC2026_x64", "PHYSXLEGACY", "UE4REDIST", "openAL", "dotNetDesktopRuntime90"}
+                        <= set(glob))
+        self.assertTrue({"DOSBox063", "DOSBox074glide", "ScummVM", "nGlide_105", "language_setup", "SuspendLauncher",
+                         "DOSBOXConfigurator"} <= set(game))
+        self.assertTrue(all(repo[i].internal for i in game))                     # alle internal – trotzdem Spielordner
+        self.assertTrue({"AdobeAir", "QuickTime", "Foxit"} <= {i for i in glob if repo[i].internal})
+        entries = redist.installer_entries(glob, repo)
+        self.assertEqual(len(entries), 48)                                       # ISI ist kein Installer
+        self.assertTrue(all(redist.is_global_path(e["path"]) for e in entries))
 
     def test_required_ids_like_heroic(self):
         repo = parse_dependency_repository(REPOSITORY)
@@ -208,6 +227,19 @@ class CommandTest(Base):
         steps = redist.build_steps("100", "Demo", rec, game, build_id="5555", version_name="1.0", language="de-DE")
         self.assertEqual([s.key for s in steps], ["temp:200:5555"])
         self.assertEqual(steps[0].exe, str(redist.support_dir("100") / "200" / "setup.exe"))
+
+    def test_v1_support_commands(self):
+        game = self.root / "Games" / "Alt"
+        rec = {"products": ["100"], "support_commands": [
+            {"gameID": "100", "executable": "/support/setup.exe", "languages": ["Neutral"]},
+            {"gameID": "100", "executable": "support/lang_de.exe", "languages": ["German"]},
+            {"gameID": "100", "executable": "support/lang_fr.exe", "languages": ["French"]}]}
+        steps = redist.build_steps("100", "Alt", rec, game, build_id="77", version_name="1.2", language="de-DE")
+        self.assertEqual([s.key for s in steps], ["v1:100:77:support/setup.exe", "v1:100:77:support/lang_de.exe"])
+        self.assertEqual(steps[0].exe, str(redist.support_dir("100") / "100" / "support" / "setup.exe"))
+        self.assertIn("/ProductId=100", steps[1].argv)                             # nicht die Sprache wie Heroic
+        self.assertIn("/Language=german", steps[1].argv)
+        self.assertTrue(all(s.is_script for s in steps))
 
 
 # ----------------------------------------------------------------------------- Zustand und Wiederholungen
@@ -420,6 +452,11 @@ class InstallerTest(Base):
         self.assertTrue(redist.support_ready("100", "5555"))
         self.assertEqual((rec["origin"], rec["script_interpreter"], rec["game_dependencies"]),
                          ("installer", True, ["DOSBox074", "language_setup"]))
+        self.assertEqual(rec["product_names"], {"100": "Demo", "200": "Demo DLC"})
+        steps = redist.build_steps("100", "Demo", rec, plan.install_dir, build_id="5555", version_name="1.0",
+                                   language="en-US")
+        self.assertEqual([s.title for s in steps][:2], ["Installationsskript (ISI) für Demo",
+                                                        "Installationsskript (ISI) für Demo DLC"])
         inst.uninstall("100")
         self.assertFalse(redist.support_dir("100").exists())
 
@@ -542,12 +579,30 @@ class SetupHookTest(Base):
         self.put_cache(["ISI", "MSVC2017"])                                          # später online geladen
         self.assertTrue(hook_redist.setup_prefix(self.ctx())["finished"])
 
+    def test_isi_waits_for_support_files(self):
+        self.put_cache(["ISI", "MSVC2017"])
+        (redist.support_dir("100") / redist.SUPPORT_MARKER).unlink()                 # z. B. übernommenes Spiel
+        api = types.SimpleNamespace(logged_in=False)                                 # ohne Anmeldung nicht ladbar
+        out = hook_redist.setup_prefix(self.ctx(api=api))
+        self.assertEqual(self.ran(), ["VC_redist.x86.exe"])                          # Redistributables laufen schon
+        self.assertEqual(out["pending"], ["isi:100:5555", "isi:200:5555"])
+        self.assertNotIn("isi:100:5555", redist.load_setup_state(self.prefix)["steps"])   # kein Fehlversuch
+        self.assertEqual(self.gs.get("100").setup_done, [])
+        self.run.reset_mock()
+        with mock.patch.object(redist, "download_support_files",
+                               side_effect=lambda *a, **k: redist.write_support_marker("100", "5555", ["100"], 1)) as dl:
+            out = hook_redist.setup_prefix(self.ctx(api=types.SimpleNamespace(logged_in=True)))
+        dl.assert_called_once()
+        self.assertTrue(out["finished"])
+        self.assertEqual(self.ran(), ["scriptinterpreter.exe", "scriptinterpreter.exe"])
+
     def test_update_reruns_scripts_only_and_rerun_request_repeats_all(self):
         self.put_cache(["ISI", "MSVC2017"])
         hook_redist.setup_prefix(self.ctx())
         self.run.reset_mock()
         self.record.update(build_id="6666", version_name="2.0")                      # Update
         self.write_record()
+        redist.write_support_marker("100", "6666", ["100", "200"], 0)                # schreibt der Installer
         hook_redist.setup_prefix(self.ctx())
         self.assertEqual(self.ran(), ["scriptinterpreter.exe", "scriptinterpreter.exe"])
         self.assertIn("/buildId=6666", self.run.call_args_list[0].args[0])
@@ -562,6 +617,21 @@ class SetupHookTest(Base):
         self.run.assert_not_called()
         hook_redist.setup_prefix(self.ctx(prepare_only=True))                        # galaxy-linux prefix setup
         self.assertEqual(len(self.ran()), 3)
+
+    def test_update_installs_new_redists_per_prefix(self):
+        """Anders als Heroic: neue Redistributables aus einem Update kommen auch in bestehende Prefixe."""
+        self.put_cache(["ISI", "MSVC2017", "DirectX"])
+        hook_redist.setup_prefix(self.ctx())
+        self.run.reset_mock()
+        self.record.update(build_id="6666", dependency_ids=["ISI", "MSVC2017", "DirectX"])
+        self.record["redist"].append({"id": "DirectX", "name": "DirectX 9.0c", "path": "__redist/DirectX/DXSETUP.exe",
+                                      "arguments": "/silent"})
+        self.write_record()
+        redist.write_support_marker("100", "6666", ["100", "200"], 0)
+        self.assertTrue(hook_redist.setup_prefix(self.ctx())["finished"])
+        self.assertEqual(self.ran(), ["scriptinterpreter.exe", "scriptinterpreter.exe", "DXSETUP.exe"])
+        steps = redist.load_setup_state(self.prefix)["steps"]
+        self.assertTrue(steps["redist:DirectX"]["ok"] and steps["redist:MSVC2017"]["ok"])
 
     def test_moved_install_reruns_scripts(self):
         self.put_cache(["ISI", "MSVC2017"])
@@ -647,6 +717,10 @@ class JobTest(Base):
         self.assertTrue(hook_redist.redist_update_needed(backend))                   # Repository geändert
         backend.settings.install_redist = False
         self.assertFalse(hook_redist.redist_update_needed(backend))
+        backend.settings.install_redist = True
+        (redist.redist_root() / "__redist/MSVC2017/VC_redist.x86.exe").unlink()      # fehlt – aber offline:
+        backend.api = mock.Mock(get_json=mock.Mock(side_effect=ApiError("offline")))
+        self.assertFalse(hook_redist.redist_update_needed(backend))                  # kein Auftrag, der nur scheitert
 
 
 class UpgradeTest(Base):

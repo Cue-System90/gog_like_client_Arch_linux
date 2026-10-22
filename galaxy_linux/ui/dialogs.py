@@ -717,7 +717,7 @@ class GameSettingsDialog(Adw.PreferencesDialog):
 
         # Redistributables/Einrichtung im Prefix: ui/ext_redist.py (Seite „Kompatibilität“)
 
-        sg =Adw.PreferencesGroup(title=tr('Verknüpfungen'), description=tr('Starten das Spiel über den Client (Spielzeit, Proton-Einstellungen).'))
+        sg = Adw.PreferencesGroup(title=tr('Verknüpfungen'), description=tr('Starten das Spiel über den Client (Spielzeit, Proton-Einstellungen).'))
         has_menu, has_desktop = self.backend.shortcut_state(self.pid)
         self.sw_menu = Adw.SwitchRow(title=tr('Im Startmenü'), active=has_menu)
         self.sw_menu.set_sensitive(self.installed is not None)
