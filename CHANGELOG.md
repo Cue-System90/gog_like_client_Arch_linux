@@ -13,7 +13,11 @@ Fundament; weitere Bausteine folgen.
 - **Avatar-Menü wie in Galaxy**: Kontoverwaltung, Bisherige Bestellungen, Geldbeutel, Ausloggen (mit Rückfrage,
   laufende Downloads werden abgebrochen); abgemeldet nur „Bei GOG anmelden“.
 - Das „+“ in der Titelleiste enthält nur noch Hinzufügen und Prefix-Pflege.
-- Store-Seiten öffnen in der Sprache der Oberfläche (bisher immer Deutsch).
+- **Eingebetteter GOG-Store wie im Original**: Seitenleiste GOG STORE (Startseite, Alle Spiele, Einkaufen,
+  Wunschliste mit Zähler, Warenkorb, Bisherige Bestellungen) zeigt die gog.com-Seiten im Client, in der Sprache der
+  Oberfläche; Login und Store teilen sich die Sitzung. Nach einem Kauf wird die Bibliothek sofort abgeglichen,
+  Zahlungs-Fenster (PayPal) öffnen im Client, Downloads landen im Download-Ordner. Ausblendbar unter Einstellungen →
+  Oberfläche → Bevorzugter Store. Spielansicht „⋯“ → Im Store anzeigen. `webkitgtk-6.0` ist jetzt Pflichtpaket.
 - Neue Einstellungsseite **Spielfunktionen**: Spiele automatisch aktualisieren, Cloud-Spielstände, Erfolge,
   Galaxy-Dienste im Spiel (comet), Erfassung der Spielzeit, GOverlay-Profile pro Spiel; pro Spiel abweichend unter
   Eigenschaften → Spielfunktionen. (Die Schalter wirken, sobald die zugehörigen Bausteine fertig sind.)

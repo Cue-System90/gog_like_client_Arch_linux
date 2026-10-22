@@ -30,14 +30,18 @@ The layout follows GOG Galaxy 2.0:
   (Account management, Order history, Wallet, Sign out) · search (above the sidebar); on the right back/forward,
   bookmark (favourite), **Filter**, **+** (add game, create library, scan folders, prefix maintenance), the
   "Search games" field, the view menu (layout, sorting, cover size, titles) and the window buttons.
-* **Sidebar**: GAMES → Last played, All games (counter), Installed (counter), Downloads (counter);
+* **Sidebar** in the order of the original: GOG STORE → Home, All games, Deals (discounts without owned
+  games), Wishlist (counter), Cart, Order history (can be hidden: Settings → Interface → Preferred store);
+  GAMES → Last played, All games (counter), Installed (counter), Downloads (counter);
   LIBRARIES → one entry with counter per custom library (like the platform entries in Galaxy 2.0), "+"
   creates a new one, right-click opens its menu; FRIENDS (activity, friends online, messages – not
-  available in this client, therefore greyed out); STORE → Recommended, Deals.
+  available in this client, therefore greyed out).
+* **Store**: like the original, the real gog.com pages inside the content area, with a slim bar (back,
+  forward, reload, home, address). Login and store share their cookies.
 * **Library**: portrait covers in sections ("Play next", "All games", "Last played", "Recently
   installed"), tooltip with the title, progress bar on the cover while downloading.
 * **Game page**: hero artwork with the transparent game logo, below it the purple **PLAY**/**INSTALL**
-  button, the "⋯" menu (verify, folder, prefix, Winetricks, log, GOG.com, hide, uninstall), the stats
+  button, the "⋯" menu (verify, folder, prefix, Winetricks, log, View in store, hide, uninstall), the stats
   PLAYTIME · LAST PLAYED · ACHIEVEMENTS · COMPATIBILITY, then "About the game" (genres, description,
   DLCs), achievements as an icon row and "Game details". In addition – like Steam – a **Compatibility**
   block with Proton selection, launch options, "From GOverlay" and a command preview; the gear opens the
@@ -53,6 +57,7 @@ The layout follows GOG Galaxy 2.0:
 | Area | Implementation |
 |---|---|
 | Login | OAuth like the Galaxy client (login page inside the client with `webkitgtk-6.0`, otherwise browser login and pasting the redirect URL; 2FA works). Automatic token refresh. |
+| Store | **Embedded GOG store** like in Galaxy (WebKitGTK 6.0, same session as the login): GOG STORE sidebar group, pages in the interface language, wishlist counter. Buying and paying inside the client (payment windows such as PayPal open in a window of their own); after a **completed purchase** the library is synchronised at once. Offline installers and goodies are saved to the Downloads folder, links to other sites open in the browser. If the website is not signed in, a notice offers "Sign in to the store". Game page "⋯" → **View in store**. Signing out also signs out the store. No custom user agent, no affiliate links. |
 | Library | All purchased games with cover, background, description, genres, developer/publisher, release date and DLC ownership (GamesDB + api.gog.com). Search, filters (installed, favourites, updates, Windows, Linux native), hiding games. |
 | Install location | Like the Windows client: global games folder in the settings (default `~/Games/GOG`), games end up in `<folder>/<game name>`. The install dialog offers the default, remembered additional locations or "Other folder …" and shows the final path. **Move installation** (game page menu, properties, CLI `move`) – instant on the same drive, otherwise copied with progress. |
 | Copied games | Games copied into the games folder (or an additional install location) by hand – e.g. from a Windows installation of GOG Galaxy – are detected automatically by their `goggame-<ID>.info`, also one level deeper (a copied "GOG Games" collection folder). The client waits until copying has finished, registers the game and its DLCs as installed (the "Installed" counter follows) and creates missing Wine prefixes in the prefix folder with the DPI of the desktop scaling (225 % → 216). Deleted game folders are removed from the library again; the prefix with the save games stays. Manually: "+" → "Scan games folders for games" or `galaxy-linux scan`. Can be switched off in the settings. |
@@ -93,9 +98,9 @@ builds the pacman package into `../dist/` (next to the cloned folder), removes a
 completely (settings, credentials and games stay) and installs it with `sudo pacman -U`.
 **Update:** `git pull && ./install.sh`.
 
-Required: `python python-requests python-gobject gtk4 libadwaita unzip xdg-utils`.
-Recommended: `webkitgtk-6.0 umu-launcher proton-cachyos mangohud lib32-mangohud goverlay winetricks gamescope innoextract python-vdf`
-(`webkitgtk-6.0` = GOG login directly inside the client).
+Required: `python python-requests python-gobject gtk4 libadwaita webkitgtk-6.0 unzip xdg-utils`
+(`webkitgtk-6.0` = embedded GOG store and GOG login inside the client; without it, store and login open in the browser).
+Recommended: `umu-launcher proton-cachyos mangohud lib32-mangohud goverlay winetricks gamescope innoextract python-vdf`
 
 ```bash
 ./install.sh --purge   # as above, additionally deletes settings, credentials and logs first (games stay)

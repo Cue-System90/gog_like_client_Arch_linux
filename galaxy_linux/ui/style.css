@@ -42,6 +42,14 @@ window.galaxy { background-color: #1b1b20; color: #d9d9de; }
 .cover-progress trough { background-color: rgba(0,0,0,0.6); min-height: 4px; border-radius: 0; }
 .cover-progress progress { background-color: #c57be3; min-height: 4px; border-radius: 0; }
 
+/* Eingebetteter Store (ui/store.py): schmale Leiste über der gog.com-Seite */
+.store-page { background-color: #1b1b20; }
+.store-bar { background-color: #1b1b20; padding: 4px 10px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.store-url { color: #8c8c92; font-size: 9pt; }
+.store-progress { min-height: 2px; }
+.store-progress trough { background-color: transparent; min-height: 2px; border-radius: 0; }
+.store-progress progress { background-color: #c57be3; min-height: 2px; border-radius: 0; }
+
 /* Spielansicht */
 .hero { background-color: #121216; }
 .hero-shade { background: linear-gradient(to top, #1b1b20 0%, rgba(27,27,32,0.6) 28%, rgba(27,27,32,0.0) 60%); }

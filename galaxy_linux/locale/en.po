@@ -2450,10 +2450,6 @@ msgid "AKTUALISIEREN"
 msgstr "UPDATE"
 
 #: galaxy_linux/ui/game_page.py
-msgid "Auf GOG.com öffnen"
-msgstr "Open on GOG.com"
-
-#: galaxy_linux/ui/game_page.py
 msgid "Aus Bibliothek entfernen …"
 msgstr "Remove from library…"
 
@@ -2512,6 +2508,10 @@ msgstr "Genre"
 #: galaxy_linux/ui/game_page.py
 msgid "INSTALLIEREN"
 msgstr "INSTALL"
+
+#: galaxy_linux/ui/game_page.py
+msgid "Im Store anzeigen"
+msgstr "View in store"
 
 #: galaxy_linux/ui/game_page.py galaxy_linux/ui/window.py
 msgid "Installiert"
@@ -2741,7 +2741,7 @@ msgstr "Exit"
 msgid "Bibliothek aktualisieren"
 msgstr "Refresh library"
 
-#: galaxy_linux/ui/menus.py
+#: galaxy_linux/ui/menus.py galaxy_linux/ui/store.py
 msgid "Bisherige Bestellungen"
 msgstr "Orders history"
 
@@ -2849,6 +2849,114 @@ msgstr "Update check failed: {0}"
 msgid "galaxy-linux {0} – inoffizieller, nativer Client für GOG.com."
 msgstr "galaxy-linux {0} – unofficial native client for GOG.com."
 
+#: galaxy_linux/ui/store.py galaxy_linux/ui/window.py
+msgid "Alle Spiele"
+msgstr "All games"
+
+#: galaxy_linux/ui/store.py
+msgid "Bevorzugter Store"
+msgstr "Preferred store"
+
+#: galaxy_linux/ui/store.py
+msgid "Die Seite konnte nicht geladen werden"
+msgstr "The page could not be loaded"
+
+#: galaxy_linux/ui/store.py
+msgid "Die Store-Ansicht wurde neu geladen."
+msgstr "The store view was reloaded."
+
+#: galaxy_linux/ui/store.py
+msgid "Download abgeschlossen: {0}"
+msgstr "Download complete: {0}"
+
+#: galaxy_linux/ui/store.py
+msgid "Download fehlgeschlagen: {0}"
+msgstr "Download failed: {0}"
+
+#: galaxy_linux/ui/store.py
+msgid "Download gestartet: {0}"
+msgstr "Download started: {0}"
+
+#: galaxy_linux/ui/store.py
+msgid "Du bist im Store nicht angemeldet."
+msgstr "You are not signed in to the store."
+
+#: galaxy_linux/ui/store.py
+msgid "ERNEUT VERSUCHEN"
+msgstr "TRY AGAIN"
+
+#: galaxy_linux/ui/store.py
+msgid "Eingebetteter Store nicht verfügbar (Paket webkitgtk-6.0 fehlt) – die Seite wurde im Browser geöffnet."
+msgstr "Embedded store not available (package webkitgtk-6.0 is missing) – the page was opened in the browser."
+
+#: galaxy_linux/ui/store.py
+msgid "Einkaufen"
+msgstr "Deals"
+
+#: galaxy_linux/ui/store.py
+msgid "GOG STORE"
+msgstr "GOG STORE"
+
+#: galaxy_linux/ui/store.py
+msgid "GOG Store"
+msgstr "GOG Store"
+
+#: galaxy_linux/ui/store.py
+msgid "GOG.COM"
+msgstr "GOG.COM store"
+
+#: galaxy_linux/ui/store.py
+msgid "Im Store anmelden"
+msgstr "Sign in to the store"
+
+#: galaxy_linux/ui/store.py
+msgid "In der Seitenleiste ausblenden"
+msgstr "Hide from sidebar"
+
+#: galaxy_linux/ui/store.py
+msgid "Kauf abgeschlossen – die Bibliothek wird aktualisiert."
+msgstr "Purchase complete – refreshing the library."
+
+#: galaxy_linux/ui/store.py
+msgid "Laden abbrechen"
+msgstr "Stop loading"
+
+#: galaxy_linux/ui/store.py
+msgid "Neu laden"
+msgstr "Reload"
+
+#: galaxy_linux/ui/store.py
+msgid "Ordner öffnen"
+msgstr "Open folder"
+
+#: galaxy_linux/ui/store.py
+msgid "Prüfe die Internetverbindung und versuche es erneut."
+msgstr "Check your internet connection and try again."
+
+#: galaxy_linux/ui/store.py
+msgid "Startseite"
+msgstr "Home"
+
+#: galaxy_linux/ui/store.py
+msgid "Store-Startseite"
+msgstr "Store home"
+
+#: galaxy_linux/ui/store.py galaxy_linux/ui/window.py
+msgid "Vor"
+msgstr "Forward"
+
+#: galaxy_linux/ui/store.py
+msgid "Warenkorb"
+msgstr "Cart"
+
+#: galaxy_linux/ui/store.py
+msgid "Wunschliste"
+msgstr "Wishlist"
+
+#: galaxy_linux/ui/store.py galaxy_linux/ui/window.py
+msgid "Zurück"
+msgstr "Back"
+
 #: galaxy_linux/ui/util.py
 msgid "Deutsch"
 msgstr "Deutsch"
@@ -2946,10 +3054,6 @@ msgid "Aktivität"
 msgstr "Activity"
 
 #: galaxy_linux/ui/window.py
-msgid "Alle Spiele"
-msgstr "All games"
-
-#: galaxy_linux/ui/window.py
 msgid "Alle Spiele haben bereits einen Prefix"
 msgstr "All games already have a prefix"
 
@@ -2964,10 +3068,6 @@ msgstr "Marked as favorite"
 #: galaxy_linux/ui/window.py
 msgid "Als Nächstes spielen"
 msgstr "Play next"
-
-#: galaxy_linux/ui/window.py
-msgid "Angebote"
-msgstr "Deals"
 
 #: galaxy_linux/ui/window.py
 msgid "Angemeldet als {0}"
@@ -3024,10 +3124,6 @@ msgstr "Downloads"
 #: galaxy_linux/ui/window.py
 msgid "Durchsuchen fehlgeschlagen: {0}"
 msgstr "Scan failed: {0}"
-
-#: galaxy_linux/ui/window.py
-msgid "Empfohlen"
-msgstr "Recommended"
 
 #: galaxy_linux/ui/window.py
 msgid "Erscheinungsdatum"
@@ -3210,10 +3306,6 @@ msgid "SPIELE"
 msgstr "GAMES"
 
 #: galaxy_linux/ui/window.py
-msgid "STORE"
-msgstr "STORE"
-
-#: galaxy_linux/ui/window.py
 msgid "Sehr groß"
 msgstr "Extra large"
 
@@ -3306,10 +3398,6 @@ msgid "Verwaiste Prefixe entfernen …"
 msgstr "Remove orphaned prefixes…"
 
 #: galaxy_linux/ui/window.py
-msgid "Vor"
-msgstr "Forward"
-
-#: galaxy_linux/ui/window.py
 msgid "Windows"
 msgstr "Windows"
 
@@ -3328,10 +3416,6 @@ msgstr "Still copying: {0} – will be added afterwards"
 #: galaxy_linux/ui/window.py
 msgid "Wird verschoben"
 msgstr "Moving"
-
-#: galaxy_linux/ui/window.py
-msgid "Zurück"
-msgstr "Back"
 
 #: galaxy_linux/ui/window.py
 msgid "Zurücksetzen"

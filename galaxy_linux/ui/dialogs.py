@@ -17,21 +17,15 @@ from ..jsonstore import read_json
 from ..launch import compat, goverlay, launch_options
 from ..launch.launcher import LaunchError
 from ..settings import GameSettings, format_bytes
-from . import prefs_registry
+from . import prefs_registry, store, web
 from .util import (LANGUAGES, Adw, Gio, GLib, Gtk, choose_folder, copy_text, icon_button, idle, label,
                    language_index, open_uri, pick_icon, run_async)
 
 
 # ----------------------------------------------------------------------------- Login
 def _webkit():
-    """WebKitGTK 6.0 (optional) für den eingebetteten Login wie im Windows-Client."""
-    try:
-        import gi
-        gi.require_version("WebKit", "6.0")
-        from gi.repository import WebKit  # type: ignore
-        return WebKit
-    except Exception:
-        return None
+    """WebKitGTK 6.0 für den eingebetteten Login wie im Windows-Client (gemeinsame Sitzung mit dem Store: ui/web.py)."""
+    return web.webkit()
 
 
 class LoginDialog(Adw.Dialog):
@@ -70,9 +64,7 @@ class LoginDialog(Adw.Dialog):
         box.append(hint)
         box.append(self.error)
         try:
-            data_dir = str(paths.DATA_DIR / "webkit")
-            session = WebKit.NetworkSession.new(data_dir, str(paths.CACHE_DIR / "webkit"))
-            self.view = WebKit.WebView(network_session=session)
+            self.view = web.new_view()      # dieselben Cookies wie der eingebettete Store
         except Exception:
             self.view = WebKit.WebView()
         self.view.set_vexpand(True)
@@ -846,6 +838,7 @@ class PreferencesDialog(Adw.PreferencesDialog):
         ui_lang.connect("notify::selected", lambda *_: (self._save(ui_language=codes[ui_lang.get_selected()]),
                                                        self.add_toast(Adw.Toast.new(tr('Sprache wird nach einem Neustart des Clients übernommen')))))
         ui.add(ui_lang)
+        ui.add(store.preferred_store_row(self))     # GOG STORE in der Seitenleiste zeigen/ausblenden
         page.add(ui)
         grp = Adw.PreferencesGroup(title=tr('Ordner'))
         d = Adw.EntryRow(title=tr('Spiele-Ordner'), text=self.s.install_dir, show_apply_button=True)

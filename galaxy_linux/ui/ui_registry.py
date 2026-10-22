@@ -7,7 +7,7 @@ Funktionen hängen sich hier ein, ohne ``window.py``/``game_page.py`` zu ändern
     register_game_section("cloud", lambda page: CloudBox(page), column="right")
     register_window_hook(lambda win: win.connect("notify::is-active", …))
 
-* Spiel-Aktionen erscheinen im „⋯“-Menü der Spielansicht (nach „Auf GOG.com öffnen“); ``visible`` wird bei jedem
+* Spiel-Aktionen erscheinen im „⋯“-Menü der Spielansicht (nach „Im Store anzeigen“); ``visible`` wird bei jedem
   Öffnen des Menüs geprüft.
 * Spiel-Abschnitte: ``builder(page)`` liefert einmalig ein Gtk.Widget für die linke (``left``: unter „Über das Spiel“
   und „Erfolge“) oder rechte Spalte (``right``: unter „Kompatibilität“). Hat das Widget ``set_game(pid)`` bzw.

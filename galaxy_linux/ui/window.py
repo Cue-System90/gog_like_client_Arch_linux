@@ -2,9 +2,9 @@
 
 Titelleiste: links Zahnrad-Menü (wie Galaxy 2.1, siehe ui/menus.py) · Avatar-Menü · Suche (über der Seitenleiste),
 rechts Zurück/Vor, Lesezeichen, Filter, „+“, Suchfeld, Ansicht und die Fensterknöpfe.
-Seitenleiste: SPIELE (Zuletzt gespielt, Alle Spiele, Installiert, Downloads), darunter BIBLIOTHEKEN (eigene
-Bibliotheken für Nicht-GOG-Spiele, je ein Eintrag mit Zähler), FREUNDE, STORE.
-Inhalt: Cover-Raster in Abschnitten, Downloads-Seite, Spielansicht.
+Seitenleiste wie im Original: GOG STORE (eingebettete gog.com-Seiten, ui/store.py), SPIELE (Zuletzt gespielt, Alle
+Spiele, Installiert, Downloads), darunter BIBLIOTHEKEN (eigene Bibliotheken für Nicht-GOG-Spiele, je ein Eintrag mit
+Zähler), FREUNDE. Inhalt: Cover-Raster in Abschnitten, Downloads-Seite, Spielansicht, Store.
 """
 from __future__ import annotations
 
@@ -18,8 +18,7 @@ from pathlib import Path
 from .. import APP_NAME, __version__, i18n
 from ..api.client import NotLoggedIn
 from ..settings import format_bytes, format_minutes
-from ..store_links import store_lang, store_url
-from . import menus, prefs_registry, ui_registry
+from . import menus, prefs_registry, store, ui_registry
 from .bridge import GtkBridge
 from .dialogs import LoginDialog, PreferencesDialog
 from .game_page import GamePage
@@ -505,6 +504,9 @@ class MainWindow(Adw.ApplicationWindow):
             box.append(it)
             return it
 
+        # GOG STORE wie im Original vor den Spielen (Startseite … Bisherige Bestellungen), ausblendbar über
+        # Einstellungen → Oberfläche → „Bevorzugter Store“
+        box.append(store.build_sidebar_group(self, NavItem))
         section(tr('SPIELE'))
         item("recent", tr('Zuletzt gespielt'), pick_icon("document-open-recent-symbolic", "alarm-symbolic"))
         item("all", tr('Alle Spiele'), pick_icon("view-grid-symbolic", "view-app-grid-symbolic"))
@@ -528,9 +530,6 @@ class MainWindow(Adw.ApplicationWindow):
         item("activity", tr('Aktivität'), pick_icon("emblem-shared-symbolic", "network-workgroup-symbolic"), enabled=False)
         item("friends", tr('Freunde online'), pick_icon("system-users-symbolic", "avatar-default-symbolic"), enabled=False)
         item("messages", tr('Nachrichten'), pick_icon("mail-unread-symbolic", "chat-symbolic"), enabled=False)
-        section(tr('STORE'))
-        item("featured", tr('Empfohlen'), pick_icon("starred-symbolic", "emblem-favorite-symbolic"), cb=lambda: self.open_store("/games"))
-        item("discounts", tr('Angebote'), pick_icon("emblem-favorite-symbolic", "tag-symbolic"), cb=lambda: self.open_store("/promo"))
         box = outer
         self.status_lbl = label("", css=["dim", "caption"])
         self.status_lbl.set_margin_start(22)
@@ -592,6 +591,9 @@ class MainWindow(Adw.ApplicationWindow):
         elif view == "downloads":
             self._rebuild_downloads()
             self.stack.set_visible_child_name("downloads")
+        elif view.startswith("store:") and getattr(self, "store_page", None) is not None:
+            self.stack.set_visible_child_name("store")
+            self.store_page.sync_nav()
         else:
             if not self.backend.library and not self.backend.registry.all() and not self.backend.api.logged_in:
                 self.stack.set_visible_child_name("welcome")
@@ -859,7 +861,7 @@ class MainWindow(Adw.ApplicationWindow):
 
     def _on_search(self, entry: Gtk.SearchEntry) -> None:
         self._search = entry.get_text().strip().lower()
-        if self.view in ("game", "downloads") and self._search:
+        if (self.view in ("game", "downloads") or self.view.startswith("store:")) and self._search:
             self.navigate("all")
         for sec in self.sections:
             sec.flow.invalidate_filter()
@@ -926,9 +928,9 @@ class MainWindow(Adw.ApplicationWindow):
         self.refresh_library_async(check_updates=True if reason == "manual" else None)
 
     def open_store(self, path: str) -> None:
-        """Store-Seite öffnen (Pfad wie "/games", "/redeem" oder volle gog.com-Adresse) – vorerst im Browser,
-        in der Sprache der Oberfläche. Wird vom eingebetteten Store ersetzt."""
-        open_uri(store_url(path, store_lang(i18n.current())))
+        """Store-Seite öffnen (Pfad wie "/games", "/redeem" oder volle gog.com-Adresse; "" = zuletzt besuchte Seite)
+        im eingebetteten Store in der Sprache der Oberfläche; ohne webkitgtk-6.0 im Browser (ui/store.py)."""
+        store.open_store(self, path)
 
     def refresh_library_async(self, check_updates: bool | None = None) -> None:
         """Bibliothek von GOG laden; danach nach Spiel-Updates suchen (Vorgabe: Einstellung „Beim Start …“)."""
@@ -1164,10 +1166,12 @@ class MainWindow(Adw.ApplicationWindow):
     def _after_login(self, user: dict) -> None:
         self.toast(tr('Angemeldet als {0}').format(user.get('username', '')))
         self._update_avatar()
+        store.on_login(self)            # Store-Seite mit den neuen Cookies neu laden, Wunschliste zählen
         self.request_library_refresh("login", force=True)
 
     def do_logout(self) -> None:
         self.backend.api.logout()
+        store.on_logout(self)           # auch die Store-Sitzung (Cookies) abmelden
         self.backend.library = []
         self.avatar.set_custom_image(None)
         self._update_avatar()
