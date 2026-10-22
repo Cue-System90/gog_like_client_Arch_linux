@@ -326,47 +326,40 @@ class LaunchFlowTest(TempLauncherBase):
             self.launcher.run_prepare_only("999")
 
 
-# ----------------------------------------------------------------------------- Redistributables als Hook
+# ----------------------------------------------------------------------------- Prefix-Einrichtung als Hook
 class RedistHookTest(TempLauncherBase):
-    def make_ctx(self, record: dict):
-        (self.root / "manifests" / "1.json").write_text(json.dumps(record))
+    """Grundsätzliches zum Hook; der Ablauf der Einrichtung steht in tests/test_redist.py."""
+
+    def make_ctx(self, record: dict, pid: str = "1"):
+        (self.root / "manifests" / f"{pid}.json").write_text(json.dumps(record))
         fake = types.SimpleNamespace(game_settings=self.gs, run_in_prefix=mock.Mock(return_value=0), ui_bridge=None)
-        game = self.registry.get("1")
-        return LaunchContext(product_id="1", game=game, gs=self.gs.get("1"), settings=self.settings, plan=None,
-                             install_dir=self.game_dir, exe=None, prefix=self.root / "prefixes" / "1", runner="umu",
-                             tool=None, log_file=self.root / "logs" / "1.log", status=lambda t: None,
+        game = self.registry.get(pid)
+        return LaunchContext(product_id=pid, game=game, gs=self.gs.get(pid), settings=self.settings, plan=None,
+                             install_dir=Path(game.install_path), exe=None, prefix=self.root / "prefixes" / pid,
+                             runner="umu", tool=None, log_file=self.root / "logs" / f"{pid}.log", status=lambda t: None,
                              ask=lambda *a: a[-1], launcher=fake)
 
-    def test_installs_once_and_marks_missing_done(self):
-        (self.game_dir / "__redist" / "DirectX").mkdir(parents=True)
-        (self.game_dir / "__redist" / "DirectX" / "DXSETUP.exe").write_bytes(b"MZ")
-        ctx = self.make_ctx({"redist": [
-            {"id": "DirectX", "name": "DirectX", "path": "__redist/DirectX/DXSETUP.exe", "arguments": "/silent"},
-            {"id": "MSVC2017", "name": "VC 2017", "path": "__redist/MSVC2017/VC_redist.x86.exe", "arguments": "/q"},
-            {"id": "ohne-pfad", "path": ""}]})
-        hook = RedistHook()
-        self.assertTrue(hook.enabled(ctx))
-        self.assertEqual([r["id"] for r in pending_redists(json.loads((self.root / "manifests" / "1.json").read_text()), [])],
-                         ["DirectX", "MSVC2017"])
-        hook.prepare(ctx)
-        ctx.launcher.run_in_prefix.assert_called_once_with(
-            "1", [str(self.game_dir / "__redist/DirectX/DXSETUP.exe"), "/silent"], timeout=1800, extra_env=None)
-        self.assertEqual(sorted(self.gs.get("1").redist_done), ["DirectX", "MSVC2017"])     # fehlend = erledigt (wie 0.1.6)
-        ctx.launcher.run_in_prefix.reset_mock()
-        hook.prepare(ctx)
-        ctx.launcher.run_in_prefix.assert_not_called()
+    def test_pending_redists_legacy_format(self):
+        record = {"redist": [{"id": "DirectX", "path": "__redist/DirectX/DXSETUP.exe"},
+                             {"id": "MSVC2017", "path": "__redist/MSVC2017/VC_redist.x86.exe"}, {"id": "x", "path": ""}]}
+        self.assertEqual([r["id"] for r in pending_redists(record, ["DirectX"])], ["MSVC2017"])
 
-    def test_late_record_keeps_missing_open(self):
-        ctx = self.make_ctx({"origin": "build-record", "redist": [
-            {"id": "MSVC2017", "name": "VC 2017", "path": "__redist/MSVC2017/VC_redist.x86.exe", "arguments": "/q"}]})
-        RedistHook().prepare(ctx)
-        self.assertEqual(self.gs.get("1").redist_done, [])
-
-    def test_disabled_for_linux_and_switch(self):
+    def test_enabled_only_for_gog_windows(self):
+        self.assertTrue(RedistHook().enabled(self.make_ctx({})))
+        self.gs.update("1", install_redist=False)          # schaltet nur die Redistributables ab, nicht die Skripte
         ctx = self.make_ctx({})
-        self.gs.update("1", install_redist=False)
-        ctx.gs = self.gs.get("1")
-        self.assertFalse(RedistHook().enabled(ctx))
+        self.assertTrue(RedistHook().enabled(ctx))
+        self.assertFalse(RedistHook().enabled(self.make_ctx({}, pid="2")))       # Linux
+        self.registry.set(InstalledGame("ext-x", "X", "windows", str(self.game_dir), method="external"))
+        self.assertFalse(RedistHook().enabled(self.make_ctx({}, pid="ext-x")))
+
+    def test_without_record_nothing_runs(self):
+        ctx = self.make_ctx({})
+        with mock.patch.multiple("galaxy_linux.paths", DATA_DIR=self.root / "data"), \
+                mock.patch("galaxy_linux.launch.hook_redist.subprocess.run") as run:
+            RedistHook().prepare(ctx)
+        run.assert_not_called()
+        self.assertEqual(self.gs.get("1").setup_done, [])
 
     def test_registered_as_builtin(self):
         import importlib

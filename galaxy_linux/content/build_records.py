@@ -28,6 +28,7 @@ from ..api.auth import AuthError
 from ..api.client import ApiError
 from ..jsonstore import read_json, write_json
 from .manifest import Build, BuildManifest, DependencyDepot, ManifestError, parse_dependency_repository
+from .redist import ISI_ID, is_global
 from .scanner import read_info
 
 log = logging.getLogger(__name__)
@@ -119,16 +120,18 @@ def pick_build(builds: Iterable[Build], build_id: str = "") -> Build | None:
 
 def redist_entries(dependency_ids: Iterable[str], repo: dict[str, DependencyDepot],
                    skip: Iterable[str] = ()) -> tuple[list[dict[str, str]], list[str]]:
-    """(redist-Liste wie im Installer, lesbare Namen) – interne und übersprungene Abhängigkeiten fallen heraus."""
+    """(redist-Liste wie im Installer, lesbare Namen). ``redist`` enthält nur globale Pakete (``__redist/…``, ohne
+    ISI) – sie laufen im Prefix; Spielordner-Pakete (DOSBox, ScummVM …) stehen nur bei den Namen. ``internal`` zählt
+    nicht (wie gogdl); übersprungene und unbekannte IDs fallen heraus."""
     skip = set(skip)
     redist: list[dict[str, str]] = []
     names: list[str] = []
     for dep_id in dependency_ids:
         dep = repo.get(dep_id)
-        if dep is None or dep.internal or dep_id in skip:
+        if dep is None or dep_id in skip:
             continue
         names.append(dep.readable_name)
-        if dep.executable_path:
+        if dep_id != ISI_ID and is_global(dep) and all(r["id"] != dep_id for r in redist):
             redist.append({"id": dep_id, "name": dep.readable_name, "path": dep.executable_path,
                            "arguments": dep.executable_args})
     return redist, names
@@ -189,10 +192,9 @@ def ensure_record(api, game, force: bool = False, repo: dict[str, DependencyDepo
         redist: list[dict] = []
         names: list[str] = []
         if manifest.dependencies:
-            from .installer import INTERNAL_DEPENDENCIES
             try:
                 redist, names = redist_entries(manifest.dependencies, repo if repo is not None else dependency_repo(api),
-                                               INTERNAL_DEPENDENCIES)
+                                               {ISI_ID})
             except (ApiError, KeyError) as exc:
                 log.warning("Abhängigkeiten für %s nicht verfügbar: %s", pid, exc)
     except (ApiError, AuthError, ManifestError, ValueError, OSError) as exc:

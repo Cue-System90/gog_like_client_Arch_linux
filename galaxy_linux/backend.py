@@ -134,6 +134,15 @@ class JobQueue:
         self._wake.set()
         return job
 
+    def run_now(self, job: Job) -> Job:
+        """Auftrag sofort im aufrufenden (Arbeits-)Thread ausführen – an der Warteschlange vorbei, aber in der
+        Download-Ansicht sichtbar (z. B. Galaxy-Redistributables vor einem Spielstart, während ein Download läuft)."""
+        job.state = "running"            # die Warteschlange nimmt nur „queued“-Aufträge
+        with self._lock:
+            self.jobs.append(job)
+        self._execute(job)
+        return job
+
     def active_for(self, product_id: str) -> Job | None:
         with self._lock:
             for j in self.jobs:
@@ -867,6 +876,8 @@ class Backend:
                 self.installer.record_path(pid).unlink()
             except OSError:
                 pass
+            from .content.redist import remove_support
+            remove_support(pid)
         elif str(path) not in self.settings.ignored_paths:
             self.settings.ignored_paths.append(str(path))
             self.settings.save()
@@ -907,8 +918,8 @@ class Backend:
         import shutil
         shutil.rmtree(p, ignore_errors=True)
         gs = self.game_settings.get(product_id)
-        if gs.redist_done:
-            self.game_settings.update(product_id, redist_done=[])
+        if gs.redist_done or gs.setup_done:     # Einrichtung (Skripte, Redistributables) läuft im neuen Prefix neu
+            self.game_settings.update(product_id, redist_done=[], setup_done=[])
         log.info("Prefix gelöscht: %s", p)
         return p
 

@@ -471,6 +471,39 @@ def cmd_records(b: Backend, a) -> int:
     return 0
 
 
+def cmd_redist(b: Backend, a) -> int:
+    """Galaxy-Redistributables (gemeinsamer Ordner) bzw. Einrichtung eines Spiels in seinem Prefix."""
+    from .content import redist
+    from .launch import hook_redist
+    if a.game:
+        pid = _resolve(b, a.game)
+        if a.again:
+            hook_redist.request_rerun(b.launcher, pid)
+            print(tr('Die Einrichtung läuft beim nächsten Start erneut.'), file=sys.stderr)
+        rows = hook_redist.prefix_status(b.launcher, pid)
+        if a.json:
+            print(json.dumps(rows, indent=2, ensure_ascii=False))
+            return 0
+        print(f"{tr('Prefix')}: {b.launcher.prefix_for(pid)} · {redist.summary_text(rows)}")
+        for r in rows:
+            print(f"  {r['title'][:48]:<48}  {redist.state_text(r)}")
+        return 0
+    if a.download:
+        hook_redist.attach_backend(b)
+        return _wait_job(b.jobs.add(hook_redist.new_job(full=True)))
+    info = redist.cache_info()
+    required = hook_redist.required_redists(b)
+    info.update(required=required, missing=redist.missing_ids(required))
+    if a.json:
+        print(json.dumps(info, indent=2, ensure_ascii=False))
+        return 0
+    print(f"{tr('Ordner')}: {info['path']}  ({format_bytes(info['size'])}, {tr('Repository')} {info['build_id'] or '–'})")
+    print(f"{tr('Geladen')}: {', '.join(info['installed']) or '–'}")
+    print(f"{tr('Benötigt')}: {', '.join(required)}")
+    print(f"{tr('Fehlt')}: {', '.join(info['missing']) or '–'}")
+    return 0
+
+
 def cmd_add(b: Backend, a) -> int:
     if a.library:
         b.find_library(a.library)            # Tippfehler vor dem Durchsuchen melden
@@ -677,6 +710,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.set_defaults(fn=cmd_library)
     s = sub.add_parser("prefix", help=tr('Prefix-Werkzeuge (setup = Einrichtung wie vor dem ersten Start erneut ausführen)')); s.add_argument("action", choices=["create", "delete", "reset", "winetricks", "run", "path", "setup"]); s.add_argument("game"); s.add_argument("verbs", nargs="*"); s.set_defaults(fn=cmd_prefix)
     s = sub.add_parser("records", help=tr('Installations-Datensätze (Build, Abhängigkeiten) anzeigen oder anlegen')); s.add_argument("game", nargs="?"); s.add_argument("--create", action="store_true", help=tr('fehlende Datensätze über das GOG-Content-System anlegen')); s.add_argument("--force", action="store_true", help=tr('vorhandene Datensätze neu anlegen')); s.add_argument("--json", action="store_true"); s.set_defaults(fn=cmd_records)
+    s = sub.add_parser("redist", help=tr('Galaxy-Redistributables und die Einrichtung im Prefix anzeigen')); s.add_argument("game", nargs="?", help=tr('Spiel: Status der Einrichtung in seinem Prefix')); s.add_argument("--download", action="store_true", help=tr('gemeinsamen Ordner jetzt laden bzw. aktualisieren')); s.add_argument("--again", action="store_true", help=tr('Einrichtung des Spiels beim nächsten Start wiederholen')); s.add_argument("--json", action="store_true"); s.set_defaults(fn=cmd_redist)
     return p
 
 
