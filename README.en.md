@@ -42,7 +42,7 @@ The layout follows GOG Galaxy 2.0:
   installed"), tooltip with the title, progress bar on the cover while downloading.
 * **Game page**: hero artwork with the transparent game logo, below it the purple **PLAY**/**INSTALL**
   button, the "⋯" menu (verify, folder, prefix, Winetricks, log, View in store, hide, uninstall), the stats
-  PLAYTIME · LAST PLAYED · ACHIEVEMENTS · COMPATIBILITY, then "About the game" (genres, description,
+  PLAYTIME · LAST PLAYED · ACHIEVEMENTS · COMPATIBILITY · CLOUD SAVES, then "About the game" (genres, description,
   DLCs), achievements as an icon row and "Game details". In addition – like Steam – a **Compatibility**
   block with Proton selection, launch options, the game's GOverlay profile, "Open GOverlay" and a command
   preview; the gear opens the full properties.
@@ -74,13 +74,14 @@ The layout follows GOG Galaxy 2.0:
 | Playtime | Measured locally, optionally sent to GOG (appears in the GOG profile like with Galaxy). |
 | Achievements | Per game via the gameplay API (game-specific token from the build manifest, like Galaxy). |
 | Galaxy services (comet) | Games with the GOG Galaxy SDK unlock achievements and use stats and leaderboards in game: like Heroic, galaxy-linux sets up the placeholder service `GalaxyCommunication.exe` in the prefix (`sc create`, Galaxy client registry entry) and starts **comet** (a re-implementation of the Galaxy communication service on `127.0.0.1:9977`) before the game, stopping it afterwards. Tokens are never put on the command line but briefly into a private file (0600). If a comet is already running (e.g. Heroic's), it is shared. comet is searched for (own path → PATH → Heroic package → own download), otherwise downloaded once from the official release on first use (SHA-256 verified). Switches: Settings → Game features, per game Properties → Game features; status, download/update and own path under Settings → Compatibility → Galaxy services. Log: `…/logs/comet.log` (masked). |
+| Cloud saves | Like Galaxy via `cloudstorage.gog.com`: before every launch newer saves are downloaded from the cloud into the prefix, after the game exits your own saves are uploaded. The save locations come from GOG's game configuration (`<?DOCUMENTS?>`, `<?APPLICATION_DATA_ROAMING?>` … → `drive_c/users/steamuser/…` in the prefix). On a conflict the client asks like Galaxy (GOG Galaxy Cloud / This computer / Ignore); above 200 MB Galaxy's quota notice appears. Before cloud files replace local ones a backup `~/.local/share/galaxy-linux/cloudsave-backups/<id>/<time>.tar.gz` is made (the last five are kept). Globally under Settings → Game features, per game under Properties → Game features (also "Upload now", "Download now", backups and save locations); the state is shown as a stat on the game page. GOG Windows games only (Linux versions have no cloud saves at GOG). |
 | Settings | **General**: interface language, games and prefix folders, additional install locations, excluded game folders, preferred game language, parallel download connections, folder watching, automatic prefixes, shortcut defaults, update check at start, send playtime to GOG, show hidden games, store credentials in the system keyring. **Libraries**: create, edit and delete custom libraries. **Compatibility**: default compatibility tool, prefer umu-launcher, Wayland driver as default, redistributables, DPI for new prefixes (0 = from the desktop scaling), global launch options, overview of detected tools (umu, GOverlay, MangoHud, vkBasalt, GameMode, Gamescope). |
 | Language | Interface in **German** and **English**, follows the system language; can be changed in the settings (see [Language](#language)). |
 | Log | Detailed log for troubleshooting, credentials and tokens masked (see [Logging](#logging)). |
 | CLI | Everything also from the terminal/scripts: `galaxy-linux install|launch|config|tools|…`. URI scheme `galaxy-linux://launch/<id>`. |
 
-**Not implemented yet** (Galaxy features that would be projects of their own): friends/chat, cloud
-saves, integration of other stores (Steam/Epic plugins), the in-game Galaxy overlay, a client auto-updater.
+**Not implemented yet** (Galaxy features that would be projects of their own): friends/chat,
+integration of other stores (Steam/Epic plugins), the in-game Galaxy overlay, a client auto-updater.
 
 ---
 
@@ -222,6 +223,8 @@ galaxy-linux config env <game> DXVK_ASYNC=1
 galaxy-linux launch <game> --dry-run     # only show the command
 galaxy-linux launch <game> -- -windowed  # launch, arguments for the game
 galaxy-linux prefix winetricks <game> vcrun2019
+galaxy-linux cloud <game> [--status]      # sync cloud saves (both directions) or show their state
+galaxy-linux cloud <game> --upload|--download [--force]    # one direction only; --force: one side replaces the other
 galaxy-linux uninstall <game> [--prefix]
 ```
 

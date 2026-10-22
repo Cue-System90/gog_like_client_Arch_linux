@@ -269,7 +269,7 @@ msgstr "Waiting…"
 msgid "Wayland-Treiber: on, off oder leer (globale Vorgabe)"
 msgstr "Wayland driver: on, off or empty (global default)"
 
-#: galaxy_linux/backend.py
+#: galaxy_linux/backend.py galaxy_linux/ui/ext_cloudsaves.py
 msgid "keine"
 msgstr "none"
 
@@ -446,6 +446,10 @@ msgid "Build"
 msgstr "Build"
 
 #: galaxy_linux/cli.py
+msgid "Cloud-Speicherstände abgleichen (ohne Schalter: beide Richtungen, Konflikte mit Rückfrage)"
+msgstr "sync cloud saves (without a switch: both directions, asks on conflicts)"
+
+#: galaxy_linux/cli.py
 msgid "DPI für neue Prefixe (0 = globale Vorgabe)"
 msgstr "DPI for new prefixes (0 = global default)"
 
@@ -481,7 +485,7 @@ msgstr "A scan is already running."
 msgid "Externes Spiel"
 msgstr "External game"
 
-#: galaxy_linux/cli.py galaxy_linux/launch/galaxy_services.py
+#: galaxy_linux/cli.py galaxy_linux/content/cloudsaves.py galaxy_linux/launch/galaxy_services.py
 msgid "Fehler: {0}"
 msgstr "Error: {0}"
 
@@ -638,6 +642,10 @@ msgid "Protokoll geleert."
 msgstr "Log cleared."
 
 #: galaxy_linux/cli.py
+msgid "Speicherorte, Zustand und Sicherungen anzeigen"
+msgstr "show save locations, state and backups"
+
+#: galaxy_linux/cli.py
 msgid "Spiel aus der Bibliothek entfernen"
 msgstr "remove game from the library"
 
@@ -645,7 +653,7 @@ msgstr "remove game from the library"
 msgid "Spiel aus einem beliebigen Ordner hinzufügen (GOG oder extern)"
 msgstr "add a game from any folder (GOG or external)"
 
-#: galaxy_linux/cli.py galaxy_linux/content/installer.py galaxy_linux/launch/launcher.py
+#: galaxy_linux/cli.py galaxy_linux/content/cloudsaves.py galaxy_linux/content/installer.py
 msgid "Spiel ist nicht installiert."
 msgstr "Game is not installed."
 
@@ -753,7 +761,7 @@ msgstr "sign out"
 msgid "aktualisieren"
 msgstr "update a game"
 
-#: galaxy_linux/cli.py galaxy_linux/ui/dialogs.py
+#: galaxy_linux/cli.py galaxy_linux/content/cloudsaves.py galaxy_linux/ui/dialogs.py
 msgid "an"
 msgstr "on"
 
@@ -761,7 +769,7 @@ msgstr "on"
 msgid "angemeldeten Nutzer zeigen"
 msgstr "show the signed-in user"
 
-#: galaxy_linux/cli.py galaxy_linux/ui/dialogs.py
+#: galaxy_linux/cli.py galaxy_linux/content/cloudsaves.py galaxy_linux/ui/dialogs.py
 msgid "aus"
 msgstr "off"
 
@@ -874,6 +882,10 @@ msgid "keine Prefixe anlegen"
 msgstr "don't create prefixes"
 
 #: galaxy_linux/cli.py
+msgid "mit --upload/--download: eine Seite ersetzt die andere"
+msgstr "with --upload/--download: one side replaces the other"
+
+#: galaxy_linux/cli.py
 msgid "nach Spiel-Updates suchen"
 msgstr "check for game updates"
 
@@ -900,6 +912,14 @@ msgstr "only games in this library (name or ID)"
 #: galaxy_linux/cli.py
 msgid "nur diese Bibliothek"
 msgstr "only this library"
+
+#: galaxy_linux/cli.py
+msgid "nur herunterladen (neuere lokale Stände bleiben unberührt)"
+msgstr "download only (newer local saves are left alone)"
+
+#: galaxy_linux/cli.py
+msgid "nur hochladen (neuere Cloud-Stände bleiben unberührt)"
+msgstr "upload only (newer cloud saves are left alone)"
 
 #: galaxy_linux/cli.py
 msgid "ohne GOG-Spieldaten: {0}"
@@ -1016,6 +1036,310 @@ msgstr "GitHub answered with HTTP {0}"
 #: galaxy_linux/clientinfo.py
 msgid "GitHub nicht erreichbar: {0}"
 msgstr "GitHub not reachable: {0}"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "(nicht auflösbar)"
+msgstr "(cannot be resolved)"
+
+#: galaxy_linux/content/cloudsaves.py galaxy_linux/ui/dialogs.py galaxy_linux/ui/window.py
+msgid "Abbrechen"
+msgstr "Cancel"
+
+#: galaxy_linux/content/cloudsaves.py galaxy_linux/ui/dialogs.py galaxy_linux/ui/ext_goverlay.py
+msgid "Aus"
+msgstr "Off"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Automatischer Abgleich: {0}"
+msgstr "Automatic sync: {0}"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Beim Synchronisieren deiner Cloud-Speicherstände ist ein Problem aufgetreten."
+msgstr "There was a problem while syncing your cloud saves."
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Benutzerdaten auf diesem Computer: {0}"
+msgstr "User data files on this computer: {0}"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Benutzerdaten können für dieses Spiel nicht synchronisiert werden"
+msgstr "User data files cannot be synced for this game"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Cloud-Dateiliste nicht abrufbar (HTTP {0})"
+msgstr "Cloud file list unavailable (HTTP {0})"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Cloud-Speicherstände gibt es nur für GOG-Spiele."
+msgstr "Cloud saves are only available for GOG games."
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Cloud-Speicherstände nicht synchronisiert"
+msgstr "Cloud saves not synced"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Cloud-Speicherstände synchronisiert"
+msgstr "Cloud saves synced"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Cloud: {0} Dateien, {1} · nächster Schritt: {2}"
+msgstr "Cloud: {0} files, {1} · next step: {2}"
+
+#: galaxy_linux/content/cloudsaves.py galaxy_linux/ui/ext_cloudsaves.py
+msgid "Das Spiel läuft – die Spielstände werden nach dem Beenden synchronisiert."
+msgstr "The game is running - saves will be synced after it exits."
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Das Spiel unterstützt keine Cloud-Speicherstände."
+msgstr "This game does not support cloud saves."
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Die Benutzerdaten auf diesem Computer übersteigen deinen GOG Galaxy Cloud-Speicherplatz. Starte bitte das Spiel und entferne ältere Speicherstände."
+msgstr "User data files on this computer exceed GOG Galaxy Cloud storage quota for this game. Launch the game and remove some older saves data."
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Dieser Computer"
+msgstr "This computer"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Dieser Computer – Zuletzt geändert: {0}"
+msgstr "This computer - Last modified: {0}"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Einige Dateien aus der GOG Galaxy-Cloud stehen im Konflikt mit den Dateien auf diesem Computer. An welchem Ort befinden sich die zu verwendenden Dateien?"
+msgstr "Some user files previously uploaded to GOG Galaxy Cloud conflict with files on this computer. Which location has the most correct data?"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Fehler"
+msgstr "Error"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Für dieses Spiel sind keine Cloud-Speicherstände verfügbar."
+msgstr "No cloud saves are available for this game."
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "GOG Galaxy Cloud-Speicherplatz: {0}"
+msgstr "GOG Galaxy Cloud storage quota: {0}"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "GOG Galaxy-Cloud"
+msgstr "GOG Galaxy Cloud"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "GOG Galaxy-Cloud – Zuletzt geändert: {0}"
+msgstr "GOG Galaxy Cloud - Last modified: {0}"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "GOG-Benutzerkennung unbekannt – bitte neu anmelden."
+msgstr "GOG user ID unknown - please sign in again."
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Herunterladen von {0} fehlgeschlagen (HTTP {1})"
+msgstr "Downloading {0} failed (HTTP {1})"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Hochladen"
+msgstr "Upload"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Hochladen abgebrochen."
+msgstr "Upload cancelled."
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Hochladen von {0} fehlgeschlagen (HTTP {1})"
+msgstr "Uploading {0} failed (HTTP {1})"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Ignorieren"
+msgstr "Ignore"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "In der Cloud liegen neuere Spielstände – sie werden vor dem nächsten Start heruntergeladen."
+msgstr "The cloud has newer saves - they will be downloaded before the next launch."
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "In der GOG Galaxy-Cloud liegen Spielstände, die seit dem letzten Abgleich geändert wurden. Beim Hochladen werden sie durch die Dateien auf diesem Computer ersetzt; Cloud-Dateien, die es hier nicht gibt, werden gelöscht."
+msgstr "GOG Galaxy Cloud has saves that changed since the last sync. Uploading replaces them with the files on this computer; cloud files that do not exist here are deleted."
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Kein Galaxy-Zugang für dieses Spiel (Installations-Datensatz ohne Client-ID)."
+msgstr "No Galaxy access for this game (install record without client ID)."
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Kein Speicherort des Spiels ließ sich im Prefix auflösen."
+msgstr "None of the game's save locations could be resolved in the prefix."
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Kein Zugang zu den Cloud-Speicherständen: {0}"
+msgstr "No access to cloud saves: {0}"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Konflikt"
+msgstr "Conflict"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Konflikt zwischen Cloud und diesem Computer – nicht synchronisiert."
+msgstr "Conflict between the cloud and this computer - not synced."
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Kontingent überschritten"
+msgstr "Quota exceeded"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Letzte erfolgreiche Synchronisierung: {0}"
+msgstr "Last successful sync date: {0}"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Linux-Versionen von GOG-Spielen haben keine Cloud-Speicherstände."
+msgstr "Linux versions of GOG games have no cloud saves."
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Lokale Speicherstände werden nicht mit der GOG Galaxy-Cloud synchronisiert."
+msgstr "Local saves are not synced with GOG Galaxy Cloud."
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Lokale Spielstände sind neuer – sie werden nach dem Spielen hochgeladen."
+msgstr "Local saves are newer - they will be uploaded after playing."
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Löschen von {0} in der Cloud fehlgeschlagen (HTTP {1})"
+msgstr "Deleting {0} in the cloud failed (HTTP {1})"
+
+#: galaxy_linux/content/cloudsaves.py galaxy_linux/ui/ext_cloudsaves.py
+msgid "Nicht angemeldet – Cloud-Speicherstände brauchen eine GOG-Anmeldung."
+msgstr "Not signed in - cloud saves need a GOG sign-in."
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Nicht synchronisiert"
+msgstr "Not synced"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Nicht verfügbar"
+msgstr "Not available"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Noch nicht synchronisiert"
+msgstr "Not synced yet"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Sicherung der lokalen Spielstände fehlgeschlagen: {0}"
+msgstr "Backing up local saves failed: {0}"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Sicherung: {0}"
+msgstr "Backup: {0}"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Sicherungen: {0} ({1})"
+msgstr "Backups: {0} ({1})"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Speicherorte nicht abrufbar (HTTP {0})"
+msgstr "Save locations unavailable (HTTP {0})"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Speicherorte nicht abrufbar: {0}"
+msgstr "Save locations unavailable: {0}"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Spielstände in der Cloud ersetzen?"
+msgstr "Replace saves in the cloud?"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Synchronisation abbrechen"
+msgstr "Cancel sync"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Synchronisation läuft bereits."
+msgstr "A sync is already running."
+
+#: galaxy_linux/content/cloudsaves.py galaxy_linux/ui/ext_cloudsaves.py
+msgid "Synchronisiere Cloud-Spielstände …"
+msgstr "Syncing Cloud Saves …"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Synchronisiere …"
+msgstr "Syncing …"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Synchronisiert"
+msgstr "Synced"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Synchronisiert in GOG Galaxy-Cloud ({0} hochgeladen, {1} heruntergeladen)"
+msgstr "Synced with GOG Galaxy Cloud ({0} uploaded, {1} downloaded)"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Synchronisiert · {0}"
+msgstr "Synced · {0}"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Ungültige Antwort von cloudstorage.gog.com"
+msgstr "Invalid response from cloudstorage.gog.com"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Verbindung zu cloudstorage.gog.com fehlgeschlagen: {0}"
+msgstr "Connection to cloudstorage.gog.com failed: {0}"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "Zustand: {0}"
+msgstr "State: {0}"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "abgebrochen"
+msgstr "cancelled"
+
+#: galaxy_linux/content/cloudsaves.py galaxy_linux/ui/util.py
+msgid "gerade eben"
+msgstr "just now"
+
+#: galaxy_linux/content/cloudsaves.py galaxy_linux/ui/util.py
+msgid "gestern"
+msgstr "yesterday"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "herunterladen"
+msgstr "download"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "hochladen"
+msgstr "upload"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "lokal: {0} Dateien, {1} · zuletzt synchronisiert: {2}"
+msgstr "local: {0} files, {1} · last synced: {2}"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "nicht auflösbar"
+msgstr "cannot be resolved"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "nichts zu tun"
+msgstr "nothing to do"
+
+#: galaxy_linux/content/cloudsaves.py galaxy_linux/ui/util.py
+msgid "vor {0} Min."
+msgstr "{0} min ago"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "vor {0} Std."
+msgstr "{0} h ago"
+
+#: galaxy_linux/content/cloudsaves.py galaxy_linux/ui/util.py
+msgid "vor {0} Tagen"
+msgstr "{0} days ago"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "{0} (Client-ID {1}) · Kontingent {2}"
+msgstr "{0} (client ID {1}) · quota {2}"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "{0} · hochgeladen {1}, heruntergeladen {2}, gelöscht lokal {3}, in der Cloud {4}"
+msgstr "{0} · uploaded {1}, downloaded {2}, deleted locally {3}, in the cloud {4}"
+
+#: galaxy_linux/content/cloudsaves.py
+msgid "übersprungen"
+msgstr "skipped"
 
 #: galaxy_linux/content/downloader.py
 msgid "Chunk {0}… konnte nicht geladen werden: {1}"
@@ -1381,6 +1705,22 @@ msgstr "no profile – the games folder is not registered in GOverlay"
 msgid "kein Profil – in GOverlay das Spiel anklicken"
 msgstr "no profile – click the game in GOverlay"
 
+#: galaxy_linux/launch/hook_cloudsaves.py galaxy_linux/ui/ext_cloudsaves.py
+msgid "Cloud-Speicherstände"
+msgstr "Cloud saves"
+
+#: galaxy_linux/launch/hook_cloudsaves.py
+msgid "Cloud-Synchronisation fehlgeschlagen"
+msgstr "Failed to sync with GOG Galaxy Cloud"
+
+#: galaxy_linux/launch/hook_cloudsaves.py galaxy_linux/ui/ext_cloudsaves.py
+msgid "Cloud-Synchronisierung fehlgeschlagen: {0}"
+msgstr "Cloud Sync failed: {0}"
+
+#: galaxy_linux/launch/hook_cloudsaves.py
+msgid "Synchronisiert in GOG Galaxy-Cloud"
+msgstr "Synced with GOG Galaxy Cloud"
+
 #: galaxy_linux/launch/hook_galaxy_services.py
 msgid "Galaxy-Dienste (comet)"
 msgstr "Galaxy services (comet)"
@@ -1557,10 +1897,6 @@ msgstr "0 = global default ({0})"
 msgid "1. „GOG-Login im Browser öffnen“ und bei GOG anmelden (auch mit Zwei-Faktor-Code).\n2. Nach dem Login landet der Browser auf einer leeren Seite von embed.gog.com – das ist richtig so.\n3. Die komplette Adresse dieser Seite aus der Adressleiste kopieren und hier einfügen. Der Login startet automatisch, sobald ein Code erkannt wird."
 msgstr "1. Click “Open GOG login in browser” and sign in to GOG (two-factor codes work too).\n2. After signing in, the browser lands on a blank page on embed.gog.com – that’s expected.\n3. Copy the full address of that page from the address bar and paste it here. Sign-in starts automatically as soon as a code is detected."
 
-#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/window.py
-msgid "Abbrechen"
-msgstr "Cancel"
-
 #: galaxy_linux/ui/dialogs.py
 msgid "Abweichend von „Einstellungen → Spielfunktionen“ nur für dieses Spiel."
 msgstr "Overrides \"Settings → Game features\" for this game only."
@@ -1600,10 +1936,6 @@ msgstr "Type"
 #: galaxy_linux/ui/dialogs.py
 msgid "Auf dem Schreibtisch"
 msgstr "On the desktop"
-
-#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/ext_goverlay.py
-msgid "Aus"
-msgstr "Off"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Aus (XWayland)"
@@ -2437,7 +2769,7 @@ msgstr "Will be installed to"
 msgid "Zugangsdaten im System-Schlüsselbund speichern"
 msgstr "Store credentials in the system keyring"
 
-#: galaxy_linux/ui/dialogs.py
+#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/ext_cloudsaves.py
 msgid "Zustand"
 msgstr "Status"
 
@@ -2612,6 +2944,58 @@ msgstr "Remove “{0}” from the library?"
 #: galaxy_linux/ui/dialogs.py
 msgid "„{0}“ gelöscht – {1} Spiel(e) ausgetragen, Dateien bleiben"
 msgstr "“{0}” deleted – {1} game(s) removed from the library, files kept"
+
+#: galaxy_linux/ui/ext_cloudsaves.py
+msgid "Cloud-Speicherstände sind in den Einstellungen (Spielfunktionen) deaktiviert."
+msgstr "Cloud saves are disabled in the settings (Game features)."
+
+#: galaxy_linux/ui/ext_cloudsaves.py
+msgid "Dateien: {0} · {1}"
+msgstr "Files: {0} · {1}"
+
+#: galaxy_linux/ui/ext_cloudsaves.py
+msgid "Jetzt herunterladen"
+msgstr "Download now"
+
+#: galaxy_linux/ui/ext_cloudsaves.py
+msgid "Jetzt hochladen"
+msgstr "Upload now"
+
+#: galaxy_linux/ui/ext_cloudsaves.py
+msgid "Lokale Sicherungen öffnen"
+msgstr "Open local backups"
+
+#: galaxy_linux/ui/ext_cloudsaves.py
+msgid "Noch keine Sicherungen"
+msgstr "No backups yet"
+
+#: galaxy_linux/ui/ext_cloudsaves.py
+msgid "Noch keine Sicherungen – sie entstehen, bevor Spielstände aus der Cloud lokale Dateien ersetzen."
+msgstr "No backups yet - they are made before saves from the cloud replace local files."
+
+#: galaxy_linux/ui/ext_cloudsaves.py galaxy_linux/ui/store.py
+msgid "Ordner öffnen"
+msgstr "Open folder"
+
+#: galaxy_linux/ui/ext_cloudsaves.py
+msgid "Sicherung angelegt"
+msgstr "backup made"
+
+#: galaxy_linux/ui/ext_cloudsaves.py
+msgid "Sicherungen: {0} · {1}"
+msgstr "Backups: {0} · {1}"
+
+#: galaxy_linux/ui/ext_cloudsaves.py
+msgid "Speicherorte"
+msgstr "Save locations"
+
+#: galaxy_linux/ui/ext_cloudsaves.py
+msgid "nicht auflösbar: {0}"
+msgstr "cannot be resolved: {0}"
+
+#: galaxy_linux/ui/ext_cloudsaves.py
+msgid "werden ermittelt …"
+msgstr "being determined …"
 
 #: galaxy_linux/ui/ext_goverlay.py
 msgid "Automatisch (Ordner „{0}“)"
@@ -3278,10 +3662,6 @@ msgid "Neu laden"
 msgstr "Reload"
 
 #: galaxy_linux/ui/store.py
-msgid "Ordner öffnen"
-msgstr "Open folder"
-
-#: galaxy_linux/ui/store.py
 msgid "Prüfe die Internetverbindung und versuche es erneut."
 msgstr "Check your internet connection and try again."
 
@@ -3350,28 +3730,12 @@ msgid "Türkçe"
 msgstr "Türkçe"
 
 #: galaxy_linux/ui/util.py
-msgid "gerade eben"
-msgstr "just now"
-
-#: galaxy_linux/ui/util.py
-msgid "gestern"
-msgstr "yesterday"
-
-#: galaxy_linux/ui/util.py
 msgid "heute"
 msgstr "today"
 
 #: galaxy_linux/ui/util.py
 msgid "nie"
 msgstr "never"
-
-#: galaxy_linux/ui/util.py
-msgid "vor {0} Min."
-msgstr "{0} min ago"
-
-#: galaxy_linux/ui/util.py
-msgid "vor {0} Tagen"
-msgstr "{0} days ago"
 
 #: galaxy_linux/ui/util.py
 msgid "{0} h {1:02d} min"

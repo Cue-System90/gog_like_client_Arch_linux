@@ -514,6 +514,12 @@ def cmd_comet(b: Backend, a) -> int:
     return galaxy_services.cli_command(b, a)
 
 
+def cmd_cloud(b: Backend, a) -> int:
+    """Cloud-Speicherstände eines Spiels abgleichen (wie Galaxy vor/nach dem Spielen) oder den Zustand zeigen."""
+    from .content import cloudsaves
+    return cloudsaves.run_cli(b, _resolve(b, a.game), a)
+
+
 def cmd_add(b: Backend, a) -> int:
     if a.library:
         b.find_library(a.library)            # Tippfehler vor dem Durchsuchen melden
@@ -720,6 +726,7 @@ def build_parser() -> argparse.ArgumentParser:
     c = ls.add_parser("remove", help=tr('Bibliothek löschen (Spielordner und Prefixe bleiben)')); c.add_argument("library"); c.add_argument("-y", "--yes", action="store_true")
     s.set_defaults(fn=cmd_library)
     s = sub.add_parser("prefix", help=tr('Prefix-Werkzeuge (setup = Einrichtung wie vor dem ersten Start erneut ausführen)')); s.add_argument("action", choices=["create", "delete", "reset", "winetricks", "run", "path", "setup"]); s.add_argument("game"); s.add_argument("verbs", nargs="*"); s.set_defaults(fn=cmd_prefix)
+    s = sub.add_parser("cloud", help=tr('Cloud-Speicherstände abgleichen (ohne Schalter: beide Richtungen, Konflikte mit Rückfrage)')); s.add_argument("game"); g = s.add_mutually_exclusive_group(); g.add_argument("--upload", action="store_true", help=tr('nur hochladen (neuere Cloud-Stände bleiben unberührt)')); g.add_argument("--download", action="store_true", help=tr('nur herunterladen (neuere lokale Stände bleiben unberührt)')); g.add_argument("--status", action="store_true", help=tr('Speicherorte, Zustand und Sicherungen anzeigen')); s.add_argument("--force", action="store_true", help=tr('mit --upload/--download: eine Seite ersetzt die andere')); s.add_argument("--json", action="store_true"); s.set_defaults(fn=cmd_cloud)
     s = sub.add_parser("records", help=tr('Installations-Datensätze (Build, Abhängigkeiten) anzeigen oder anlegen')); s.add_argument("game", nargs="?"); s.add_argument("--create", action="store_true", help=tr('fehlende Datensätze über das GOG-Content-System anlegen')); s.add_argument("--force", action="store_true", help=tr('vorhandene Datensätze neu anlegen')); s.add_argument("--json", action="store_true"); s.set_defaults(fn=cmd_records)
     s = sub.add_parser("comet", help=tr('Galaxy-Dienste (comet): Status anzeigen oder herunterladen')); s.add_argument("--download", action="store_true", help=tr('comet und den GalaxyCommunication-Dienst herunterladen bzw. aktualisieren')); s.add_argument("--json", action="store_true"); s.set_defaults(fn=cmd_comet)
     return p

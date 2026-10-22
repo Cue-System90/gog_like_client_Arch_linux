@@ -222,7 +222,7 @@ class GamePage(Gtk.Box):
 
         # Abschnitte der Erweiterungen (ui_registry.register_game_section)
         self._ext_sections: list[Gtk.Widget] = []
-        for col, box in (("left", left), ("right", right)):
+        for col, box in (("left", left), ("right", right), ("stats", stats)):
             for w in ui_registry.build_sections(col, self):
                 box.append(w)
                 self._ext_sections.append(w)
