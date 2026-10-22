@@ -66,6 +66,10 @@ class FileJob:
     file: DepotFile
     endpoint: str          # Basis-URL des CDN; Chunk = {endpoint}/{md5[:2]}/{md5[2:4]}/{md5}
     sfc_key: str = ""      # Schlüssel des SmallFilesContainers (Depot-Manifest-ID), falls sfc_ref
+    root: Path | None = None   # eigener Zielordner statt dest_root (Support-Dateien → gog-support/<id>)
+
+    def dest(self, dest_root: Path) -> Path:
+        return (self.root or dest_root) / self.file.path
 
 
 @dataclass
@@ -239,7 +243,7 @@ class ChunkDownloader:
         for n, job in enumerate(jobs):
             self._check_cancel()
             f = job.file
-            dest = dest_root / f.path
+            dest = job.dest(dest_root)
             if f.sfc_ref:
                 if dest.exists() and verify and not verify_existing_chunks(dest, f.chunks):
                     verified_bytes += f.size
@@ -293,7 +297,7 @@ class ChunkDownloader:
             self._check_cancel()
             chunk = job.file.chunks[idx]
             data = self.fetch_chunk(job.endpoint, chunk)
-            dest = dest_root / job.file.path
+            dest = job.dest(dest_root)
             fd = os.open(dest, os.O_WRONLY)
             try:
                 view = memoryview(data)
@@ -319,7 +323,7 @@ class ChunkDownloader:
         # 4) Rechte & Links
         for job in jobs:
             if job.file.executable:
-                p = dest_root / job.file.path
+                p = job.dest(dest_root)
                 try:
                     p.chmod(p.stat().st_mode | 0o111)
                 except OSError:
@@ -404,7 +408,7 @@ class ChunkDownloader:
                 if want and hashlib.md5(data).hexdigest() != want:
                     self.errors.append(tr('Prüfsumme falsch für {0}').format(j.file.path))
                     continue
-                dest = dest_root / j.file.path
+                dest = j.dest(dest_root)
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 dest.write_bytes(data)
                 with self._lock:

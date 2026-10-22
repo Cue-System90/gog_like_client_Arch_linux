@@ -25,6 +25,7 @@ from .. import paths
 from ..api.client import ApiError, GogApi
 from ..jsonstore import read_json, write_json
 from ..settings import GlobalSettings, InstalledGame, InstalledRegistry
+from . import redist as deps
 from .downloader import ChunkDownloader, DownloadCancelled, DownloadError, FileJob, Progress, SfcSource
 from .manifest import (Build, BuildManifest, DepotFile, DepotLink, DependencyDepot, ManifestError,
                        DepotManifest, parse_dependency_repository)
@@ -40,7 +41,6 @@ LANG_NAMES = {
     "cs": ("český", "czech"), "hu": ("magyar", "hungarian"), "ko": ("한국어", "korean"), "tr": ("türkçe", "turkish"),
     "nl": ("nederlands", "dutch"), "sv": ("svenska", "swedish"), "uk": ("українська", "ukrainian"),
 }
-INTERNAL_DEPENDENCIES = {"ISI", "language_setup", "SuspendLauncher", "DOSBOXConfigurator"}
 
 
 class InstallError(Exception):
@@ -70,8 +70,13 @@ class InstallPlan:
     directories: list[str] = field(default_factory=list)
     links: list[DepotLink] = field(default_factory=list)
     dlc_ids: list[str] = field(default_factory=list)
-    redist: list[dict] = field(default_factory=list)
+    redist: list[dict] = field(default_factory=list)            # globale Redistributables → Prefix (content/redist.py)
     dependency_names: list[str] = field(default_factory=list)
+    game_dependencies: list[str] = field(default_factory=list)  # Spielordner-Pakete (DOSBox, ScummVM …)
+
+    @property
+    def support_count(self) -> int:
+        return sum(1 for j in self.jobs if j.root is not None)
 
     @property
     def total_size(self) -> int:
@@ -171,6 +176,7 @@ class InstallManager:
                            install_dir=Path(install_dir), build=build, manifest=manifest)
         endpoints: dict[str, str] = {}
         files_by_path: dict[str, FileJob] = {}
+        support = deps.support_dir(product_id)
         for i, dep in enumerate(depots):
             if status:
                 status(tr('Depot {0}/{1} laden …').format(i + 1, len(depots)))
@@ -181,7 +187,11 @@ class InstallManager:
             if dm.small_files_container:
                 plan.sfc_sources[dep.manifest] = SfcSource(endpoints[pid], dm.small_files_container)
             for f in dm.files:
-                files_by_path[f.path] = FileJob(f, endpoints[pid], dep.manifest if f.sfc_ref else "")
+                if f.is_support:     # wie gogdl: gog-support/<id>/<productId>/…, nicht in den Spielordner
+                    files_by_path[f"\0support/{pid}/{f.path}"] = deps.support_file_job(f, pid, endpoints[pid], dep.manifest,
+                                                                                       root=support)
+                else:
+                    files_by_path[f.path] = FileJob(f, endpoints[pid], dep.manifest if f.sfc_ref else "")
             plan.directories.extend(dm.directories)
             plan.links.extend(dm.links)
             if pid != manifest.base_product_id and pid not in plan.dlc_ids:
@@ -192,27 +202,40 @@ class InstallManager:
                  ",".join(manifest.available_languages) or "-", len(depots), len(plan.jobs), plan.total_size,
                  plan.download_size, plan.dlc_ids or "-", manifest.dependencies or "-", plan.install_dir)
 
-        want_deps = self.settings.install_redist if with_dependencies is None else with_dependencies
-        if want_deps and manifest.dependencies and platform == "windows":
+        # Abhängigkeiten (Windows): Spielordner-Pakete gehören zum Spiel und werden immer mitgeladen; globale
+        # Redistributables kommen in den gemeinsamen Ordner (Auftrag „Galaxy-Redistributables“) und werden nur
+        # vermerkt. with_dependencies=False lässt beides weg.
+        if with_dependencies is not False and manifest.dependencies and platform == "windows":
             self._plan_dependencies(plan, status)
         return plan
 
     def _plan_dependencies(self, plan: InstallPlan, status: Callable[[str], None] | None) -> None:
+        """Wie gogdl (``DependenciesManager``): globale Pakete (``__redist/…``) nur vermerken, Spielordner-Pakete
+        (DOSBox, ScummVM, nGlide, language_setup … – auch ``internal``) in den Spielordner laden."""
         try:
             repo = self.dependency_repo()
-            endpoint = self.api.dependency_link()
-        except (ApiError, KeyError) as exc:
+        except (ApiError, KeyError, ManifestError) as exc:
             log.warning("Abhängigkeiten nicht verfügbar: %s", exc)
             return
-        for dep_id in plan.manifest.dependencies:
-            dep = repo.get(dep_id)
-            if dep is None or dep.internal or dep_id in INTERNAL_DEPENDENCIES:
-                continue
+        glob, game, unknown = deps.split_dependencies(plan.manifest.dependencies, repo)
+        for dep_id in unknown:
+            log.warning("Abhängigkeit %s steht nicht im GOG-Repository", dep_id)
+        plan.redist = deps.installer_entries(glob, repo)
+        plan.dependency_names = [repo[i].readable_name for i in [*glob, *game] if i != deps.ISI_ID]
+        if not game:
+            return
+        try:
+            endpoint = self.api.dependency_link()
+        except (ApiError, KeyError) as exc:
+            log.warning("Spielordner-Abhängigkeiten nicht verfügbar: %s", exc)
+            return
+        for dep_id in game:
+            dep = repo[dep_id]
             if status:
                 status(tr('Abhängigkeit {0} …').format(dep.readable_name))
             try:
                 dm = DepotManifest.parse(self.api.dependency_depot_manifest(dep.manifest), "", dep.manifest)
-            except ApiError as exc:
+            except (ApiError, ManifestError) as exc:
                 log.warning("Abhängigkeit %s übersprungen: %s", dep_id, exc)
                 continue
             if dm.small_files_container:
@@ -220,10 +243,10 @@ class InstallManager:
             for f in dm.files:
                 plan.jobs.append(FileJob(f, endpoint, dep.manifest if f.sfc_ref else ""))
             plan.directories.extend(dm.directories)
-            plan.dependency_names.append(dep.readable_name)
-            if dep.executable_path:
-                plan.redist.append({"id": dep_id, "name": dep.readable_name, "path": dep.executable_path,
-                                    "arguments": dep.executable_args})
+            plan.links.extend(dm.links)
+            plan.game_dependencies.append(dep_id)
+        log.info("Abhängigkeiten %s: Spielordner %s · global %s", plan.product_id, ",".join(plan.game_dependencies) or "-",
+                 ",".join(glob) or "-")
 
     # ------------------------------------------------------------------ Ausführung
     def install(self, plan: InstallPlan, progress_cb: ProgressCb | None = None,
@@ -240,8 +263,8 @@ class InstallManager:
         except DownloadError as exc:
             raise InstallError(str(exc)) from exc
 
-        # veraltete Dateien aus früherer Version entfernen
-        new_paths = {j.file.path for j in plan.jobs}
+        # veraltete Dateien aus früherer Version entfernen (auch Support-Dateien und __redist-Kopien bis 0.1.6)
+        new_paths = {j.file.path for j in plan.jobs if j.root is None}
         for p in old.get("files", []):
             if p not in new_paths:
                 try:
@@ -267,8 +290,13 @@ class InstallManager:
             # ab 0.2.0 (gleiches Format wie content/build_records.py)
             "dependency_ids": list(plan.manifest.dependencies), "script_interpreter": plan.manifest.script_interpreter,
             "products": [plan.product_id, *plan.dlc_ids], "support": list(plan.manifest.support),
+            "product_names": deps.manifest_product_names(plan.manifest),
             "version_name": plan.build.version_name, "manifest_link": plan.build.link, "origin": "installer",
+            "game_dependencies": list(plan.game_dependencies),
         })
+        if plan.platform == "windows":
+            deps.write_support_marker(plan.product_id, plan.build.build_id, [plan.product_id, *plan.dlc_ids],
+                                      plan.support_count)
         self.registry.set(game)
         log.info("Installiert: %s → %s (%s, Build %s, %s)", game.title, game.install_path, game.platform, game.build_id, total)
         return game
@@ -306,6 +334,7 @@ class InstallManager:
             self.record_path(product_id).unlink()
         except OSError:
             pass
+        deps.remove_support(product_id)
         if remove_prefix and remove_prefix.is_dir() and remove_prefix != Path.home():
             shutil.rmtree(remove_prefix, ignore_errors=True)
 

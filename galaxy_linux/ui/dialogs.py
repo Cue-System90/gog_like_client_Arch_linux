@@ -692,16 +692,7 @@ class GameSettingsDialog(Adw.PreferencesDialog):
         grp.add(post)
         page.add(grp)
 
-        rg = Adw.PreferencesGroup(title=tr('Redistributables (DirectX, Visual C++, .NET …)'))
-        rec = read_json(paths.MANIFEST_DIR / f"{self.pid}.json", {})
-        deps = ", ".join(rec.get("dependencies") or []) or tr('keine laut Manifest')
-        sw = Adw.SwitchRow(title=tr('Beim ersten Start im Prefix installieren'), subtitle=deps, active=self.gs.install_redist)
-        sw.connect("notify::active", lambda r, _: self._save(install_redist=r.get_active()))
-        rg.add(sw)
-        again = Adw.ButtonRow(title=tr('Beim nächsten Start erneut installieren'))
-        again.connect("activated", lambda *_: (self._save(redist_done=[]), self._toast(tr("Redistributables werden beim nächsten Start neu installiert"))))
-        rg.add(again)
-        page.add(rg)
+        # Redistributables/Einrichtung im Prefix: ui/ext_redist.py (Seite „Kompatibilität“)
 
         sg = Adw.PreferencesGroup(title=tr('Verknüpfungen'), description=tr('Starten das Spiel über den Client (Spielzeit, Proton-Einstellungen).'))
         has_menu, has_desktop = self.backend.shortcut_state(self.pid)
