@@ -89,7 +89,7 @@ msgstr " (ambiguous)"
 msgid "Abgebrochen"
 msgstr "Canceled"
 
-#: galaxy_linux/backend.py
+#: galaxy_linux/backend.py galaxy_linux/launch/galaxy_services.py
 msgid "Aktualisieren"
 msgstr "Update"
 
@@ -477,13 +477,17 @@ msgstr "A scan is already running."
 msgid "Externes Spiel"
 msgstr "External game"
 
-#: galaxy_linux/cli.py
+#: galaxy_linux/cli.py galaxy_linux/launch/galaxy_services.py
 msgid "Fehler: {0}"
 msgstr "Error: {0}"
 
 #: galaxy_linux/cli.py
 msgid "GOG-Spiel"
 msgstr "GOG game"
+
+#: galaxy_linux/cli.py
+msgid "Galaxy-Dienste (comet): Status anzeigen oder herunterladen"
+msgstr "Galaxy services (comet): show status or download"
 
 #: galaxy_linux/cli.py
 msgid "Gestartet (PID {0}, {1}); Protokoll: {2}"
@@ -764,6 +768,10 @@ msgstr "already installed elsewhere: {0}"
 #: galaxy_linux/cli.py
 msgid "bestimmte Build-ID"
 msgstr "specific build ID"
+
+#: galaxy_linux/cli.py
+msgid "comet und den GalaxyCommunication-Dienst herunterladen bzw. aktualisieren"
+msgstr "download or update comet and the GalaxyCommunication service"
 
 #: galaxy_linux/cli.py
 msgid "deinstallieren"
@@ -1153,6 +1161,134 @@ msgstr "System Wine ({0})"
 msgid "UMU-Proton (neueste Version, Download über umu)"
 msgstr "UMU-Proton (latest version, downloaded via umu)"
 
+#: galaxy_linux/launch/galaxy_services.py
+msgid " · Port {0} belegt (z. B. comet von Heroic) – dieser Dienst wird mitbenutzt"
+msgstr " · port {0} in use (e.g. comet from Heroic) – that service will be shared"
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid " · Version {0} verfügbar"
+msgstr " · version {0} available"
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid " · läuft gerade"
+msgstr " · running now"
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "Anmeldung bei GOG konnte nicht erneuert werden: {0}"
+msgstr "Could not renew the GOG sign-in: {0}"
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "Download abgebrochen."
+msgstr "Download cancelled."
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "Download von {0} fehlgeschlagen: HTTP {1}"
+msgstr "Download of {0} failed: HTTP {1}"
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "Download von {0} fehlgeschlagen: {1}"
+msgstr "Download of {0} failed: {1}"
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "GalaxyCommunication-Dienst: {0}"
+msgstr "GalaxyCommunication service: {0}"
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "Gefunden: {0} · Version {1} · {2}"
+msgstr "Found: {0} · version {1} · {2}"
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "Lade Galaxy-Dienste herunter …"
+msgstr "Downloading Galaxy services …"
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "Lade comet herunter …"
+msgstr "Downloading comet …"
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "Lade comet herunter … {0} %"
+msgstr "Downloading comet … {0} %"
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "Neuer Pfad eingetragen: {0}"
+msgstr "New path set: {0}"
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "Neuere Version {0} verfügbar: galaxy-linux comet --download"
+msgstr "Newer version {0} available: galaxy-linux comet --download"
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "Nicht gefunden"
+msgstr "Not found"
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "Nicht gefunden – wird beim ersten Start eines Spiels mit Galaxy-Diensten heruntergeladen."
+msgstr "Not found – will be downloaded when a game with Galaxy services is first launched."
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "Port {0} ist belegt – ein anderer Galaxy-Dienst (z. B. von Heroic) läuft."
+msgstr "Port {0} is in use – another Galaxy service (e.g. from Heroic) is running."
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "Prüfsumme von {0} stimmt nicht – Datei verworfen."
+msgstr "Checksum of {0} does not match – file discarded."
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "Richte Galaxy-Dienste im Prefix ein …"
+msgstr "Setting up Galaxy services in the prefix …"
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "Starte Galaxy-Dienste (comet) …"
+msgstr "Starting Galaxy services (comet) …"
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "Systempfad"
+msgstr "system path"
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "Unerwartete Dateigröße bei {0}."
+msgstr "Unexpected file size for {0}."
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "aus Heroic"
+msgstr "from Heroic"
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "comet gibt es hier nur für x86_64 – bitte comet selbst installieren und den Pfad eintragen."
+msgstr "comet is only available for x86_64 here – please install comet yourself and enter its path."
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "comet hat sich sofort beendet (Exit-Code {0}) – Details im comet-Protokoll."
+msgstr "comet exited immediately (exit code {0}) – see the comet log for details."
+
+#: galaxy_linux/launch/galaxy_services.py galaxy_linux/ui/prefs_galaxy_services.py
+msgid "comet herunterladen"
+msgstr "Download comet"
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "comet konnte nicht gestartet werden: {0}"
+msgstr "comet could not be started: {0}"
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "comet: nicht gefunden – galaxy-linux comet --download"
+msgstr "comet: not found – galaxy-linux comet --download"
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "comet: {0} (Version {1}, Quelle {2})"
+msgstr "comet: {0} (version {1}, source {2})"
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "eigener Pfad"
+msgstr "own path"
+
+#: galaxy_linux/launch/galaxy_services.py galaxy_linux/ui/dialogs.py
+msgid "nicht gefunden"
+msgstr "not found"
+
+#: galaxy_linux/launch/galaxy_services.py
+msgid "von galaxy-linux geladen"
+msgstr "downloaded by galaxy-linux"
+
 #: galaxy_linux/launch/goverlay.py
 msgid "DXVK-HUD (FPS)"
 msgstr "DXVK HUD (FPS)"
@@ -1192,6 +1328,14 @@ msgstr "Native Wayland (Proton 9+)"
 #: galaxy_linux/launch/goverlay.py
 msgid "gamescope {0} --"
 msgstr "gamescope {0} --"
+
+#: galaxy_linux/launch/hook_galaxy_services.py
+msgid "Galaxy-Dienste (comet)"
+msgstr "Galaxy services (comet)"
+
+#: galaxy_linux/launch/hook_galaxy_services.py galaxy_linux/ui/prefs_galaxy_services.py
+msgid "GalaxyCommunication-Dienst"
+msgstr "GalaxyCommunication service"
 
 #: galaxy_linux/launch/hook_redist.py
 msgid "Installiere {0} …"
@@ -2326,10 +2470,6 @@ msgid "nicht ermittelbar: {0}"
 msgstr "could not be determined: {0}"
 
 #: galaxy_linux/ui/dialogs.py
-msgid "nicht gefunden"
-msgstr "not found"
-
-#: galaxy_linux/ui/dialogs.py
 msgid "nichts gefunden"
 msgstr "nothing found"
 
@@ -2817,7 +2957,7 @@ msgstr "New update {0} available"
 msgid "Noch keine Veröffentlichung"
 msgstr "No release published yet"
 
-#: galaxy_linux/ui/menus.py
+#: galaxy_linux/ui/menus.py galaxy_linux/ui/prefs_galaxy_services.py
 msgid "Projektseite öffnen"
 msgstr "Open project page"
 
@@ -2848,6 +2988,58 @@ msgstr "Update check failed: {0}"
 #: galaxy_linux/ui/menus.py
 msgid "galaxy-linux {0} – inoffizieller, nativer Client für GOG.com."
 msgstr "galaxy-linux {0} – unofficial native client for GOG.com."
+
+#: galaxy_linux/ui/prefs_galaxy_services.py
+msgid "Datei wählen"
+msgstr "Choose file"
+
+#: galaxy_linux/ui/prefs_galaxy_services.py
+msgid "Eigener Pfad zu comet (leer = automatisch suchen)"
+msgstr "Own path to comet (empty = search automatically)"
+
+#: galaxy_linux/ui/prefs_galaxy_services.py
+msgid "Galaxy-Dienste"
+msgstr "Galaxy services"
+
+#: galaxy_linux/ui/prefs_galaxy_services.py
+msgid "Lizenz"
+msgstr "License"
+
+#: galaxy_linux/ui/prefs_galaxy_services.py
+msgid "Nicht gefunden oder nicht ausführbar: {0}"
+msgstr "Not found or not executable: {0}"
+
+#: galaxy_linux/ui/prefs_galaxy_services.py
+msgid "Nicht gefunden – wird zusammen mit comet heruntergeladen."
+msgstr "Not found – will be downloaded together with comet."
+
+#: galaxy_linux/ui/prefs_galaxy_services.py
+msgid "Wird gesucht …"
+msgstr "Searching …"
+
+#: galaxy_linux/ui/prefs_galaxy_services.py
+msgid "Wird heruntergeladen …"
+msgstr "Downloading …"
+
+#: galaxy_linux/ui/prefs_galaxy_services.py
+msgid "Wird heruntergeladen … {0} %"
+msgstr "Downloading … {0} %"
+
+#: galaxy_linux/ui/prefs_galaxy_services.py
+msgid "comet auswählen"
+msgstr "Choose comet"
+
+#: galaxy_linux/ui/prefs_galaxy_services.py
+msgid "comet ersetzt den Kommunikationsdienst von GOG Galaxy: Spiele mit Galaxy-SDK schalten Erfolge frei und nutzen Statistiken und Bestenlisten. Ein- und ausschalten unter „Spielfunktionen“."
+msgstr "comet replaces the GOG Galaxy communication service: games with the Galaxy SDK unlock achievements and use stats and leaderboards. Turn it on or off under \"Game features\"."
+
+#: galaxy_linux/ui/prefs_galaxy_services.py
+msgid "comet von imLinguin, {0} – wird unverändert aus dem offiziellen Release geladen und per SHA-256 geprüft."
+msgstr "comet by imLinguin, {0} – downloaded unmodified from the official release and verified via SHA-256."
+
+#: galaxy_linux/ui/prefs_galaxy_services.py
+msgid "comet {0} heruntergeladen"
+msgstr "comet {0} downloaded"
 
 #: galaxy_linux/ui/util.py
 msgid "Deutsch"

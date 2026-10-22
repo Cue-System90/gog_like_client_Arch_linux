@@ -471,6 +471,12 @@ def cmd_records(b: Backend, a) -> int:
     return 0
 
 
+def cmd_comet(b: Backend, a) -> int:
+    """Galaxy-Dienste (comet): Status anzeigen, herunterladen bzw. aktualisieren."""
+    from .launch import galaxy_services
+    return galaxy_services.cli_command(b, a)
+
+
 def cmd_add(b: Backend, a) -> int:
     if a.library:
         b.find_library(a.library)            # Tippfehler vor dem Durchsuchen melden
@@ -677,6 +683,7 @@ def build_parser() -> argparse.ArgumentParser:
     s.set_defaults(fn=cmd_library)
     s = sub.add_parser("prefix", help=tr('Prefix-Werkzeuge (setup = Einrichtung wie vor dem ersten Start erneut ausführen)')); s.add_argument("action", choices=["create", "delete", "reset", "winetricks", "run", "path", "setup"]); s.add_argument("game"); s.add_argument("verbs", nargs="*"); s.set_defaults(fn=cmd_prefix)
     s = sub.add_parser("records", help=tr('Installations-Datensätze (Build, Abhängigkeiten) anzeigen oder anlegen')); s.add_argument("game", nargs="?"); s.add_argument("--create", action="store_true", help=tr('fehlende Datensätze über das GOG-Content-System anlegen')); s.add_argument("--force", action="store_true", help=tr('vorhandene Datensätze neu anlegen')); s.add_argument("--json", action="store_true"); s.set_defaults(fn=cmd_records)
+    s = sub.add_parser("comet", help=tr('Galaxy-Dienste (comet): Status anzeigen oder herunterladen')); s.add_argument("--download", action="store_true", help=tr('comet und den GalaxyCommunication-Dienst herunterladen bzw. aktualisieren')); s.add_argument("--json", action="store_true"); s.set_defaults(fn=cmd_comet)
     return p
 
 

@@ -17,6 +17,10 @@ Fundament; weitere Bausteine folgen.
 - Neue Einstellungsseite **Spielfunktionen**: Spiele automatisch aktualisieren, Cloud-Spielstände, Erfolge,
   Galaxy-Dienste im Spiel (comet), Erfassung der Spielzeit, GOverlay-Profile pro Spiel; pro Spiel abweichend unter
   Eigenschaften → Spielfunktionen. (Die Schalter wirken, sobald die zugehörigen Bausteine fertig sind.)
+- **Galaxy-Dienste im Spiel**: Spiele mit GOG Galaxy-SDK schalten Erfolge frei und nutzen Statistiken und
+  Bestenlisten – über **comet** (Apache-2.0) und den GalaxyCommunication-Dienst im Prefix, wie bei Heroic. comet wird
+  gesucht (eigener Pfad, PATH, Heroic) oder einmalig aus dem offiziellen Release geladen (SHA-256-geprüft); Status,
+  Herunterladen und eigener Pfad unter Einstellungen → Kompatibilität → Galaxy-Dienste, im Terminal `galaxy-linux comet`.
 - Unter der Haube: Erweiterungspunkte für den Spielstart (Launch-Hooks), für Einstellungsdialoge, Spielansicht und
   Auftragsarten; die Redistributables beim ersten Start laufen jetzt als Hook.
 - Installations-Datensätze (Build, Abhängigkeiten, Client-ID) lassen sich für übernommene Spiele nachträglich
