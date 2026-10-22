@@ -23,6 +23,7 @@ from . import menus, prefs_registry, ui_registry
 from .bridge import GtkBridge
 from .dialogs import LoginDialog, PreferencesDialog
 from .game_page import GamePage
+from .library_sync import LibrarySyncController
 from .util import (Adw, Gdk, Gio, GLib, Gtk, ImageLoader, Pango, choose_folder, clamped_picture, fmt_eta, fmt_speed, icon_button, idle, label,
                    open_uri, pick_icon, relative_time, run_async)
 
@@ -95,6 +96,13 @@ class CoverCard(Gtk.FlowBoxChild):
         self.badge.set_margin_bottom(6)
         self.badge.set_visible(False)
         self.overlay.add_overlay(self.badge)
+        self.new_badge = label(tr('NEU'), css=["new-badge"])     # neu in der Bibliothek (Bibliotheks-Abgleich)
+        self.new_badge.set_halign(Gtk.Align.END)
+        self.new_badge.set_valign(Gtk.Align.START)
+        self.new_badge.set_margin_end(6)
+        self.new_badge.set_margin_top(6)
+        self.new_badge.set_visible(False)
+        self.overlay.add_overlay(self.new_badge)
         self.progress = Gtk.ProgressBar(valign=Gtk.Align.END)
         self.progress.add_css_class("cover-progress")
         self.progress.set_visible(False)
@@ -107,6 +115,9 @@ class CoverCard(Gtk.FlowBoxChild):
         box.append(self.title)
         self.set_child(box)
         self.set_tooltip_text(entry.title)
+
+    def set_new(self, new: bool) -> None:
+        self.new_badge.set_visible(new)
 
     def set_state(self, state: str, fraction: float | None = None, busy_text: str = tr('LÄDT')) -> None:
         self.state = state
@@ -144,7 +155,13 @@ class GameListRow(Gtk.ListBoxRow):
         lib = b.library_of(entry.id) if g and g.method == "external" else None
         src = (lib.name if lib else tr('Extern')) if g and g.method == "external" else \
             tr('GOG') + (tr(' · Linux') if "linux" in entry.platforms and "windows" not in entry.platforms else "")
-        tb.append(self.title)
+        tt = Gtk.Box(spacing=8)
+        tt.append(self.title)
+        self.new_badge = label(tr('NEU'), css=["new-badge"])
+        self.new_badge.set_valign(Gtk.Align.CENTER)
+        self.new_badge.set_visible(False)
+        tt.append(self.new_badge)
+        tb.append(tt)
         tb.append(label(src, css=["dim", "caption"]))
         box.append(tb)
         minutes, last = b.playtime.get(entry.id)
@@ -159,6 +176,9 @@ class GameListRow(Gtk.ListBoxRow):
             box.append(lbl)
         self.set_child(box)
         self.set_tooltip_text(entry.title)
+
+    def set_new(self, new: bool) -> None:
+        self.new_badge.set_visible(new)
 
     def set_state(self, state: str, fraction: float | None = None, busy_text: str = tr('LÄDT')) -> None:
         self.state = state
@@ -238,6 +258,7 @@ class LibrarySection(Gtk.Box):
             self.flow.append(card)
             self.win.load_cover(e, card.pic)
             self.win.apply_card_state(card)
+            card.set_new(self.win.library_sync.is_new(e.id))
         self.count_lbl.set_text(str(len(entries)))
         self.set_visible(bool(entries))
 
@@ -259,6 +280,7 @@ class MainWindow(Adw.ApplicationWindow):
                         "windows": False, "linux": False}
         self._search = ""
         self.sections: list[LibrarySection] = []
+        self.library_sync = LibrarySyncController(self)   # Abgleich mit GOG: Start, Intervall, Fokus, Login, Kauf, F5
 
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         root.append(self._build_header())
@@ -310,10 +332,8 @@ class MainWindow(Adw.ApplicationWindow):
         self.navigate("all")
         self.setup_folder_watch()
         GLib.timeout_add_seconds(2, lambda: (self.scan_folders_async(quiet=True), False)[1])
-        if self.backend.api.logged_in and not self.backend.library:
-            self.request_library_refresh("startup")
-        elif self.backend.api.logged_in and self.backend.settings.auto_check_updates and self.backend.registry.all():
-            self.check_updates_async(quiet=True)
+        # Bibliothek aus dem Cache steht schon – Abgleich kurz danach (leerer Cache: sofort), danach Update-Suche
+        self.library_sync.start()
         ui_registry.run_window_hooks(self)      # Erweiterungen (ui/ext_*.py): Timer, Fokus, eigene Seiten …
 
     # ------------------------------------------------------------------ Kopfzeile
@@ -587,6 +607,7 @@ class MainWindow(Adw.ApplicationWindow):
         for k, it in self.nav.items():
             it.set_selected(k == view)
         if view == "game" and pid:
+            self.library_sync.seen(pid)          # NEU entfällt, sobald die Spielansicht offen war
             self.page.set_game(pid)
             self.stack.set_visible_child_name("game")
         elif view == "downloads":
@@ -720,6 +741,7 @@ class MainWindow(Adw.ApplicationWindow):
                 self.lib_box.append(label(tr('Noch nichts gespielt – installiere ein Spiel aus „Alle Spiele“.'), css=["dim"]))
         else:
             if v["sections"]:
+                add(tr('Neu in der Bibliothek'), self.library_sync.new_entries(ents))
                 next_to_play = [e for e in ents if reg.is_installed(e.id) and pt.get(e.id)[0] == 0]
                 add(tr('Als Nächstes spielen'), next_to_play[:12])
             add(tr('Alle Spiele'), ents)
@@ -920,10 +942,11 @@ class MainWindow(Adw.ApplicationWindow):
 
     # ------------------------------------------------------------------ Erweiterungspunkte Bibliotheks-Abgleich / Store
     def request_library_refresh(self, reason: str, force: bool = False) -> None:
-        """Bibliothek mit GOG abgleichen. ``reason``: "startup", "login", "manual", "timer", "focus", "store" …;
-        ``force`` = sofort, ohne Sperre/Prüfsummen-Abkürzung. Wird vom Bibliotheks-Abgleich ersetzt."""
+        """Bibliothek mit GOG abgleichen. ``reason``: "startup", "login", "manual", "timer", "focus", "store",
+        "purchase" (sofort, danach nach 5/15/60 s erneut, bis neue Spiele da sind) …; ``force`` = Vollabruf ohne
+        Prüfsummen-Abkürzung. Läuft schon ein Abgleich, wird ein erzwungener Wunsch einmal nachgeholt."""
         log.info("Bibliotheksabgleich angefordert (%s%s)", reason, ", erzwungen" if force else "")
-        self.refresh_library_async(check_updates=True if reason == "manual" else None)
+        self.library_sync.request(reason, force)
 
     def open_store(self, path: str) -> None:
         """Store-Seite öffnen (Pfad wie "/games", "/redeem" oder volle gog.com-Adresse) – vorerst im Browser,
@@ -931,35 +954,8 @@ class MainWindow(Adw.ApplicationWindow):
         open_uri(store_url(path, store_lang(i18n.current())))
 
     def refresh_library_async(self, check_updates: bool | None = None) -> None:
-        """Bibliothek von GOG laden; danach nach Spiel-Updates suchen (Vorgabe: Einstellung „Beim Start …“)."""
-        if not self.backend.api.logged_in:
-            self.do_login()
-            return
-        self.spinner.start()
-
-        def progress(p: int, t: int) -> None:
-            idle(self.status_lbl.set_text, tr('Bibliothek wird geladen … {0}/{1}').format(p, t))
-
-        def done(entries) -> None:
-            self.spinner.stop()
-            self.status_lbl.set_text("")
-            self._update_avatar()
-            if is_lib_view(self.view) or self.stack.get_visible_child_name() == "welcome":
-                self.navigate(self.view if is_lib_view(self.view) else "all", push=False)
-            self.update_nav_badges()
-            self.toast(tr('{0} Spiele geladen').format(len(entries)))
-            if self.backend.settings.auto_check_updates if check_updates is None else check_updates:
-                self.check_updates_async(quiet=True)
-
-        def fail(exc: Exception) -> None:
-            self.spinner.stop()
-            self.status_lbl.set_text("")
-            if isinstance(exc, NotLoggedIn):
-                self.toast(tr('Sitzung abgelaufen – bitte neu anmelden.'))
-                self.do_login()
-            else:
-                self.toast(tr('Bibliothek konnte nicht geladen werden: {0}').format(exc))
-        run_async(lambda: self.backend.refresh_library(progress), done, fail)
+        """Ältere Aufrufe: Bibliothek vollständig neu laden (wie Zahnrad → „Bibliothek aktualisieren“)."""
+        self.request_library_refresh("manual", force=True)
 
     def check_updates_async(self, quiet: bool = False) -> None:
         def done(found: dict) -> None:

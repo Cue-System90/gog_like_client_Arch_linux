@@ -309,13 +309,16 @@ class Backend:
 
     # ------------------------------------------------------------------ Bibliothek
     def refresh_library(self, progress: Callable[[int, int], None] | None = None) -> list[LibraryEntry]:
-        if not self.api.logged_in:
-            raise NotLoggedIn()
-        if not self.api.user:
-            self.api.user_data()
-        self.library = self.api.library(progress)
-        log.info("Bibliothek geladen: %d Einträge", len(self.library))
+        """Bibliothek vollständig neu von GOG laden (erzwungener Abgleich)."""
+        self.sync_library("manual", force=True, progress=progress)
         return self.library
+
+    def sync_library(self, reason: str = "manual", force: bool = False,
+                     progress: Callable[[int, int], None] | None = None):
+        """Bibliothek mit GOG abgleichen: userData.json, Prüfsummen-Vorfilter, versteckte Spiele, neue IDs (NEU)
+        – siehe api/library_sync.py. Liefert ein ``SyncResult``; wirft NotLoggedIn/ApiError."""
+        from .api import library_sync
+        return library_sync.sync(self, reason, force, progress)
 
     def entry(self, product_id: str) -> LibraryEntry | None:
         pid = str(product_id)

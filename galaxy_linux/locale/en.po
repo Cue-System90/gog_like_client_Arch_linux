@@ -413,6 +413,10 @@ msgstr "show library"
 msgid "Bibliothek durchsuchen"
 msgstr "search library"
 
+#: galaxy_linux/cli.py galaxy_linux/ui/library_sync.py
+msgid "Bibliothek ist aktuell"
+msgstr "Library is up to date"
+
 #: galaxy_linux/cli.py
 msgid "Bibliothek löschen (Spielordner und Prefixe bleiben)"
 msgstr "delete library (game folders and prefixes are kept)"
@@ -540,6 +544,10 @@ msgstr "compatibility tool default (ID or partial name)"
 #: galaxy_linux/cli.py
 msgid "Login-Seite im Browser öffnen und bei GOG anmelden. Danach zeigt der Browser eine leere Seite"
 msgstr "Open the login page in your browser and sign in to GOG. The browser will then show a blank page"
+
+#: galaxy_linux/cli.py galaxy_linux/ui/window.py
+msgid "NEU"
+msgstr "NEW"
 
 #: galaxy_linux/cli.py
 msgid "Name der Startdatei (playTask)"
@@ -948,6 +956,10 @@ msgstr "Creating {0} missing prefixes."
 #: galaxy_linux/cli.py
 msgid "{0} gelöscht."
 msgstr "{0} deleted."
+
+#: galaxy_linux/cli.py galaxy_linux/ui/library_sync.py
+msgid "{0} neue(s) Spiel(e): {1}"
+msgstr "{0} new game(s): {1}"
 
 #: galaxy_linux/cli.py
 msgid "{0} verwaiste Prefixe löschen? [j/N] "
@@ -2725,6 +2737,34 @@ msgstr "“{0}” removed"
 msgid "▶   SPIELEN"
 msgstr "▶   PLAY"
 
+#: galaxy_linux/ui/library_sync.py
+msgid "Bibliothek konnte nicht geladen werden: {0}"
+msgstr "Could not load library: {0}"
+
+#: galaxy_linux/ui/library_sync.py
+msgid "Bibliothek wird abgeglichen …"
+msgstr "Syncing library…"
+
+#: galaxy_linux/ui/library_sync.py
+msgid "Bibliothek wird geladen … {0}/{1}"
+msgstr "Loading library… {0}/{1}"
+
+#: galaxy_linux/ui/library_sync.py galaxy_linux/ui/window.py
+msgid "Neu in der Bibliothek"
+msgstr "New in library"
+
+#: galaxy_linux/ui/library_sync.py
+msgid "Sitzung abgelaufen – bitte neu anmelden."
+msgstr "Session expired – please sign in again."
+
+#: galaxy_linux/ui/library_sync.py
+msgid "{0} Spiele geladen"
+msgstr "{0} games loaded"
+
+#: galaxy_linux/ui/library_sync.py
+msgid "„{0}“ wurde deiner Bibliothek hinzugefügt"
+msgstr "“{0}” was added to your library"
+
 #: galaxy_linux/ui/menus.py
 msgid "Anzeigen"
 msgstr "Show"
@@ -2848,6 +2888,34 @@ msgstr "Update check failed: {0}"
 #: galaxy_linux/ui/menus.py
 msgid "galaxy-linux {0} – inoffizieller, nativer Client für GOG.com."
 msgstr "galaxy-linux {0} – unofficial native client for GOG.com."
+
+#: galaxy_linux/ui/prefs_library_sync.py
+msgid "Abgleich mit GOG"
+msgstr "Sync with GOG"
+
+#: galaxy_linux/ui/prefs_library_sync.py
+msgid "Abstand in Minuten"
+msgstr "Interval in minutes"
+
+#: galaxy_linux/ui/prefs_library_sync.py
+msgid "Beim Wechsel ins Fenster abgleichen"
+msgstr "Sync when switching to the window"
+
+#: galaxy_linux/ui/prefs_library_sync.py
+msgid "Bibliothek automatisch abgleichen"
+msgstr "Sync library automatically"
+
+#: galaxy_linux/ui/prefs_library_sync.py
+msgid "Die ganze Bibliothek wird nur geladen, wenn GOG eine Änderung meldet."
+msgstr "The whole library is only loaded when GOG reports a change."
+
+#: galaxy_linux/ui/prefs_library_sync.py
+msgid "Neue Käufe erscheinen ohne Neustart in der Bibliothek. Von Hand: Zahnrad → „Bibliothek aktualisieren“ (F5)."
+msgstr "New purchases show up in the library without a restart. Manually: gear → “Refresh library” (F5)."
+
+#: galaxy_linux/ui/prefs_library_sync.py
+msgid "höchstens alle 5 Minuten"
+msgstr "at most every 5 minutes"
 
 #: galaxy_linux/ui/util.py
 msgid "Deutsch"
@@ -2988,14 +3056,6 @@ msgstr "LIBRARIES"
 #: galaxy_linux/ui/window.py
 msgid "Bibliothek bearbeiten …"
 msgstr "Edit library…"
-
-#: galaxy_linux/ui/window.py
-msgid "Bibliothek konnte nicht geladen werden: {0}"
-msgstr "Could not load library: {0}"
-
-#: galaxy_linux/ui/window.py
-msgid "Bibliothek wird geladen … {0}/{1}"
-msgstr "Loading library… {0}/{1}"
 
 #: galaxy_linux/ui/window.py
 msgid "Bibliothek „{0}“ angelegt – Ordner wird durchsucht …"
@@ -3222,10 +3282,6 @@ msgid "Sehr klein"
 msgstr "Extra small"
 
 #: galaxy_linux/ui/window.py
-msgid "Sitzung abgelaufen – bitte neu anmelden."
-msgstr "Session expired – please sign in again."
-
-#: galaxy_linux/ui/window.py
 msgid "Spiel hinzufügen …"
 msgstr "Add game…"
 
@@ -3368,10 +3424,6 @@ msgstr "{0} prefixes created"
 #: galaxy_linux/ui/window.py
 msgid "{0} Spiel(e) ausgetragen, Ordner fehlt: {1}"
 msgstr "{0} game(s) removed from the library, folder missing: {1}"
-
-#: galaxy_linux/ui/window.py
-msgid "{0} Spiele geladen"
-msgstr "{0} games loaded"
 
 #: galaxy_linux/ui/window.py
 msgid "{0} Update(s) verfügbar"
