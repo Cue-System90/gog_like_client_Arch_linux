@@ -21,7 +21,7 @@ from .. import APP_ID, APP_NAME, __version__, i18n, library_view as lv, paths
 from ..api.client import NotLoggedIn
 from ..presence import Presence
 from ..settings import format_bytes, format_minutes
-from . import menus, prefs_registry, store, ui_registry, util
+from . import footer, menus, prefs_registry, store, ui_registry, util
 from .bridge import GtkBridge
 from .dialogs import LoginDialog, PreferencesDialog
 from .downloads_view import DownloadsView
@@ -661,6 +661,17 @@ class MainWindow(Adw.ApplicationWindow):
         self.status_lbl.set_margin_bottom(4)
         self.status_lbl.set_ellipsize(Pango.EllipsizeMode.END)
         box.append(self.status_lbl)
+        # „N Update(s) verfügbar“: ein Klick öffnet die Downloads bei „Erhältliche Updates“
+        self.updates_lbl = label("", css=["caption"], ellipsize=True)
+        self.updates_btn = Gtk.Button(child=self.updates_lbl, tooltip_text=tr('Erhältliche Updates anzeigen'))
+        self.updates_btn.add_css_class("flat")
+        self.updates_btn.add_css_class("footer-link")
+        self.updates_btn.set_halign(Gtk.Align.START)
+        self.updates_btn.set_margin_start(14)
+        self.updates_btn.set_margin_bottom(2)
+        self.updates_btn.set_visible(False)
+        self.updates_btn.connect("clicked", lambda *_: footer.open_available_updates(self))
+        box.append(self.updates_btn)
         # Version und Rechner wie im Alltagstool – man sieht sofort, welche Fassung wo läuft
         ver = label(tr('galaxy-linux v{0} · {1}').format(__version__, socket.gethostname()), css=["dim", "caption"])
         ver.set_margin_start(22)
@@ -1180,8 +1191,9 @@ class MainWindow(Adw.ApplicationWindow):
                 it.set_badge(str(len(self._custom_entries(lib.id, include_hidden=False))))
         active = len(self.backend.jobs.active())
         self.nav["downloads"].set_badge(str(active) if active else "", accent=bool(active))
-        upd = len(self.backend.updates)
-        self.status_lbl.set_text(tr('{0} Update(s) verfügbar').format(upd) if upd else "")
+        text = footer.updates_text(len(self.backend.updates))
+        self.updates_lbl.set_text(text)
+        self.updates_btn.set_visible(bool(text))
 
     def _on_search(self, entry: Gtk.SearchEntry) -> None:
         if getattr(self, "_search_guard", False):

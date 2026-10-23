@@ -119,3 +119,7 @@ window.galaxy { background-color: #1b1b20; color: #d9d9de; }
 
 /* 0.3.1: Bearbeiten … (Vorschau des Covers) */
 .edit-cover { border-radius: 4px; background-color: #26262c; }
+/* Fußzeile der Seitenleiste – „N Update(s) verfügbar“ als Verweis (ein Klick → Downloads) */
+.footer-link { padding: 1px 8px; min-height: 0; border-radius: 4px; color: #d9a8f0; }
+.footer-link:hover { color: #ffffff; background-color: rgba(255,255,255,0.05); }
+.footer-link:hover label { text-decoration-line: underline; }

@@ -60,6 +60,8 @@ class DownloadsView(Gtk.ScrolledWindow):
         self.win = win
         self.backend = win.backend
         self.rows: dict[str, dict] = {}
+        self.updates_hdr: Gtk.Widget | None = None
+        self.first_update_btn: Gtk.Widget | None = None
         self._structure: tuple = ()
         self._speed_job = ""
         self._speeds: list[float] = []
@@ -141,6 +143,8 @@ class DownloadsView(Gtk.ScrolledWindow):
             self.sections.remove(child)
             child = nxt
         self.rows.clear()
+        self.updates_hdr = None
+        self.first_update_btn = None
         jobs = self.backend.jobs
         queue = jobs.queue()
         finished = [j for j in jobs.jobs if not j.active]
@@ -153,16 +157,16 @@ class DownloadsView(Gtk.ScrolledWindow):
             st.set_icon_name(pick_icon("folder-download-symbolic", "go-down-symbolic"))
             self.sections.append(st)
         self._section(tr('Warteschlange'), queue, self._job_row)
-        self._section(tr('Erhältliche Updates'), updates, self._update_row)
+        self.updates_hdr = self._section(tr('Erhältliche Updates'), updates, self._update_row)
         self._section(tr('Abgeschlossen'), done[:30], self._job_row)
         self._section(tr('Fehlgeschlagen'), failed[:30], self._job_row)
         for j in queue:
             self.update_job(j)
         self._update_controls()
 
-    def _section(self, title: str, items: list, make) -> None:
+    def _section(self, title: str, items: list, make) -> Gtk.Widget | None:
         if not items:
-            return
+            return None
         hdr = label(f"{title.upper()}  {len(items)}", css=["sec-hdr"])
         hdr.set_margin_top(12)
         self.sections.append(hdr)
@@ -171,6 +175,28 @@ class DownloadsView(Gtk.ScrolledWindow):
         for it in items:
             lst.append(make(it))
         self.sections.append(lst)
+        return hdr
+
+    def reveal_updates(self) -> None:
+        """Zu „Erhältliche Updates“ rollen und den ersten Update-Knopf fokussieren (Fußzeile der Seitenleiste)."""
+        GLib.timeout_add(120, self._do_reveal)
+
+    def _do_reveal(self) -> bool:
+        hdr = getattr(self, "updates_hdr", None)
+        if hdr is None or hdr.get_parent() is None:
+            return False
+        try:
+            from gi.repository import Graphene
+            ok, pt = hdr.compute_point(self.get_child(), Graphene.Point().init(0, 0))
+            y = pt.y if ok else None
+        except Exception:  # pragma: no cover – ältere GTK-Fassungen
+            res = hdr.translate_coordinates(self.get_child(), 0, 0)
+            y = res[1] if res and res[0] is not False else None
+        if y is not None:
+            self.get_vadjustment().set_value(max(0.0, y - 12))
+        if self.first_update_btn is not None:
+            self.first_update_btn.grab_focus()
+        return False
 
     def _cover(self, pid: str) -> Gtk.Widget:
         frame, pic = clamped_picture(40, 56, ["cover"])
@@ -250,6 +276,8 @@ class DownloadsView(Gtk.ScrolledWindow):
         box.append(mid)
         up = Gtk.Button(label=tr('Update'), valign=Gtk.Align.CENTER)
         up.add_css_class("btn-secondary")
+        if self.first_update_btn is None:
+            self.first_update_btn = up
         up.connect("clicked", lambda *_: (self.backend.update(pid), self.refresh()))
         box.append(up)
         row.set_child(box)
