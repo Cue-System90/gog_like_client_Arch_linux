@@ -1,9 +1,9 @@
 # galaxy-linux
 
 An unofficial, native **GOG.com client for CachyOS / Arch Linux**, modelled on GOG Galaxy 2.x – a GTK4/libadwaita
-app plus a command line tool. It rebuilds the client natively and talks to the GOG services the way Galaxy does
-(login, library, content system v2, GamesDB, gameplay API, cloud storage), and adds what Linux needs: Proton/Wine
-per game, prefixes and GOverlay.
+app plus a command line tool: **buy games in the built-in GOG store**, install, play and sync them. It rebuilds the
+client natively and talks to the GOG services the way Galaxy does (login, store, library, content system v2,
+GamesDB, gameplay API, cloud storage), and adds what Linux needs: Proton/Wine per game, prefixes and GOverlay.
 
 ![galaxy-linux library view](docs/screenshot.png)
 
@@ -13,6 +13,10 @@ per game, prefixes and GOverlay.
   names and covers, copies shown once), grid/list views, tags, star ratings, sort/group/filter, sidebar bookmarks,
   right-click menu and *Edit …* for a custom title and cover. New purchases show up on their
   own; ⚙ → *Refresh library* (F5) forces a sync. Power Search with Ctrl+F (library, bookmarks, store).
+- **GOG store with purchases** – the real gog.com store inside the client, signed in with your GOG login: browse,
+  search, wishlist, cart and checkout including payment (payment providers such as PayPal open in their own window),
+  redeem codes, order history. A completed purchase is detected and the new games appear in the library a few
+  seconds later – no restart, no external browser.
 - **Discover, Recent and a notification center** – store shelves (for you, new arrivals, deals, wishlist, DLC, Good Old
   Games) in your currency, a Recent view with playtime stats and *What to play next*, a bell for downloads, updates,
   new games, cloud saves and wishlist discounts.
@@ -28,8 +32,6 @@ per game, prefixes and GOverlay.
   across restarts, disk space check.
 - **Desktop integration** – system tray (StatusNotifierItem), autostart, minimize/close/launch behaviour, online
   status, playtime from all devices; every view fits down to 1280 × 800 (e.g. a 4K TV at 225 % scaling).
-- **Embedded GOG store** – home, catalogue, deals, wishlist, cart and order history inside the client; buying a
-  game refreshes the library.
 - **Installs through GOG's content system** – resumable downloads, updates, verify/repair, DLCs, plus Galaxy's
   redistributables (shared cache, installer scripts, DOSBox/ScummVM).
 - **Proton per game** – umu-launcher, proton-cachyos, GE-Proton or Wine, one prefix per game, Proton's Wayland
