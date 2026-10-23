@@ -1,7 +1,7 @@
 """Menüs wie in GOG Galaxy 2.1: Zahnrad oben links (Hauptmenü) und Avatar-Menü, dazu App-Aktionen und Tastenkürzel.
 
 Zahnrad (Reihenfolge wie im Original): Spiele & Freunde hinzufügen ▸ · Bibliothek aktualisieren | Einstellungen ·
-Hilfe erhalten | Neu bei uns | Nach Updates suchen | Rechtliches und Datenschutz · Beenden.
+Hilfe erhalten · Protokoll (Linux-Ergänzung) | Neu bei uns | Nach Updates suchen | Rechtliches und Datenschutz · Beenden.
 Avatar: Kopf mit Bild und Name | Online · Unsichtbar | Kontoverwaltung · Bisherige Bestellungen · Geldbeutel | Ausloggen
 (abgemeldet nur „Bei GOG anmelden“).
 """
@@ -30,6 +30,7 @@ def install_actions(app) -> None:
         ("scan-folders", lambda: w() and w().scan_folders_async(quiet=False), []),
         ("create-library", lambda: w() and w().create_library(), []),
         ("help", lambda: open_uri(clientinfo.ISSUES_URL), []),
+        ("log", lambda: w() and open_log(w()), []),
         ("whats-new", lambda: w() and show_whats_new(w()), []),
         ("check-client-update", lambda: w() and check_client_update(w()), []),
         ("legal", lambda: w() and show_legal(w()), []),
@@ -79,7 +80,7 @@ def main_menu_model() -> Gio.Menu:
     top.append_submenu(tr('Spiele & Freunde hinzufügen'), add)
     top.append(tr('Bibliothek aktualisieren'), "app.refresh")
     menu.append_section(None, top)
-    for items in (((tr('Einstellungen'), "app.preferences"), (tr('Hilfe erhalten'), "app.help")),
+    for items in (((tr('Einstellungen'), "app.preferences"), (tr('Hilfe erhalten'), "app.help"), (tr('Protokoll'), "app.log")),
                   ((tr('Neu bei uns'), "app.whats-new"),),
                   ((tr('Nach Updates suchen'), "app.check-client-update"),),
                   ((tr('Rechtliches und Datenschutz'), "app.legal"), (tr('Beenden'), "app.quit"))):
@@ -134,6 +135,12 @@ def avatar_popover(win) -> Gtk.PopoverMenu:
 
 
 # --------------------------------------------------------------------------- Aktionen mit Dialog
+def open_log(win) -> None:
+    """„Protokoll“: Protokoll-Fenster (galaxy-linux.log, comet.log, Spielprotokolle)."""
+    from .log_window import open_log_window
+    open_log_window(win)
+
+
 def confirm_logout(win) -> None:
     """Ausloggen mit Rückfrage wie in Galaxy; laufende Downloads werden abgebrochen."""
     from .dialogs import confirm_destructive

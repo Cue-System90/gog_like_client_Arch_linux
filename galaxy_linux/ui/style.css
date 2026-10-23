@@ -123,3 +123,6 @@ window.galaxy { background-color: #1b1b20; color: #d9d9de; }
 .footer-link { padding: 1px 8px; min-height: 0; border-radius: 4px; color: #d9a8f0; }
 .footer-link:hover { color: #ffffff; background-color: rgba(255,255,255,0.05); }
 .footer-link:hover label { text-decoration-line: underline; }
+/* Protokoll-Fenster */
+.log-view { font-size: 9pt; }
+.log-view text { background-color: #141418; color: #d0d0d6; }
