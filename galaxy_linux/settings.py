@@ -137,9 +137,17 @@ class GlobalSettings:
     notify_wishlist: str = "desktop"          # Wunschliste: Rabatte, neu erhältlich
     notify_new_games: str = "desktop"         # Neue Spiele in der Bibliothek
     notify_cloud_saves: str = "desktop"       # Cloud-Spielstände: Konflikte, Kontingent, Fehler
+    notify_friend_invite: str = "desktop"     # Freundschaftsanfrage
+    notify_friend_online: str = "center"      # Freund geht online
+    notify_friend_playing: str = "center"     # Freund startet ein Spiel
     # Aktuelle Übersicht (ab 0.4.0)
     recent_widgets: list[dict] = field(default_factory=list)   # [{"key", "enabled"}] in Anzeigereihenfolge
     recent_next_seen: str = ""        # zuletzt gezeigter Vorschlag „Was als Nächstes spielen“ („Neu“ in der Seitenleiste)
+    # Freunde (ab 0.4.0; Galaxy: Freundesliste „Ansicht“, Oberfläche → showFriendsSidebar)
+    show_friends_sidebar: bool = True # „Zeige eine Seitenleiste für Freunde, die online sind“ (Fenster ab 1501 px)
+    friends_sort: str = "activity"    # activity | name
+    friends_group: str = "none"       # none | game
+    friends_compact: bool = False     # „Kompakte Liste“ statt „Erweiterte Liste“
     # Installieren/aktualisieren
     extras_dir: str = ""              # Ordner für andere Downloads (Offline-Installer, Extras); "" = Downloads/GOG
     pause_downloads_when_playing: bool = True

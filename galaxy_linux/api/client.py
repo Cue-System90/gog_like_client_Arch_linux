@@ -115,6 +115,10 @@ class GogApi:
                 self.store.save(self.creds)
             return self.creds.access_token
 
+    def access_token(self) -> str:
+        """Gültiges Zugriffstoken (bei Bedarf erneuert) – für Web-Ansichten, die es selbst mitschicken (Chat)."""
+        return self._ensure_token()
+
     def _force_refresh(self) -> str:
         with self._lock:
             if not self.creds:

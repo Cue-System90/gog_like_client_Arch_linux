@@ -122,15 +122,16 @@ class RouteTest(unittest.TestCase):
         self.assertEqual(nt.route("none", window_focused=False), (False, False))
 
     def test_register_type(self):
+        # eigener Testtyp – die echten Freunde-Typen (galaxy_linux/friends.py) bleiben unberührt
         try:
-            nt.register_type(nt.NotificationType("friends", "Freunde", "notify_friends", order=50, focus_desktop=True))
-            nt.register_kind("friend-online", "friends")
-            self.assertEqual(nt.type_for_kind("friend-online").setting, "notify_friends")
-            self.assertEqual([t.key for t in nt.types()][-1], "friends")
-            self.assertEqual(nt.mode_for(SimpleNamespace(notify_friends="center"), "friend-online"), "center")
+            nt.register_type(nt.NotificationType("testtyp", "Test", "notify_testtyp", order=999, focus_desktop=True))
+            nt.register_kind("test-kind", "testtyp")
+            self.assertEqual(nt.type_for_kind("test-kind").setting, "notify_testtyp")
+            self.assertEqual([t.key for t in nt.types()][-1], "testtyp")
+            self.assertEqual(nt.mode_for(SimpleNamespace(notify_testtyp="center"), "test-kind"), "center")
         finally:
-            nt._types.pop("friends", None)
-            nt.KIND_TYPE.pop("friend-online", None)
+            nt._types.pop("testtyp", None)
+            nt.KIND_TYPE.pop("test-kind", None)
 
 
 if __name__ == "__main__":

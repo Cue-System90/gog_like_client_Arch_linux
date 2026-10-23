@@ -30,6 +30,8 @@ _SECRET_QUERY = {"code", "token", "access_token", "refresh_token", "auth", "sess
 # galaxy-linux:// (startet Spiele), steam:// u. Ä. – wird verworfen: jede Seite im Store-Fenster, auch fremde Seiten
 # und eingebettete Werbung, könnte es sonst ohne Zutun auslösen.
 EXTERNAL_SCHEMES = {"mailto"}
+# Seiten ohne Sprachsegment (Profile wie in Galaxys „Profil ansehen“: https://www.gog.com/u/<name>)
+NO_LANG_PREFIXES = ("/u/",)
 
 
 def store_lang(ui_lang: str) -> str:
@@ -69,10 +71,13 @@ def store_path(url_or_path: str) -> str:
 
 
 def store_url(url_or_path: str, lang: str) -> str:
-    """Vollständige Store-Adresse in der gewünschten Sprache (fremde Hosts unverändert)."""
+    """Vollständige Store-Adresse in der gewünschten Sprache (fremde Hosts unverändert). Profilseiten (``/u/<name>``)
+    gibt es nur ohne Sprachpräfix – ``/de/u/<name>`` liefert 404."""
     path = store_path(url_or_path)
     if not path.startswith("/"):
         return path
+    if path.startswith(NO_LANG_PREFIXES):
+        return f"{STORE_HOST}{path}"
     return f"{STORE_HOST}/{lang}{path}"
 
 
