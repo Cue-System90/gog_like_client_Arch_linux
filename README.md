@@ -16,6 +16,8 @@ per game, prefixes and GOverlay.
 - **Discover, Recent and a notification center** – store shelves (for you, new arrivals, deals, wishlist, DLC, Good Old
   Games) in your currency, a Recent view with playtime stats and *What to play next*, a bell for downloads, updates,
   new games, cloud saves and wishlist discounts.
+- **Friends** – friends list with presence and *Playing …*, invites (accept/decline), a friends sidebar on wide
+  windows, *Friends playing now* and *Activity* in Recent, notifications, and GOG's chat web app under *Messages*.
 - **Game view with Overview / My progress / Extras** – achievements with rarity, offline installers and goodies,
   cloud saves backup; *Configure …* for game language, version rollback, beta/private channels, DLCs and custom
   executables.

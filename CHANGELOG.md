@@ -4,7 +4,8 @@ Neueste Version zuerst. „Neu bei uns“ im Zahnrad-Menü zeigt den Abschnitt d
 
 ## 0.4.0 (in Arbeit)
 
-Dritter Schritt Richtung GOG Galaxy 2.1, Teil 1: die Gruppe GOG GALAXY und das Benachrichtigungszentrum.
+Dritter Schritt Richtung GOG Galaxy 2.1, Teil 1: die Gruppe GOG GALAXY und das Benachrichtigungszentrum; Teil 2:
+Freunde, Chat und Aktivität.
 
 - **Seitenleiste wie Galaxy 2.1**: ganz oben die Gruppe **GOG GALAXY** mit „Entdecken“, „Suche“ (öffnet die Power
   Search) und „Aktuelle Übersicht“ (mit „Neu“, wenn „Was als Nächstes spielen“ einen neuen Vorschlag hat). Reihenfolge
@@ -37,6 +38,35 @@ Dritter Schritt Richtung GOG Galaxy 2.1, Teil 1: die Gruppe GOG GALAXY und das B
   erscheinen weiter nur, solange das Fenster nicht im Vordergrund ist; ein Klick darauf öffnet das Fenster und führt
   die Aktion aus.
 - Downloads: die leere Warteschlange zeigt ihren Hinweis wieder (das „&“ im Text brach die Anzeige).
+- **Seitenleiste FREUNDE wie Galaxy**: „Einladungen“ (nur mit offenen Freundschaftsanfragen, mit Zahl), „Freunde
+  online“ (Zahl, öffnet die Freundesliste) und „Nachrichten“ (Chat) – nicht mehr ausgegraut.
+- **Freundesliste**: oben Suche, „Ansicht“ (Erweiterte/Kompakte Liste, Nach Aktivität/Namen sortieren, Nicht gruppieren/
+  Nach gespieltem Spiel gruppieren – je ein Klick, gespeichert) und „Freunde hinzufügen“. Erst „Erhaltene Einladungen
+  und Empfehlungen“ mit „Annehmen“/„Ablehnen“, dann ONLINE (im Spiel, online, abwesend; Profilbild mit Präsenz-Punkt,
+  „Spielt – Titel“ samt Status im Spiel) und OFFLINE („Zuletzt online …“, soweit galaxy-linux es beobachtet hat). Jede
+  Zeile hat „Nachricht senden“, „Profil ansehen“ (gog.com/u/<Name> im eingebetteten Store) und „Aus Freundesliste
+  entfernen“ (mit Rückfrage) als Knöpfe und im Kontextmenü; ein Klick auf die Zeile öffnet den Chat. „Freunde
+  hinzufügen“ (auch im Zahnrad unter „Spiele & Freunde hinzufügen“) öffnet die Freundesseite von gog.com im Store –
+  Galaxys eigene Suche nutzt eine Schnittstelle, auf die sich galaxy-linux nicht verlassen kann; die Liste sagt das.
+- **Abgleich**: Freundesliste (chat.gog.com, höchstens alle 10 Minuten neu), Einladungen und Präsenz der Freunde
+  (presence.gog.com, in Paketen zu 100) alle 2 Minuten bei sichtbarem Fenster, alle 10 Minuten verborgen oder im
+  System-Tray, nie abgemeldet; nach Fehlern doppelt so lange (höchstens 30 Minuten). Fehlende Namen und Bilder kommen
+  aus dem öffentlichen Profil (users.gog.com, 7 Tage zwischengespeichert), Titel laufender Spiele aus der Bibliothek,
+  GamesDB oder api.gog.com. Endpunkte und Felder wie in der Weboberfläche von Galaxy 2.1.10.56.
+- **Freunde-Seitenleiste rechts** bei Fenstern ab 1501 px: kompakte Liste der Freunde, die online sind. Einstellungen →
+  Oberfläche → „Zeige eine Seitenleiste für Freunde, die online sind“. Sie erzwingt nie ein breiteres Fenster.
+- **Nachrichten**: die Chat-Web-App von GOG (chat.gog.com, wie Galaxy mit `isEmbedFrom=galaxy`) in einer WebKit-Ansicht
+  der gemeinsamen Sitzung; die erste Anfrage trägt das Zugriffstoken. Nimmt die App die Anmeldung nicht an (401/403),
+  bleibt sie leer oder fehlt die Verbindung, erscheint ein Hinweis mit „GOG.COM ÖFFNEN“ (Store, dort per Cookies
+  angemeldet) und „Erneut versuchen“. „Nachricht senden“ öffnet die Unterhaltung mit dem Freund.
+- **Aktuelle Übersicht**: neue Widgets „Freunde spielen gerade“ (Cover des Spiels, Freund und Titel; ein Klick öffnet
+  das Spiel bzw. seine Store-Seite) und „Aktivität“ (die letzten 50 beobachteten Ereignisse: online gekommen, spielt
+  jetzt …, gespeichert in `friends_activity.json`, beim Abmelden gelöscht).
+- **Benachrichtigungen für Freunde** wie Galaxy, je Art in Einstellungen → Benachrichtigungen: „Freundschaftsanfrage“
+  (Vorgabe: Desktop und Benachrichtigungszentrum), „Freund geht online“ und „Freund startet ein Spiel“ (Vorgabe: nur
+  Benachrichtigungszentrum). Jede Anfrage erscheint nur einmal, der erste Abgleich nach dem Start meldet nichts.
+- Präsenz „Unsichtbar“ im Avatar-Menü meldet weiterhin nichts an GOG – weder „online“ noch das laufende Spiel –, damit
+  Freunde keine Meldungen über dich bekommen.
 
 ## 0.3.1 (23.10.2026)
 
