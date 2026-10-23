@@ -215,6 +215,32 @@ def icon_button(icon: str, tooltip: str, css: list[str] | None = None) -> Gtk.Bu
     return b
 
 
+def ellipsize_dropdown(dd: Gtk.DropDown) -> Gtk.DropDown:
+    """Lange Einträge (z. B. „Globale Vorgabe (proton-cachyos-…)“) enden im Knopf mit „…“, statt die Mindestbreite der
+    Ansicht hochzutreiben; die aufgeklappte Liste zeigt sie ganz, der Tooltip den gewählten Eintrag."""
+    def text(item) -> str:
+        obj = item.get_item()
+        return obj.get_string() if obj is not None and hasattr(obj, "get_string") else ""
+
+    def setup(_f, item, short: bool) -> None:
+        lbl = Gtk.Label(xalign=0)
+        if short:
+            lbl.set_ellipsize(Pango.EllipsizeMode.END)
+        item.set_child(lbl)
+
+    for short, setter in ((True, dd.set_factory), (False, dd.set_list_factory)):
+        f = Gtk.SignalListItemFactory()
+        f.connect("setup", setup, short)
+        f.connect("bind", lambda _f, item: item.get_child().set_text(text(item)))
+        setter(f)
+
+    def tip(*_a) -> None:
+        obj = dd.get_selected_item()
+        dd.set_tooltip_text(obj.get_string() if obj is not None and hasattr(obj, "get_string") else None)
+    dd.connect("notify::selected-item", tip)
+    return dd
+
+
 def choose_folder(parent: Gtk.Window | None, title: str, initial: str, callback: Callable[[str], None]) -> None:
     dlg = Gtk.FileDialog(title=title, modal=True)
     try:

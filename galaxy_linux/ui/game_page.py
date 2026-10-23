@@ -1,6 +1,10 @@
 """Spielansicht nach GOG Galaxy 2.1: Hero-Artwork mit Logo, Play-Leiste mit Kennzahlen und Anpassen-Menü, darunter
 die Tabs Übersicht / Mein Fortschritt / Extras (``GameViewTab``).
 
+Schmale Fenster (bis 1280 px, 4K-Fernseher mit 225 % ≈ 1706 px): die Kennzahlen der Play-Leiste und die Tags brechen
+in eine zweite Zeile um (``Adw.WrapBox``), lange Werte und Auswahllisten kürzen mit „…“ – die Spielansicht hält das
+Fenster nie breiter als nötig (``ui/width_audit.py``).
+
 Zusätzlich (wie Steam): Kompatibilitätstool und Startoptionen direkt in der Übersicht. Alle Spielaktionen nehmen eine
 Produkt-ID – das Kontextmenü der Bibliothek (ui/game_menu.py) nutzt sie auch für Spiele, die gerade nicht angezeigt
 werden.
@@ -19,8 +23,8 @@ from ..settings import format_bytes, format_minutes
 from .dialogs import (GameSettingsDialog, InstallDialog, confirm_destructive, confirm_remove_game, confirm_uninstall,
                       move_installation)
 from . import game_menu, store, ui_registry
-from .util import (Adw, Gtk, Pango, choose_folder, clamped_picture, fmt_eta, fmt_speed, icon_button, idle, label, open_uri,
-                   pick_icon, relative_time, run_async)
+from .util import (Adw, Gtk, Pango, choose_folder, clamped_picture, ellipsize_dropdown, fmt_eta, fmt_speed, icon_button,
+                   idle, label, open_uri, pick_icon, relative_time, run_async)
 
 RARITY = {"common": tr('Gewöhnlich'), "uncommon": tr('Ungewöhnlich'), "rare": tr('Selten'), "epic": tr('Episch'),
           "legendary": tr('Legendär')}
@@ -28,8 +32,11 @@ OS_FILTER = (("", tr('Alle')), ("windows", "Windows"), ("linux", "Linux"), ("mac
 
 
 class Stat(Gtk.Box):
-    def __init__(self, key: str) -> None:
-        super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=2, valign=Gtk.Align.CENTER)
+    def __init__(self, key: str, pad: int = 10) -> None:
+        # Rand wie die Kennzahl-Knöpfe der Play-Leiste (stat-btn: 10 px Innenabstand) – bricht die Zeile um, stehen
+        # alle bündig untereinander
+        super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=2, valign=Gtk.Align.CENTER, margin_start=pad,
+                         margin_end=pad)
         self.key = label(key.upper(), css=["stat-key"])
         self.val = label("–", css=["stat-val"], ellipsize=True)
         self.val.set_max_width_chars(26)
@@ -115,7 +122,12 @@ class GamePage(Gtk.Box):
         for w in (self.play_btn, self.install_btn, self.update_btn, self.resume_btn, self.cancel_btn, self.stop_btn, self.menu_btn):
             w.set_valign(Gtk.Align.CENTER)
             bar.append(w)
-        stats = Gtk.Box(spacing=34, margin_start=22, hexpand=True)
+        # bis refresh_state den Zustand kennt, nur ein Knopf – sonst hielten sechs Knöpfe das Fenster beim Start breit
+        for w in (self.install_btn, self.update_btn, self.resume_btn, self.cancel_btn, self.stop_btn):
+            w.set_visible(False)
+        # Kennzahlen: eine Zeile, bei schmalem Fenster zwei (statt das Fenster breit zu halten)
+        stats = Adw.WrapBox(child_spacing=14, line_spacing=10, margin_start=12, hexpand=True, valign=Gtk.Align.CENTER)
+        stats.add_css_class("stats-row")
         self.stat_time = Stat(tr('Spielzeit'))
         self.stat_last = Stat(tr('Zuletzt gespielt'))
         self.stat_ach = Stat(tr('Erfolge'))
@@ -130,12 +142,15 @@ class GamePage(Gtk.Box):
         bar.append(stats)
         self.status_lbl = label("", css=["dim"], ellipsize=True)
         self.status_lbl.set_valign(Gtk.Align.CENTER)
+        self.status_lbl.set_max_width_chars(48)
+        self.status_lbl.connect("notify::label", lambda lbl, _p: lbl.set_tooltip_text(lbl.get_text() or None))
         bar.append(self.status_lbl)
         self.settings_btn = icon_button(pick_icon("preferences-other-symbolic", "emblem-system-symbolic"), tr('Eigenschaften'),
                                         ["btn-icon-big"])
         self.settings_btn.set_valign(Gtk.Align.CENTER)
         self.settings_btn.connect("clicked", lambda *_: self.open_settings())
         bar.append(self.settings_btn)
+        self.actionbar = bar
         content.append(bar)
 
         # ----- Fortschritt
@@ -189,7 +204,7 @@ class GamePage(Gtk.Box):
         # Links: Über das Spiel, Medien
         about = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         about.append(label(tr('ÜBER DAS SPIEL'), css=["sec-hdr"]))
-        self.tag_box = Gtk.Box(spacing=6)
+        self.tag_box = Adw.WrapBox(child_spacing=6, line_spacing=6)
         about.append(self.tag_box)
         self.summary_lbl = label("", css=["body-text"], wrap=True, selectable=True)
         self.summary_lbl.set_natural_wrap_mode(Gtk.NaturalWrapMode.WORD)
@@ -230,12 +245,12 @@ class GamePage(Gtk.Box):
         comp.add_css_class("panel")
         comp.append(label(tr('KOMPATIBILITÄT (WIE STEAM)'), css=["sec-hdr"]))
         comp.append(label(tr('Proton / Wine'), css=["detail-key"]))
-        self.tool_dd = Gtk.DropDown()
+        self.tool_dd = ellipsize_dropdown(Gtk.DropDown())
         self.tool_dd.add_css_class("compat-dd")
         self.tool_dd.connect("notify::selected", self._on_tool_changed)
         comp.append(self.tool_dd)
         self.exe_lbl = label(tr('Startdatei'), css=["detail-key"])
-        self.exe_dd = Gtk.DropDown()
+        self.exe_dd = ellipsize_dropdown(Gtk.DropDown())
         self.exe_dd.add_css_class("compat-dd")
         self.exe_dd.connect("notify::selected", self._on_exe_changed)
         self._exe_names: list[str] = []
@@ -246,7 +261,7 @@ class GamePage(Gtk.Box):
         self.opts_entry.add_css_class("compat-entry")
         self.opts_entry.connect("activate", self._on_opts_apply)
         comp.append(self.opts_entry)
-        ob = Gtk.Box(spacing=6)
+        ob = Adw.WrapBox(child_spacing=6, line_spacing=6)
         apply = Gtk.Button(label=tr('Übernehmen'))
         apply.connect("clicked", self._on_opts_apply)
         gov = Gtk.Button(label=tr('GOverlay öffnen'))
@@ -279,9 +294,9 @@ class GamePage(Gtk.Box):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18, margin_start=28, margin_end=28, margin_top=14,
                       margin_bottom=32)
         sums = Gtk.Box(spacing=34)
-        self.prog_time = Stat(tr('Spielzeit'))
-        self.prog_last = Stat(tr('Zuletzt gespielt'))
-        self.prog_ach = Stat(tr('Erfolge'))
+        self.prog_time = Stat(tr('Spielzeit'), pad=0)
+        self.prog_last = Stat(tr('Zuletzt gespielt'), pad=0)
+        self.prog_ach = Stat(tr('Erfolge'), pad=0)
         for w in (self.prog_time, self.prog_last, self.prog_ach):
             sums.append(w)
         box.append(sums)
