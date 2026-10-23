@@ -3,7 +3,7 @@ ein Popover mit der Liste (neueste zuerst; Symbol, Text, Zeit), „Als gelesen m
 auf eine Meldung führt ihre Aktion aus (Spielansicht, Store-Seite, Downloads …) und markiert sie als gelesen.
 
 ``post()`` ist der eine Weg für alle Quellen (Downloads, Updates, neue Spiele, Cloud-Spielstände, Redistributables,
-Wunschliste, später Freunde): Je Typ entscheidet Einstellungen → Benachrichtigungen, ob die Meldung ins Zentrum und
+Wunschliste, Freunde): Je Typ entscheidet Einstellungen → Benachrichtigungen, ob die Meldung ins Zentrum und
 auf den Desktop (Gio.Notification, nur wenn das Fenster nicht im Vordergrund ist) geht. Ein Klick auf die
 Desktop-Meldung öffnet das Fenster und führt dieselbe Aktion aus (``app.notification``).
 Daten und Regeln ohne GTK: ``galaxy_linux/notifications.py``.

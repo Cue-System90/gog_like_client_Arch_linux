@@ -1,6 +1,6 @@
 """Menüs wie in GOG Galaxy 2.1: Zahnrad oben links (Hauptmenü) und Avatar-Menü, dazu App-Aktionen und Tastenkürzel.
 
-Zahnrad (Reihenfolge wie im Original): Spiele & Freunde hinzufügen ▸ · Bibliothek aktualisieren | Einstellungen ·
+Zahnrad (Reihenfolge wie im Original): Spiele & Freunde hinzufügen ▸ (… | Freunde hinzufügen) · Bibliothek aktualisieren | Einstellungen ·
 Hilfe erhalten · Protokoll (Linux-Ergänzung) | Neu bei uns | Nach Updates suchen | Rechtliches und Datenschutz · Beenden.
 Avatar: Kopf mit Bild und Name | Online · Unsichtbar | Kontoverwaltung · Bisherige Bestellungen · Geldbeutel | Ausloggen
 (abgemeldet nur „Bei GOG anmelden“).
@@ -27,6 +27,7 @@ def install_actions(app) -> None:
         ("preferences", lambda: w() and w().open_preferences(), ["<primary>comma"]),
         ("add-game", lambda: w() and w().add_game(w()._view_lib_id()), []),
         ("redeem", lambda: w() and w().open_store("/redeem"), []),
+        ("add-friends", lambda: w() and getattr(w(), "friends", None) and w().friends.add_friends(), []),
         ("scan-folders", lambda: w() and w().scan_folders_async(quiet=False), []),
         ("create-library", lambda: w() and w().create_library(), []),
         ("help", lambda: open_uri(clientinfo.ISSUES_URL), []),
@@ -86,6 +87,9 @@ def main_menu_model() -> Gio.Menu:
     libs = Gio.Menu()
     libs.append(tr('Bibliothek anlegen …'), "app.create-library")
     add.append_section(None, libs)
+    friends = Gio.Menu()
+    friends.append(tr('Freunde hinzufügen'), "app.add-friends")
+    add.append_section(None, friends)
     top = Gio.Menu()
     top.append_submenu(tr('Spiele & Freunde hinzufügen'), add)
     top.append(tr('Bibliothek aktualisieren'), "app.refresh")

@@ -3,8 +3,8 @@ Spielzeit heute, gestern, diese Woche, dieser Monat, dazu ein kleines Histogramm
 Nächstes spielen“ (ein Vorschlag aus installierten, selten oder nie gespielten Spielen, „Überrasch mich“ und
 „Neu mischen“). „Ansicht anpassen“ schaltet Widgets an und ab und ordnet sie (gespeichert in ``recent_widgets``).
 
-Die Widgets kommen aus ``ui_registry.register_recent_widget`` – die eingebauten melden sich hier an, Freunde-Widgets
-folgen später auf demselben Weg. Daten ohne GTK: ``galaxy_linux/recent.py``.
+Die Widgets kommen aus ``ui_registry.register_recent_widget`` – die eingebauten melden sich hier an, „Freunde spielen
+gerade“ und „Aktivität“ aus ``ui/ext_friends.py`` auf demselben Weg. Daten ohne GTK: ``galaxy_linux/recent.py``.
 """
 from __future__ import annotations
 

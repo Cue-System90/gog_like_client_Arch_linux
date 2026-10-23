@@ -156,3 +156,24 @@ window.galaxy { background-color: #1b1b20; color: #d9d9de; }
 .hist-bar { background-color: rgba(197,123,227,0.55); border-radius: 3px 3px 0 0; min-height: 2px; }
 .hist-bar.today { background-color: #c57be3; }
 .hist-bar.empty { background-color: rgba(255,255,255,0.08); }
+
+/* 0.4.0: Freunde – Freundesliste, Freunde-Seitenleiste rechts, Präsenz-Punkt wie in Galaxy */
+.friends-sidebar { background-color: #16161a; border-left: 1px solid rgba(255,255,255,0.05); }
+.friend-list { background: transparent; }
+.friend-list > row { border-radius: 6px; }
+.friend-list > row:hover { background-color: rgba(255,255,255,0.05); }
+.friend-status { color: #8c8c92; font-size: 9pt; }
+.friend-status.playing { color: #8fe0a8; }
+.friend-status.away { color: #e3c07a; }
+.friend-group { color: #b6bdc2; font-size: 9pt; font-weight: 700; margin-top: 4px; padding-left: 8px; }
+.friend-action { color: #6e6e74; min-width: 26px; min-height: 26px; padding: 2px; border-radius: 6px; }
+.friend-action:hover { color: #ffffff; background-color: rgba(255,255,255,0.08); }
+.friend-row:hover .friend-action { color: #b6bdc2; }
+.friend-accept { background-color: #8b4fd6; color: #ffffff; font-weight: 700; border-radius: 4px; padding: 2px 14px; }
+.friend-accept:hover { background-color: #9a63df; }
+.friend-decline { background-color: #2a2a31; color: #e0e0e4; font-weight: 700; border-radius: 4px; padding: 2px 14px; }
+.friend-decline:hover { background-color: #34343c; }
+.presence-dot { min-width: 9px; min-height: 9px; border-radius: 999px; border: 2px solid #1b1b20; margin: 0 -1px -1px 0; }
+.presence-dot.online, .presence-dot.playing { background-color: #6bcf8a; }
+.presence-dot.away { background-color: #e3c07a; }
+.friends-sidebar .presence-dot { border-color: #16161a; }

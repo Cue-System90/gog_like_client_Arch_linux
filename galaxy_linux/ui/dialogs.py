@@ -977,6 +977,8 @@ class PreferencesDialog(Adw.PreferencesDialog):
         page = Adw.PreferencesPage(title=tr('Oberfläche'), icon_name="preferences-desktop-appearance-symbolic", name="interface")
         cust = Adw.PreferencesGroup(title=tr('Anpassungen'))
         cust.add(store.preferred_store_row(self))     # GOG STORE in der Seitenleiste zeigen/ausblenden
+        from .friends_view import friends_sidebar_row
+        cust.add(friends_sidebar_row(self))           # Freunde-Seitenleiste rechts (Fenster ab 1501 px)
         bm = Adw.ActionRow(title=tr('Lesezeichen'), subtitle=tr('Lesezeichen der Seitenleiste sichern oder übernehmen'))
         for text, cb in ((tr('Importieren …'), self._import_bookmarks), (tr('Exportieren …'), self._export_bookmarks)):
             b = Gtk.Button(label=text, valign=Gtk.Align.CENTER)

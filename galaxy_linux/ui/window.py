@@ -5,10 +5,11 @@ Seitenleiste), rechts Zurück/Vor, Lesezeichen, Filter, „+“, Suchfeld, Ansic
 die Fensterknöpfe (Minimieren/Schließen je nach „Verhalten des Hauptfensters“, auch in den System-Tray).
 Seitenleiste wie im Original: GOG GALAXY (Entdecken, Suche, Aktuelle Übersicht), GOG STORE (eingebettete
 gog.com-Seiten, ui/store.py), SPIELE (Zuletzt gespielt, Alle Spiele, Installiert, Downloads), BIBLIOTHEKEN (eigene
-Bibliotheken für Nicht-GOG-Spiele, je ein Eintrag mit Zähler), LESEZEICHEN, FREUNDE. Inhalt: Entdecken
-(ui/discover_view.py), Aktuelle Übersicht (ui/recent_view.py), Cover-Raster in Abschnitten oder Gruppen,
-Downloads-Seite, Spielansicht, Store. Die Glocke neben der Suche öffnet das Benachrichtigungszentrum
-(ui/notification_center.py).
+Bibliotheken für Nicht-GOG-Spiele, je ein Eintrag mit Zähler), LESEZEICHEN, FREUNDE (Einladungen, Freunde online,
+Nachrichten – ui/ext_friends.py). Inhalt: Entdecken (ui/discover_view.py), Aktuelle Übersicht (ui/recent_view.py),
+Cover-Raster in Abschnitten oder Gruppen, Downloads-Seite, Spielansicht, Store, Freundesliste und Chat (Seiten der
+Erweiterungen über ``add_page``); rechts ab 1501 px Fensterbreite die Freunde-Seitenleiste. Die Glocke neben der Suche
+öffnet das Benachrichtigungszentrum (ui/notification_center.py).
 Rechtsklick auf ein Spiel öffnet das Kontextmenü wie in Galaxy (ui/game_menu.py).
 """
 from __future__ import annotations
@@ -279,6 +280,26 @@ class LibrarySection(Gtk.Box):
         self.set_visible(bool(entries))
 
 
+class WidthProbe(Gtk.DrawingArea):
+    """Unsichtbarer Streifen über die volle Fensterbreite (0 px hoch). Meldet Breitenänderungen an ``listeners`` –
+    Galaxy zeigt die Freunde-Seitenleiste erst bei Fenstern ab 1501 px. (Gtk.Box nutzt einen Layout-Manager, dort
+    käme ``size_allocate`` nicht an; die Zeichenfläche meldet ``resize``.)"""
+
+    def __init__(self) -> None:
+        super().__init__(hexpand=True, content_height=0, can_target=False, focusable=False)
+        self.listeners: list = []
+        self.width = 0
+        self.connect("resize", self._on_resize)
+
+    def _on_resize(self, _area, width: int, _height: int) -> None:
+        if width == self.width:
+            return
+        self.width = width
+        # nicht während der Größenberechnung umbauen – erst danach in der Hauptschleife
+        for fn in list(self.listeners):
+            GLib.idle_add(lambda fn=fn, w=width: (fn(w), False)[1])
+
+
 # ----------------------------------------------------------------------------- Fenster
 class MainWindow(Adw.ApplicationWindow):
     def __init__(self, app, backend) -> None:
@@ -301,11 +322,15 @@ class MainWindow(Adw.ApplicationWindow):
         self.game_actions = GameActions(self)     # Anpassen-Menü und Kontextmenü der Spiele (Aktionsgruppe „game“)
         self.discover_service = DiscoverService(backend.api)   # Katalog-Regale, Region (auch für die Wunschliste)
         self.notifications = NotificationCenter(self)          # Glocke, Liste, Desktop-Meldungen je Einstellung
+        self.extra_pages: dict[str, Gtk.Widget] = {}           # Seiten der Erweiterungen (Freundesliste, Chat …)
         util.SPEED_IN_BITS[0] = backend.settings.speed_in_bits
 
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         root.append(self._build_header())
+        self.width_probe = WidthProbe()         # Fensterbreite für die Freunde-Seitenleiste (ab 1501 px)
+        root.append(self.width_probe)
         body = Gtk.Box(vexpand=True)
+        self.body = body
         body.append(self._build_sidebar())
         self.stack = Gtk.Stack(transition_type=Gtk.StackTransitionType.CROSSFADE, hexpand=True, vexpand=True)
         body.append(self.stack)
@@ -678,10 +703,13 @@ class MainWindow(Adw.ApplicationWindow):
         self.bmnav_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         box.append(self.bmnav_box)
         self._rebuild_bookmark_nav()
+        # FREUNDE wie Galaxy: Einladungen (nur wenn welche da sind), Freunde online (Zähler, Freundesliste),
+        # Nachrichten (Chat) – Inhalt und Zähler kommen aus ui/ext_friends.py
         section(tr('FREUNDE'))
-        item("activity", tr('Aktivität'), pick_icon("emblem-shared-symbolic", "network-workgroup-symbolic"), enabled=False)
-        item("friends", tr('Freunde online'), pick_icon("system-users-symbolic", "avatar-default-symbolic"), enabled=False)
-        item("messages", tr('Nachrichten'), pick_icon("mail-unread-symbolic", "chat-symbolic"), enabled=False)
+        item("requests", tr('Einladungen'), pick_icon("contact-new-symbolic", "list-add-symbolic"),
+             cb=lambda: self.open_friends("invitations")).set_visible(False)
+        item("friends", tr('Freunde online'), pick_icon("system-users-symbolic", "avatar-default-symbolic"))
+        item("messages", tr('Nachrichten'), pick_icon("mail-unread-symbolic", "chat-symbolic"))
         box = outer
         self.status_lbl = label("", css=["dim", "caption"])
         self.status_lbl.set_margin_start(22)
@@ -908,6 +936,11 @@ class MainWindow(Adw.ApplicationWindow):
         elif view.startswith("store:") and getattr(self, "store_page", None) is not None:
             self.stack.set_visible_child_name("store")
             self.store_page.sync_nav()
+        elif view in self.extra_pages:
+            self.stack.set_visible_child_name(view)
+            show = getattr(self.extra_pages[view], "on_show", None)
+            if callable(show):
+                show()
         else:
             if not self.backend.library and not self.backend.registry.all() and not self.backend.api.logged_in:
                 self.stack.set_visible_child_name("welcome")
@@ -933,6 +966,18 @@ class MainWindow(Adw.ApplicationWindow):
 
     def show_game(self, pid: str) -> None:
         self.navigate("game", str(pid))
+
+    def add_page(self, view: str, widget: Gtk.Widget) -> None:
+        """Eigene Seite im Inhaltsbereich (Erweiterungen); ``navigate(view)`` zeigt sie und ruft ``on_show()``."""
+        self.extra_pages[view] = widget
+        self.stack.add_named(widget, view)
+
+    def open_friends(self, section: str = "") -> None:
+        """Freundesliste öffnen, ``section="invitations"`` springt zu den erhaltenen Einladungen."""
+        self.navigate("friends")
+        page = self.extra_pages.get("friends")
+        if section and page is not None and hasattr(page, "focus_section"):
+            page.focus_section(section)
 
     def show_grid(self) -> None:
         self.navigate("all")
@@ -1232,7 +1277,8 @@ class MainWindow(Adw.ApplicationWindow):
         if getattr(self, "_search_guard", False):
             return
         self._search = entry.get_text().strip().lower()
-        if (self.view in ("game", "downloads", "welcome", *PAGE_VIEWS) or self.view.startswith("store:")) and self._search:
+        if (self.view in ("game", "downloads", "welcome", *PAGE_VIEWS, *self.extra_pages)
+                or self.view.startswith("store:")) and self._search:
             self.navigate("all")
         self._refilter()
         self._sync_bookmark()
@@ -1799,6 +1845,8 @@ class MainWindow(Adw.ApplicationWindow):
         self.presence.start()
         self.presence.refresh()
         store.on_login(self)            # Store-Seite mit den neuen Cookies neu laden, Wunschliste zählen
+        if getattr(self, "friends", None) is not None:
+            self.friends.on_login()     # Freundesliste, Einladungen, Präsenz sofort holen
         self.request_library_refresh("login", force=True)
 
     def do_logout(self) -> None:
@@ -1808,6 +1856,8 @@ class MainWindow(Adw.ApplicationWindow):
     def _finish_logout(self) -> None:
         self.backend.logout()
         store.on_logout(self)           # auch die Store-Sitzung (Cookies) abmelden
+        if getattr(self, "friends", None) is not None:
+            self.friends.on_logout()    # Freunde, Zähler und beobachtete Aktivität vergessen, Chat schließen
         self.backend.library = []
         self.avatar.set_custom_image(None)
         self._update_avatar()

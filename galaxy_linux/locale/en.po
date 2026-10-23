@@ -37,7 +37,7 @@ msgstr "Connection to auth.gog.com failed: {0}"
 msgid "galaxy-linux – GOG-Zugangsdaten"
 msgstr "galaxy-linux – GOG credentials"
 
-#: galaxy_linux/api/auth.py
+#: galaxy_linux/api/auth.py galaxy_linux/ui/chat_view.py
 msgid "unbekannter Fehler"
 msgstr "unknown error"
 
@@ -73,7 +73,7 @@ msgstr "Network error for {0}: {1}"
 msgid "Nicht bei GOG angemeldet."
 msgstr "Not signed in to GOG."
 
-#: galaxy_linux/api/client.py galaxy_linux/api/discover.py galaxy_linux/api/wishlist.py
+#: galaxy_linux/api/client.py galaxy_linux/api/discover.py galaxy_linux/api/friends.py
 msgid "Ungültige JSON-Antwort von {0}"
 msgstr "Invalid JSON response from {0}"
 
@@ -100,6 +100,22 @@ msgstr "Games for you"
 #: galaxy_linux/api/discover.py
 msgid "Zusätzliche Inhalte für deine Spiele"
 msgstr "Additional content for your games"
+
+#: galaxy_linux/api/friends.py
+msgid "Der Freund konnte nicht entfernt werden (HTTP {0})."
+msgstr "The friend could not be removed (HTTP {0})."
+
+#: galaxy_linux/api/friends.py
+msgid "Die Einladung konnte nicht abgelehnt werden (HTTP {0})."
+msgstr "The invite could not be declined (HTTP {0})."
+
+#: galaxy_linux/api/friends.py
+msgid "Die Einladung konnte nicht angenommen werden (HTTP {0})."
+msgstr "The invite could not be accepted (HTTP {0})."
+
+#: galaxy_linux/api/friends.py
+msgid "{0}: HTTP {1}"
+msgstr "{0}: HTTP {1}"
 
 #: galaxy_linux/api/wishlist.py galaxy_linux/ui/discover_view.py
 msgid "Kostenlos"
@@ -1785,6 +1801,74 @@ msgstr "Downloading support files …"
 msgid "{0} von {1} erledigt"
 msgstr "{0} of {1} done"
 
+#: galaxy_linux/friends.py
+msgid "Abwesend"
+msgstr "Away"
+
+#: galaxy_linux/friends.py
+msgid "Ein Freund hat ein Spiel gestartet"
+msgstr "A friend started a game"
+
+#: galaxy_linux/friends.py
+msgid "Ein Freund ist jetzt online"
+msgstr "A friend is now online"
+
+#: galaxy_linux/friends.py
+msgid "Freund geht online"
+msgstr "Friend comes online"
+
+#: galaxy_linux/friends.py
+msgid "Freund startet ein Spiel"
+msgstr "Friend starts a game"
+
+#: galaxy_linux/friends.py
+msgid "Freundschaftsanfrage"
+msgstr "Friend invite"
+
+#: galaxy_linux/friends.py galaxy_linux/ui/friends_view.py
+msgid "Freundschaftseinladung erhalten"
+msgstr "Friend invite received"
+
+#: galaxy_linux/friends.py galaxy_linux/ui/ext_friends.py
+msgid "Im Spiel"
+msgstr "In game"
+
+#: galaxy_linux/friends.py
+msgid "Jemand möchte dein Freund sein"
+msgstr "Someone wants to be your friend"
+
+#: galaxy_linux/friends.py
+msgid "Jetzt online"
+msgstr "Now online"
+
+#: galaxy_linux/friends.py galaxy_linux/ui/friends_view.py
+msgid "Offline"
+msgstr "Offline"
+
+#: galaxy_linux/friends.py galaxy_linux/ui/friends_view.py galaxy_linux/ui/menus.py
+msgid "Online"
+msgstr "Online"
+
+#: galaxy_linux/friends.py
+msgid "Spielt – {0}"
+msgstr "Playing - {0}"
+
+#: galaxy_linux/friends.py
+msgid "Spielt – {0} – {1}"
+msgstr "Playing - {0} - {1}"
+
+#: galaxy_linux/friends.py
+msgid "Zuletzt online {0}"
+msgstr "Last online {0}"
+
+#: galaxy_linux/friends.py
+msgid "{0} möchte dein Freund sein."
+msgstr "{0} wants to be your friend."
+
+#: galaxy_linux/friends.py galaxy_linux/ui/ext_friends.py
+msgid "{0} spielt jetzt"
+msgstr "{0} started playing"
+
 #: galaxy_linux/i18n.py
 msgid "Automatisch (Systemsprache)"
 msgstr "Automatic (system language)"
@@ -2221,7 +2305,7 @@ msgstr "No tags"
 msgid "Letzten 30 Tage"
 msgstr "Last 30 days"
 
-#: galaxy_linux/library_view.py
+#: galaxy_linux/library_view.py galaxy_linux/ui/friends_view.py
 msgid "Nicht gruppieren"
 msgstr "Don't group"
 
@@ -2372,6 +2456,70 @@ msgstr "Unofficial community project"
 #: galaxy_linux/ui/app.py
 msgid "Nativer GOG-Client für CachyOS/Arch Linux. Nutzt dieselben GOG-Dienste wie der offizielle Galaxy-Client (Login, Bibliothek, Content-System v2, GamesDB, Spielzeit, Erfolge) und startet Windows-Spiele über ein frei wählbares Proton (umu-launcher), Wine oder nativ.\n\nGOG und GOG Galaxy sind Marken von GOG sp. z o.o. Dieses Projekt steht in keiner Verbindung zu GOG."
 msgstr "Native GOG client for CachyOS/Arch Linux. Uses the same GOG services as the official Galaxy client (login, library, content system v2, GamesDB, playtime, achievements) and launches Windows games through a Proton of your choice (umu-launcher), Wine, or natively.\n\nGOG and GOG Galaxy are trademarks of GOG sp. z o.o. This project is not affiliated with GOG."
+
+#: galaxy_linux/ui/chat_view.py galaxy_linux/ui/friends_view.py galaxy_linux/ui/window.py
+msgid "BEI GOG ANMELDEN"
+msgstr "SIGN IN TO GOG"
+
+#: galaxy_linux/ui/chat_view.py
+msgid "Der Chat blieb leer"
+msgstr "The chat stayed empty"
+
+#: galaxy_linux/ui/chat_view.py
+msgid "Der Chat hat die Anmeldung nicht angenommen"
+msgstr "The chat did not accept the sign-in"
+
+#: galaxy_linux/ui/chat_view.py
+msgid "Der Chat konnte nicht geladen werden"
+msgstr "The chat could not be loaded"
+
+#: galaxy_linux/ui/chat_view.py
+msgid "Die Chat-Anwendung von GOG antwortete mit HTTP {0}. GOG Galaxy betreibt den Chat in einem eigenen, angemeldeten Fenster; ob er sich außerhalb von Galaxy anmelden lässt, ist nicht bestätigt."
+msgstr "GOG's chat app answered with HTTP {0}. GOG Galaxy runs the chat in its own signed-in window; whether it can be signed in outside of Galaxy is not confirmed."
+
+#: galaxy_linux/ui/chat_view.py
+msgid "Die Chat-Anwendung von GOG hat nichts angezeigt – vermutlich erkennt sie die Anmeldung außerhalb von GOG Galaxy nicht."
+msgstr "GOG's chat app did not show anything – it probably does not recognise the sign-in outside of GOG Galaxy."
+
+#: galaxy_linux/ui/chat_view.py galaxy_linux/ui/friends_view.py galaxy_linux/ui/store.py
+msgid "ERNEUT VERSUCHEN"
+msgstr "TRY AGAIN"
+
+#: galaxy_linux/ui/chat_view.py
+msgid "Eingebetteter Chat nicht verfügbar"
+msgstr "Embedded chat not available"
+
+#: galaxy_linux/ui/chat_view.py
+msgid "Für den Chat fehlt das Paket webkitgtk-6.0."
+msgstr "The chat needs the package webkitgtk-6.0."
+
+#: galaxy_linux/ui/chat_view.py
+msgid "GOG.COM ÖFFNEN"
+msgstr "OPEN GOG.COM"
+
+#: galaxy_linux/ui/chat_view.py
+msgid "Keine Verbindung zu chat.gog.com: {0}"
+msgstr "No connection to chat.gog.com: {0}"
+
+#: galaxy_linux/ui/chat_view.py
+msgid "Melde dich bei GOG an, um Nachrichten zu lesen und zu schreiben."
+msgstr "Sign in to GOG to read and write messages."
+
+#: galaxy_linux/ui/chat_view.py
+msgid "NACHRICHTEN"
+msgstr "MESSAGES"
+
+#: galaxy_linux/ui/chat_view.py
+msgid "Nachrichten erreichst du auf gog.com – dort bist du über den eingebetteten Store angemeldet."
+msgstr "You can reach your messages on gog.com – you are signed in there through the embedded store."
+
+#: galaxy_linux/ui/chat_view.py galaxy_linux/ui/discover_view.py galaxy_linux/ui/store.py
+msgid "Neu laden"
+msgstr "Reload"
+
+#: galaxy_linux/ui/chat_view.py galaxy_linux/ui/friends_view.py galaxy_linux/ui/window.py
+msgid "Nicht angemeldet"
+msgstr "Not signed in"
 
 #: galaxy_linux/ui/configure.py
 msgid " (installiert)"
@@ -2877,7 +3025,7 @@ msgstr "Settings"
 msgid "Entdecken"
 msgstr "Discover"
 
-#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/downloads_view.py
+#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/downloads_view.py galaxy_linux/ui/ext_friends.py
 msgid "Entfernen"
 msgstr "Remove"
 
@@ -3845,10 +3993,6 @@ msgstr "Retry"
 msgid "IM BESITZ"
 msgstr "OWNED"
 
-#: galaxy_linux/ui/discover_view.py galaxy_linux/ui/store.py
-msgid "Neu laden"
-msgstr "Reload"
-
 #: galaxy_linux/ui/discover_view.py
 msgid "Weiter"
 msgstr "Next"
@@ -4109,6 +4253,70 @@ msgstr "cannot be resolved: {0}"
 msgid "werden ermittelt …"
 msgstr "being determined …"
 
+#: galaxy_linux/ui/ext_friends.py
+msgid "Aktivität"
+msgstr "Activity"
+
+#: galaxy_linux/ui/ext_friends.py galaxy_linux/ui/friends_view.py
+msgid "Aus Freundesliste entfernen"
+msgstr "Remove from friends"
+
+#: galaxy_linux/ui/ext_friends.py
+msgid "Einladung von {0} abgelehnt"
+msgstr "Invite from {0} declined"
+
+#: galaxy_linux/ui/ext_friends.py
+msgid "Freunde spielen gerade"
+msgstr "Friends playing now"
+
+#: galaxy_linux/ui/ext_friends.py
+msgid "Freunde werden abgeglichen …"
+msgstr "Syncing friends …"
+
+#: galaxy_linux/ui/ext_friends.py
+msgid "Für diesen Freund ist kein Profilname bekannt."
+msgstr "No profile name is known for this friend."
+
+#: galaxy_linux/ui/ext_friends.py
+msgid "Gerade spielt keiner deiner Freunde."
+msgstr "None of your friends is playing right now."
+
+#: galaxy_linux/ui/ext_friends.py
+msgid "Melde dich an, um die Aktivität deiner Freunde zu sehen."
+msgstr "Sign in to see your friends' activity."
+
+#: galaxy_linux/ui/ext_friends.py
+msgid "Melde dich an, um zu sehen, was deine Freunde spielen."
+msgstr "Sign in to see what your friends are playing."
+
+#: galaxy_linux/ui/ext_friends.py
+msgid "Möchtest du {0} wirklich aus deiner Freundesliste entfernen?"
+msgstr "Do you really want to remove {0} from your friends?"
+
+#: galaxy_linux/ui/ext_friends.py
+msgid "Noch keine Aktivität: galaxy-linux merkt sich hier, wann Freunde online kommen oder ein Spiel starten (die letzten 50 Ereignisse)."
+msgstr "No activity yet: galaxy-linux keeps track here of when friends come online or start a game (the last 50 events)."
+
+#: galaxy_linux/ui/ext_friends.py
+msgid "{0} ist jetzt dein Freund"
+msgstr "{0} is now your friend"
+
+#: galaxy_linux/ui/ext_friends.py
+msgid "{0} ist jetzt online"
+msgstr "{0} is now online"
+
+#: galaxy_linux/ui/ext_friends.py
+msgid "{0} spielt jetzt „{1}“"
+msgstr "{0} started playing “{1}”"
+
+#: galaxy_linux/ui/ext_friends.py
+msgid "{0} spielt {1}"
+msgstr "{0} is playing {1}"
+
+#: galaxy_linux/ui/ext_friends.py
+msgid "{0} wurde aus der Freundesliste entfernt"
+msgstr "{0} was removed from your friends"
+
 #: galaxy_linux/ui/ext_goverlay.py
 msgid "Automatisch („{0}“)"
 msgstr "Automatic (“{0}”)"
@@ -4220,6 +4428,130 @@ msgstr "nothing downloaded yet"
 #: galaxy_linux/ui/footer.py
 msgid "{0} Update(s) verfügbar"
 msgstr "{0} update(s) available"
+
+#: galaxy_linux/ui/friends_view.py
+msgid "Ablehnen"
+msgstr "Decline"
+
+#: galaxy_linux/ui/friends_view.py
+msgid "Annehmen"
+msgstr "Accept"
+
+#: galaxy_linux/ui/friends_view.py galaxy_linux/ui/window.py
+msgid "Ansicht"
+msgstr "View"
+
+#: galaxy_linux/ui/friends_view.py
+msgid "Erhalten {0}"
+msgstr "Received {0}"
+
+#: galaxy_linux/ui/friends_view.py
+msgid "Erhaltene Einladungen und Empfehlungen"
+msgstr "Received invites and recommendations"
+
+#: galaxy_linux/ui/friends_view.py
+msgid "Erweiterte Liste"
+msgstr "Expanded list"
+
+#: galaxy_linux/ui/friends_view.py
+msgid "FREUNDE ONLINE"
+msgstr "FRIENDS ONLINE"
+
+#: galaxy_linux/ui/friends_view.py galaxy_linux/ui/menus.py
+msgid "Freunde hinzufügen"
+msgstr "Add friends"
+
+#: galaxy_linux/ui/friends_view.py
+msgid "Freunde suchen"
+msgstr "Search friends"
+
+#: galaxy_linux/ui/friends_view.py
+msgid "Freunde-Seitenleiste – verfügbar bei Fenstern breiter als {0} px"
+msgstr "Friends sidebar – available on windows wider than {0} px"
+
+#: galaxy_linux/ui/friends_view.py
+msgid "Freundesliste"
+msgstr "Friends list"
+
+#: galaxy_linux/ui/friends_view.py
+msgid "Freundesliste nicht verfügbar"
+msgstr "Friends list not available"
+
+#: galaxy_linux/ui/friends_view.py
+msgid "Freundesliste wird geladen …"
+msgstr "Loading friends list …"
+
+#: galaxy_linux/ui/friends_view.py
+msgid "GOG hat nicht geantwortet: {0}"
+msgstr "GOG did not answer: {0}"
+
+#: galaxy_linux/ui/friends_view.py
+msgid "Hier siehst du deine Freunde, die momentan online oder in Spielen sind."
+msgstr "Here you'll see friends who are currently online or playing games."
+
+#: galaxy_linux/ui/friends_view.py
+msgid "Kein Freund passt zu „{0}“."
+msgstr "No friend matches “{0}”."
+
+#: galaxy_linux/ui/friends_view.py
+msgid "Keine Freunde online"
+msgstr "No friends online"
+
+#: galaxy_linux/ui/friends_view.py
+msgid "Kompakte Liste"
+msgstr "Compact list"
+
+#: galaxy_linux/ui/friends_view.py
+msgid "Letzter Abgleich fehlgeschlagen ({0}) – angezeigt wird der vorige Stand."
+msgstr "Last sync failed ({0}) – showing the previous state."
+
+#: galaxy_linux/ui/friends_view.py
+msgid "Melde dich bei GOG an, um deine Freunde zu sehen."
+msgstr "Sign in to GOG to see your friends."
+
+#: galaxy_linux/ui/friends_view.py
+msgid "Nach Aktivität sortieren"
+msgstr "Sort by activity"
+
+#: galaxy_linux/ui/friends_view.py
+msgid "Nach Namen sortieren"
+msgstr "Sort by name"
+
+#: galaxy_linux/ui/friends_view.py
+msgid "Nach gespieltem Spiel gruppieren"
+msgstr "Group by game played"
+
+#: galaxy_linux/ui/friends_view.py
+msgid "Nachricht senden"
+msgstr "Send message"
+
+#: galaxy_linux/ui/friends_view.py
+msgid "Nicht im Spiel"
+msgstr "Not playing now"
+
+#: galaxy_linux/ui/friends_view.py
+msgid "Noch keine Freunde"
+msgstr "No friends yet"
+
+#: galaxy_linux/ui/friends_view.py
+msgid "Profil ansehen"
+msgstr "View profile"
+
+#: galaxy_linux/ui/friends_view.py
+msgid "Schicke Einladungen an andere GOG Galaxy-Nutzer – „Freunde hinzufügen“ öffnet dafür gog.com."
+msgstr "Send invites to other GOG Galaxy users – “Add friends” opens gog.com for that."
+
+#: galaxy_linux/ui/friends_view.py
+msgid "Zeige eine Seitenleiste für Freunde, die online sind"
+msgstr "Show online friends as a sidebar"
+
+#: galaxy_linux/ui/friends_view.py
+msgid "Öffnet die Freundesseite von gog.com im eingebetteten Store"
+msgstr "Opens the gog.com friends page in the embedded store"
+
+#: galaxy_linux/ui/friends_view.py
+msgid "„Freunde hinzufügen“ öffnet die Freundesseite von gog.com im eingebetteten Store: Galaxys eigene Suche nach Benutzername oder E-Mail nutzt eine Schnittstelle, auf die sich galaxy-linux nicht verlassen kann. Dort suchst du Freunde und schickst Einladungen; angenommene Freunde erscheinen hier beim nächsten Abgleich."
+msgstr "“Add friends” opens the gog.com friends page in the embedded store: Galaxy's own search by user name or email uses an interface galaxy-linux cannot rely on. Search for friends and send invites there; accepted friends appear here with the next sync."
 
 #: galaxy_linux/ui/game_menu.py
 msgid "Aus Bibliothek entfernen …"
@@ -4862,10 +5194,6 @@ msgstr "New update {0} available"
 msgid "Noch keine Veröffentlichung"
 msgstr "No release published yet"
 
-#: galaxy_linux/ui/menus.py
-msgid "Online"
-msgstr "Online"
-
 #: galaxy_linux/ui/menus.py galaxy_linux/ui/prefs_galaxy_services.py
 msgid "Projektseite öffnen"
 msgstr "Open project page"
@@ -5186,10 +5514,6 @@ msgid "Du bist im Store nicht angemeldet."
 msgstr "You are not signed in to the store."
 
 #: galaxy_linux/ui/store.py
-msgid "ERNEUT VERSUCHEN"
-msgstr "TRY AGAIN"
-
-#: galaxy_linux/ui/store.py
 msgid "Eingebetteter Store nicht verfügbar (Paket webkitgtk-6.0 fehlt) – die Seite wurde im Browser geöffnet."
 msgstr "Embedded store not available (package webkitgtk-6.0 is missing) – the page was opened in the browser."
 
@@ -5366,10 +5690,6 @@ msgid "Absteigend"
 msgstr "Descending"
 
 #: galaxy_linux/ui/window.py
-msgid "Aktivität"
-msgstr "Activity"
-
-#: galaxy_linux/ui/window.py
 msgid "Alle Spiele haben bereits einen Prefix"
 msgstr "All games already have a prefix"
 
@@ -5386,10 +5706,6 @@ msgid "Angemeldet als {0}"
 msgstr "Signed in as {0}"
 
 #: galaxy_linux/ui/window.py
-msgid "Ansicht"
-msgstr "View"
-
-#: galaxy_linux/ui/window.py
 msgid "Aufsteigend"
 msgstr "Ascending"
 
@@ -5400,10 +5716,6 @@ msgstr "Hidden"
 #: galaxy_linux/ui/window.py
 msgid "Ausgeblendete wie eingestellt"
 msgstr "Hidden games as set"
-
-#: galaxy_linux/ui/window.py
-msgid "BEI GOG ANMELDEN"
-msgstr "SIGN IN TO GOG"
 
 #: galaxy_linux/ui/window.py
 msgid "BIBLIOTHEKEN"
@@ -5444,6 +5756,10 @@ msgstr "Downloads"
 #: galaxy_linux/ui/window.py
 msgid "Durchsuchen fehlgeschlagen: {0}"
 msgstr "Scan failed: {0}"
+
+#: galaxy_linux/ui/window.py
+msgid "Einladungen"
+msgstr "Invites"
 
 #: galaxy_linux/ui/window.py
 msgid "Erhältliche Updates anzeigen"
@@ -5608,10 +5924,6 @@ msgstr "Messages"
 #: galaxy_linux/ui/window.py
 msgid "Neu"
 msgstr "New"
-
-#: galaxy_linux/ui/window.py
-msgid "Nicht angemeldet"
-msgstr "Not signed in"
 
 #: galaxy_linux/ui/window.py
 msgid "Noch keine Spiele in „{0}“. Spielordner nach {1} kopieren – sie werden nach dem Kopieren automatisch übernommen – oder einen beliebigen Ordner mit „Spiel hinzufügen …“ aufnehmen."
