@@ -1,7 +1,7 @@
 # Maintainer: lokal (CachyOS)
 # Reines Python-Paket ohne Build-Werkzeuge: Quellen werden direkt nach site-packages installiert.
 pkgname=galaxy-linux
-pkgver=0.3.1
+pkgver=0.4.0
 pkgrel=1
 pkgdesc="Inoffizieller nativer Client für GOG.com mit Proton-Auswahl pro Spiel und Steam-kompatiblen Startoptionen"
 arch=('any')
@@ -21,6 +21,7 @@ optdepends=(
   'innoextract: Offline-Installer für Spiele ohne Galaxy-Build'
   'python-vdf: Steam-VDF-Dateien lesen'
   'python-pillow: Bildkonvertierung'
+  'polkit: „Jetzt aktualisieren“ installiert Client-Updates über pkexec'
 )
 source=("$pkgname-$pkgver.tar.gz")
 sha256sums=('SKIP')

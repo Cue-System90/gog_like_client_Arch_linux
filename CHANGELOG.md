@@ -2,10 +2,11 @@
 
 Neueste Version zuerst. „Neu bei uns“ im Zahnrad-Menü zeigt den Abschnitt der installierten Version.
 
-## 0.4.0 (in Arbeit)
+## 0.4.0 (23.10.2026)
 
-Dritter Schritt Richtung GOG Galaxy 2.1, Teil 1: die Gruppe GOG GALAXY und das Benachrichtigungszentrum; Teil 2:
-Freunde, Chat und Aktivität.
+Dritter Schritt Richtung GOG Galaxy 2.1: die Gruppe GOG GALAXY mit Entdecken und Aktueller Übersicht, das
+Benachrichtigungszentrum, Freunde mit Chat und Aktivität und das Selbst-Update wie in Galaxy. Dazu passt der Client
+jetzt auf kleine und stark skalierte Bildschirme – bis 1280 × 800, auch auf einen 4K-Fernseher mit 225 %.
 
 - **Seitenleiste wie Galaxy 2.1**: ganz oben die Gruppe **GOG GALAXY** mit „Entdecken“, „Suche“ (öffnet die Power
   Search) und „Aktuelle Übersicht“ (mit „Neu“, wenn „Was als Nächstes spielen“ einen neuen Vorschlag hat). Reihenfolge
@@ -67,6 +68,27 @@ Freunde, Chat und Aktivität.
   Benachrichtigungszentrum). Jede Anfrage erscheint nur einmal, der erste Abgleich nach dem Start meldet nichts.
 - Präsenz „Unsichtbar“ im Avatar-Menü meldet weiterhin nichts an GOG – weder „online“ noch das laufende Spiel –, damit
   Freunde keine Meldungen über dich bekommen.
+- **Schmale Fenster und skalierte Bildschirme**: das Fenster ließ sich nicht schmaler als 1899 px machen und passte
+  damit z. B. nicht auf einen 55"-4K-Fernseher mit 225 % (rund 1706 × 960 Punkte). Jetzt reichen 1066 px (Englisch
+  960 px), jede Ansicht ist bis 1280 × 800 vollständig. In der Spielansicht brechen die Kennzahlen der Play-Leiste
+  (Spielzeit, Zuletzt gespielt, Erfolge, Kompatibilität, Cloud-Spielstände), die Tags und die Knöpfe des
+  Kompatibilitäts-Panels bei Bedarf in eine zweite Zeile um; lange Proton-Namen und Startdateien enden mit „…“ (ganz in
+  der Liste und im Tooltip). Die Freunde-Seitenleiste erscheint weiter erst ab 1501 px und nur, wenn daneben Platz ist.
+- **Selbst-Update wie Galaxy**: Zahnrad → „Nach Updates suchen“ und – mit „Beim Start nach Client-Updates suchen“
+  (Einstellungen → Allgemein, Vorgabe an) höchstens einmal am Tag – fragen GitHub nach der neuesten Veröffentlichung.
+  Ist sie neuer, zeigt „Neues Update verfügbar“ die Versionshinweise mit „Jetzt aktualisieren“ und „Später“, das
+  Zahnrad bekommt einen blauen Punkt und sein Eintrag heißt „Jetzt aktualisieren“. Beim pacman-Paket lädt
+  galaxy-linux das Paket und `SHA256SUMS` der Veröffentlichung, prüft die Prüfsumme und installiert mit
+  `pkexec pacman -U` – das Passwort fragt nur der Dialog des Systems ab –, danach „Neu starten“. Läuft galaxy-linux aus
+  dem Quellordner oder als Benutzerinstallation, öffnet „Jetzt aktualisieren“ die Veröffentlichung im Browser.
+- **BEENDEN während der Prefix-Einrichtung** bricht jetzt auch einen laufenden Installationsschritt ab (ISI,
+  Redistributables): seine Prozessgruppe wird beendet (nach 5 Sekunden hart), danach der wineserver des Prefix. Der
+  Schritt zählt nicht als Fehlversuch und läuft beim nächsten Start erneut („Abgebrochen – läuft beim nächsten
+  Start“ im Prefix-Status).
+- **Ruhigeres Protokoll**: GTK-/GLib-Meldungen landen erst ab Warnung in `galaxy-linux.log` – die Dutzenden
+  „Gdk-INFO: Vulkan: Loader Message“-Zeilen fallen weg; mit `GALAXY_LINUX_LOG=debug` kommt wieder alles hinein.
+- Für den Maintainer: `scripts/release.sh` baut das Paket und legt das GitHub-Release mit Paket und `SHA256SUMS` an
+  (Versionshinweise aus diesem Änderungsprotokoll; `--dry-run` veröffentlicht nichts).
 
 ## 0.3.1 (23.10.2026)
 

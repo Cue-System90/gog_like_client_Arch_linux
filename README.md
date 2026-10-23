@@ -18,13 +18,16 @@ per game, prefixes and GOverlay.
   new games, cloud saves and wishlist discounts.
 - **Friends** – friends list with presence and *Playing …*, invites (accept/decline), a friends sidebar on wide
   windows, *Friends playing now* and *Activity* in Recent, notifications, and GOG's chat web app under *Messages*.
+- **Self-update like Galaxy** – ⚙ → *Check for updates* (and once a day at start) looks for a new GitHub release and
+  shows its notes; *Update now* checks the package against `SHA256SUMS`, installs it through the system's polkit
+  prompt (`pkexec pacman -U`) and restarts.
 - **Game view with Overview / My progress / Extras** – achievements with rarity, offline installers and goodies,
   cloud saves backup; *Configure …* for game language, version rollback, beta/private channels, DLCs and custom
   executables.
 - **Downloads like Galaxy** – pause/resume, reorder, bandwidth limit with schedule, pause while playing, queue kept
   across restarts, disk space check.
 - **Desktop integration** – system tray (StatusNotifierItem), autostart, minimize/close/launch behaviour, online
-  status, playtime from all devices.
+  status, playtime from all devices; every view fits down to 1280 × 800 (e.g. a 4K TV at 225 % scaling).
 - **Embedded GOG store** – home, catalogue, deals, wishlist, cart and order history inside the client; buying a
   game refreshes the library.
 - **Installs through GOG's content system** – resumable downloads, updates, verify/repair, DLCs, plus Galaxy's
@@ -48,7 +51,8 @@ cd gog_like_client_Arch_linux
 `install.sh` builds the pacman package into `../dist`, removes an older version and installs the new one.
 Required: `python python-requests python-gobject gtk4 libadwaita webkitgtk-6.0 unzip xdg-utils`.
 Recommended: `umu-launcher proton-cachyos mangohud lib32-mangohud goverlay winetricks gamescope innoextract`.
-Update with `git pull && ./install.sh`, remove with `scripts/uninstall.sh` (`--purge` also deletes settings).
+Update with ⚙ → *Update now* once a release is out, or `git pull && ./install.sh`; remove with
+`scripts/uninstall.sh` (`--purge` also deletes settings).
 
 ## Usage
 

@@ -143,7 +143,7 @@ class ClientUpdate:
                                   tr('galaxy-linux {0} ist verfügbar – installiert ist {1}.').format(rel.version, __version__))
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         notes = clientinfo.markdown_to_plain(rel.notes) or tr('Diese Veröffentlichung hat keine Versionshinweise.')
-        text = label(notes, wrap=True, selectable=True)
+        text = label(notes, wrap=True)      # nicht auswählbar: sonst markiert GTK beim Öffnen den ganzen Text
         scroll = Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER, propagate_natural_height=True,
                                     max_content_height=320, min_content_width=300)
         scroll.set_child(text)

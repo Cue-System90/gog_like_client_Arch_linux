@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "galaxy-linux"
-version = "0.3.1"
+version = "0.4.0"
 description = "Inoffizieller nativer Client für GOG.com auf CachyOS/Arch Linux mit Proton-Auswahl pro Spiel und Steam-kompatiblen Startoptionen"
 readme = "README.md"
 requires-python = ">=3.11"
