@@ -21,11 +21,26 @@ _session: Any = None
 _download_handlers: list[Callable[[Any], None]] = []
 
 
+#: Umgebung für WebKit, bevor der erste Web-Prozess startet (er erbt sie). WEBKIT_GST_DISABLE_GL_SINK: Videos auf
+#: gog.com (z. B. die ``.gif.mp4``-Schleifen in Spielbeschreibungen) erschienen mit WebKitGTK 2.54 und NVIDIA als
+#: grüne Flächen – die GL-Videoausgabe übergibt die Bilder per DMA-BUF falsch. Ohne GL-Sink stimmt das Bild, der
+#: Rest der Seite bleibt GPU-beschleunigt. Ein vom Nutzer gesetzter Wert hat Vorrang.
+WEBKIT_ENV = {"WEBKIT_GST_DISABLE_GL_SINK": "1"}
+
+
+def prepare_environment() -> None:
+    for key, value in WEBKIT_ENV.items():
+        if key not in os.environ:
+            os.environ[key] = value
+            log.info("WebKit: %s=%s", key, value)
+
+
 def webkit():
     """Das Modul ``gi.repository.WebKit`` (6.0, GTK4) oder None, wenn es nicht installiert ist."""
     global _webkit, _checked
     if not _checked:
         _checked = True
+        prepare_environment()
         try:
             import gi
             gi.require_version("WebKit", "6.0")

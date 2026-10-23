@@ -2,6 +2,13 @@
 
 Neueste Version zuerst. „Neu bei uns“ im Zahnrad-Menü zeigt den Abschnitt der installierten Version.
 
+## 0.4.1 (23.10.2026)
+
+- **Videos im Store**: Die kurzen Video-Schleifen in Spielbeschreibungen und andere Videos auf gog.com erschienen als
+  grüne Flächen (WebKitGTK 2.54 mit NVIDIA: die GL-Videoausgabe übergab die Bilder per DMA-BUF falsch). galaxy-linux
+  setzt jetzt `WEBKIT_GST_DISABLE_GL_SINK=1`, bevor WebKit startet – die Videos stimmen, der Rest der Seite bleibt
+  GPU-beschleunigt. Wer den Wert selbst setzt, behält seinen.
+
 ## 0.4.0 (23.10.2026)
 
 Dritter Schritt Richtung GOG Galaxy 2.1: die Gruppe GOG GALAXY mit Entdecken und Aktueller Übersicht, das
