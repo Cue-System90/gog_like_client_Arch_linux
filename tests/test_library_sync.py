@@ -493,14 +493,25 @@ class ControllerTest(unittest.TestCase):
         self.assertEqual(self.finish(), ("manual", True))
         self.assertEqual(self.calls, [])
 
-    def test_new_games_toast_and_desktop_notification(self):
+    def test_new_games_toast_and_notification(self):
         self.win.is_active.return_value = False
         self.ctl.request("timer")
         self.finish(ls.SyncResult(new_ids=["1", "2", "3", "4"], total=9, new_titles=["A", "B", "C", "D"]))
-        self.assertEqual(self.toasts, [tr('{0} neue(s) Spiel(e): {1}').format(4, "A, B, C …")])
-        self.app.send_notification.assert_called_once()
+        text = tr('{0} neue(s) Spiel(e): {1}').format(4, "A, B, C …")
+        self.assertEqual(self.toasts, [text])
+        # Benachrichtigungszentrum (Desktop entscheidet es nach Einstellung und Fensterfokus)
+        self.win.notifications.post.assert_called_once_with("library", tr('Neu in der Bibliothek'), text,
+                                                            action="view:all", product_id="",
+                                                            key="library:1,2,3,4")
         self.win.populate.assert_called_once()                          # Ansicht neu, Bildlauf bleibt
         self.win.check_updates_async.assert_called_once_with(quiet=True)
+
+    def test_single_new_game_opens_its_page(self):
+        self.ctl.request("timer")
+        self.finish(ls.SyncResult(new_ids=["7"], total=2, new_titles=["Gekauft"]))
+        args, kw = self.win.notifications.post.call_args
+        self.assertEqual(args[2], tr('„{0}“ wurde deiner Bibliothek hinzugefügt').format("Gekauft"))
+        self.assertEqual((kw["action"], kw["product_id"]), ("game:7", "7"))
 
     def test_purchase_retries_until_new_games(self):
         self.ctl.request("purchase")

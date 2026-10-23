@@ -14,7 +14,7 @@ import time
 
 from ..api import library_sync as ls
 from ..api.client import NotLoggedIn
-from .util import Gio, GLib, idle, run_async
+from .util import GLib, idle, run_async
 
 log = logging.getLogger(__name__)
 
@@ -172,20 +172,16 @@ class LibrarySyncController:
             GLib.idle_add(lambda: (adj.set_value(y), False)[1])
 
     def _announce(self, res: ls.SyncResult) -> None:
-        """Toast „N neue(s) Spiel(e): …“; ist das Fenster nicht aktiv, zusätzlich eine Desktop-Benachrichtigung."""
+        """Toast „N neue(s) Spiel(e): …“ und eine Meldung im Benachrichtigungszentrum (Desktop je nach Einstellung
+        „Neue Spiele in der Bibliothek“, nur wenn das Fenster nicht im Vordergrund ist)."""
         text = tr('{0} neue(s) Spiel(e): {1}').format(len(res.new_ids), ls.new_titles_text(res.new_titles))
         self.win.toast(text)
-        if self.win.is_active():
-            return
-        app = self.win.get_application()
-        if app is None:
-            return
-        try:
-            n = Gio.Notification.new(tr('Neu in der Bibliothek'))
-            n.set_body(tr('„{0}“ wurde deiner Bibliothek hinzugefügt').format(res.new_titles[0]) if len(res.new_ids) == 1 else text)
-            app.send_notification("library-new", n)
-        except Exception as exc:  # pragma: no cover - ohne Benachrichtigungsdienst
-            log.debug("Desktop-Benachrichtigung nicht möglich: %s", exc)
+        single = len(res.new_ids) == 1
+        body = tr('„{0}“ wurde deiner Bibliothek hinzugefügt').format(res.new_titles[0]) if single else text
+        self.win.notifications.post("library", tr('Neu in der Bibliothek'), body,
+                                    action=f"game:{res.new_ids[0]}" if single else "view:all",
+                                    product_id=res.new_ids[0] if single else "",
+                                    key="library:" + ",".join(sorted(res.new_ids)))
 
     # ------------------------------------------------------------------ Kauf: Wiederholungen
     def _after_purchase_sync(self, reason: str, found_new: bool) -> None:

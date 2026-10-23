@@ -69,6 +69,12 @@ class GtkBridge:
     def notify(self, text: str) -> None:
         idle(self.window.toast, text)
 
+    def post(self, kind: str, title: str, body: str = "", product_id: str = "") -> None:
+        """Meldung fürs Benachrichtigungszentrum (aus jedem Thread); ein Klick öffnet das Spiel."""
+        center = getattr(self.window, "notifications", None)
+        if center is not None:
+            idle(center.post, kind, title, body, f"game:{product_id}" if product_id else "", product_id)
+
     def cancel_all(self) -> None:
         """Offene Rückfragen mit der Vorgabe beantworten (z. B. beim Schließen des Fensters)."""
         with self._lock:

@@ -1039,18 +1039,26 @@ class PreferencesDialog(Adw.PreferencesDialog):
             self.add_toast(Adw.Toast.new(tr('{0} Lesezeichen exportiert').format(n)))
         dlg.save(self.get_root(), None, done)
 
-    # Seite: Benachrichtigungen
+    # Seite: Benachrichtigungen (je Typ wie Galaxy; „Overlay“ = Benachrichtigungszentrum)
     def _page_notifications(self) -> Adw.PreferencesPage:
+        from .. import notifications as nt
         page = Adw.PreferencesPage(title=tr('Benachrichtigungen'), icon_name="preferences-system-notifications-symbolic",
                                    name="notifications")
         grp = Adw.PreferencesGroup(title=tr('Benachrichtigungen'),
-                                   description=tr('Desktop-Benachrichtigungen, solange das Fenster nicht im Vordergrund ist; im Fenster erscheinen die Meldungen unten.'))
-        opts = (("desktop", tr('Nur Desktop')), ("none", "—"))
-        keys = [k for k, _n in opts]
-        row = Adw.ComboRow(title=tr('Statusmeldung Installation/Update'), model=Gtk.StringList.new([n for _k, n in opts]))
-        row.set_selected(keys.index(self.s.notify_download_status) if self.s.notify_download_status in keys else 0)
-        row.connect("notify::selected", lambda r, _p: self._save(notify_download_status=keys[r.get_selected()]))
-        grp.add(row)
+                                   description=tr('Wie in GOG Galaxy je Art wählbar. Ein Galaxy-Overlay gibt es unter Linux nicht – seine Rolle übernimmt das Benachrichtigungszentrum (Glocke oben links). Desktop-Benachrichtigungen erscheinen nur, solange das Fenster nicht im Vordergrund ist.'))
+        keys = list(nt.MODES)
+        names = [tr(nt.MODE_NAMES[k]) for k in keys]
+        for t in nt.types():
+            # Auswahl als eigenes Feld: die Galaxy-Bezeichnungen sind lang und sollen ganz lesbar bleiben
+            row = Adw.ActionRow(title=tr(t.title), subtitle=tr(t.subtitle) if t.subtitle else "")
+            dd = Gtk.DropDown.new_from_strings(names)
+            dd.set_valign(Gtk.Align.CENTER)
+            cur = getattr(self.s, t.setting, t.default)
+            dd.set_selected(keys.index(cur) if cur in keys else keys.index(t.default))
+            dd.connect("notify::selected", lambda d, _p, k=t.setting: self._save(**{k: keys[d.get_selected()]}))
+            row.add_suffix(dd)
+            row.set_activatable_widget(dd)
+            grp.add(row)
         page.add(grp)
         return page
 

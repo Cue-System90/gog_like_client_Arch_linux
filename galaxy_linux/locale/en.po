@@ -5852,15 +5852,3 @@ msgstr "Open"
 #: galaxy_linux/ui/window.py
 msgid "„{0}“ hinzugefügt"
 msgstr "“{0}” added"
-
-#: galaxy_linux/ui/dialogs.py
-msgid "Desktop-Benachrichtigungen, solange das Fenster nicht im Vordergrund ist; im Fenster erscheinen die Meldungen unten."
-msgstr "Desktop notifications while the window is not in front; inside the window, messages appear at the bottom."
-
-#: galaxy_linux/ui/dialogs.py
-msgid "Nur Desktop"
-msgstr "Desktop only"
-
-#: galaxy_linux/ui/dialogs.py
-msgid "Statusmeldung Installation/Update"
-msgstr "Installing / updating status"

@@ -61,12 +61,18 @@ class CloudSavesHook(LaunchHook):
             ctx.log_line(f"--- Cloud-Spielstände ({mode}) fehlgeschlagen: {exc}")
             ctx.status(tr('Cloud-Synchronisierung fehlgeschlagen: {0}').format(exc))
             ctx.notify(tr('Cloud-Synchronisation fehlgeschlagen'))
+            ctx.event("cloud", tr('Cloud-Spielstände: {0}').format(ctx.game.title),
+                      tr('Cloud-Synchronisierung fehlgeschlagen: {0}').format(exc))
             return None
         ctx.data[f"{self.name}:{mode}"] = res
         ctx.log_line(f"--- Cloud-Spielstände ({mode}): {res.state} " + ", ".join(
             f"{r.name}={r.done} hoch={r.uploaded} runter={r.downloaded}" for r in res.locations))
         if res.state in ("conflict", "quota", "pending") and res.message:
             ctx.status(res.message)
+        if res.state in ("conflict", "quota"):
+            # Benachrichtigungszentrum: ungelöster Konflikt („Ignorieren“) bzw. Kontingent überschritten
+            ctx.event("cloud", tr('Cloud-Spielstände: {0}').format(ctx.game.title),
+                      res.message or (tr('Konflikt') if res.state == "conflict" else tr('Kontingent überschritten')))
         elif res.state == "synced" and res.changed:
             ctx.status(res.summary())
             if mode == "upload":

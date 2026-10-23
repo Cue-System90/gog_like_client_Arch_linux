@@ -50,6 +50,16 @@ def install_actions(app) -> None:
         app.add_action(a)
         if accels:
             app.set_accels_for_action(f"app.{name}", accels)
+    # Klick auf eine Desktop-Benachrichtigung: Fenster zeigen und die Aktion der Meldung ausführen
+    notif = Gio.SimpleAction.new("notification", GLib.VariantType.new("s"))
+
+    def open_notification(_a, value: GLib.Variant) -> None:
+        win = w()
+        if win is not None:
+            win.show_from_tray()
+            win.notifications.open(value.get_string())
+    notif.connect("activate", open_notification)
+    app.add_action(notif)
     # Avatar-Menü: Online / Unsichtbar (Radio, wirkt sofort)
     status = app.backend.settings.presence_status if app.backend else "online"
     pres = Gio.SimpleAction.new_stateful("presence", GLib.VariantType.new("s"), GLib.Variant("s", status))

@@ -286,6 +286,7 @@ def _report_gave_up(ctx: LaunchContext, step: redist.SetupStep, rc: int | None) 
                 redist.MAX_RETRIES + 1, rc)
     ctx.status(text)
     ctx.notify(text)
+    ctx.event("redist", tr('Einrichtung im Prefix: {0}').format(ctx.game.title), text)
 
 
 def _finish(ctx: LaunchContext, state: dict, build_id: str, dirty: bool) -> None:

@@ -28,6 +28,7 @@ from .downloads_view import DownloadsView
 from .game_menu import GameActions, attach_context_menu
 from .game_page import GamePage
 from .library_sync import LibrarySyncController
+from .notification_center import NotificationCenter
 from .tray import Tray
 from .util import (Adw, Gdk, Gio, GLib, Gtk, ImageLoader, Pango, choose_folder, clamped_picture, icon_button, idle, label,
                    pick_icon, relative_time, run_async)
@@ -291,6 +292,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.sections: list[LibrarySection] = []
         self.library_sync = LibrarySyncController(self)   # Abgleich mit GOG: Start, Intervall, Fokus, Login, Kauf, F5
         self.game_actions = GameActions(self)     # Anpassen-Menü und Kontextmenü der Spiele (Aktionsgruppe „game“)
+        self.notifications = NotificationCenter(self)          # Glocke, Liste, Desktop-Meldungen je Einstellung
         util.SPEED_IN_BITS[0] = backend.settings.speed_in_bits
 
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -387,6 +389,8 @@ class MainWindow(Adw.ApplicationWindow):
         left.append(self.avatar_btn)
         sp2 = Gtk.Box(hexpand=True)
         left.append(sp2)
+        # Glocke = Benachrichtigungszentrum (mit Zahl der ungelesenen Meldungen)
+        left.append(self.notifications.button)
         sb = icon_button(pick_icon("system-search-symbolic", "edit-find-symbolic"), tr('Suche (Strg+F)'), ["flat", "hdr-btn"])
         sb.set_margin_end(10)
         sb.set_valign(Gtk.Align.CENTER)
@@ -1345,6 +1349,7 @@ class MainWindow(Adw.ApplicationWindow):
             if self.current_pid:
                 self.page.refresh_state()
             self.update_nav_badges()
+            self._post_updates(found)
             queued = self.backend.auto_update(found) if found and self.backend.settings.feature_auto_update else []
             if queued:
                 self.toast(tr('Updates werden installiert: {0} Spiel(e)').format(len(queued)))
@@ -1355,6 +1360,23 @@ class MainWindow(Adw.ApplicationWindow):
             elif not quiet:
                 self.toast(tr('Alle installierten Spiele sind aktuell'))
         run_async(self.backend.check_updates, done, lambda e: None if quiet else self.toast(str(e)))
+
+    def _post_updates(self, found: dict) -> None:
+        """Benachrichtigungszentrum: „Updates verfügbar“ – je Stand (Spiele und Builds) nur einmal."""
+        if not found:
+            return
+        titles = []
+        for pid in found:
+            e = self.backend.entry(pid)
+            titles.append(e.title if e else pid)
+        key = "updates:" + ",".join(f"{pid}@{getattr(b, 'build_id', '')}" for pid, b in sorted(found.items()))
+        if len(found) == 1:
+            title = tr('Update verfügbar: {0}').format(titles[0])
+            body = ""
+        else:
+            title = tr('Updates verfügbar für {0} Spiel(e)').format(len(found))
+            body = ", ".join(titles[:3]) + (" …" if len(titles) > 3 else "")
+        self.notifications.post("update", title, body, action="updates", key=key)
 
     # ------------------------------------------------------------------ Spiele-Ordner überwachen
     def setup_folder_watch(self) -> None:
@@ -1662,21 +1684,11 @@ class MainWindow(Adw.ApplicationWindow):
                     self.page.refresh_state()
         run_async(lambda: self.backend.pull_playtime(pids, limit=60), done, lambda e: None)
 
-    def notify_desktop(self, key: str, title: str, body: str = "") -> None:
-        """Desktop-Benachrichtigung, solange das Fenster nicht im Vordergrund ist (sonst genügt die Meldung unten)."""
-        if self.is_active() and self.get_visible():
-            return
-        app = self.get_application()
-        if app is None:
-            return
-        n = Gio.Notification.new(title)
-        if body:
-            n.set_body(body)
-        n.set_default_action("app.activate-window")
-        try:
-            app.send_notification(key, n)
-        except Exception as exc:  # pragma: no cover
-            log.debug("Benachrichtigung nicht möglich: %s", exc)
+    def notify_desktop(self, key: str, title: str, body: str = "", kind: str = "download", action: str = "") -> None:
+        """Ältere Aufrufe: Meldung über das Benachrichtigungszentrum (Desktop nur, solange das Fenster nicht im
+        Vordergrund ist, je nach Einstellung des Typs)."""
+        self.notifications.post(kind, title, body, action=action, key=key)
+
 
     # ------------------------------------------------------------------ Schließen / Beenden
     def _on_close_request(self, *_: object) -> bool:
@@ -1778,9 +1790,7 @@ class MainWindow(Adw.ApplicationWindow):
             text = tr('{0} abgeschlossen: {1}').format(job.label, job.title) if job.title != job.label \
                 else tr('{0} abgeschlossen').format(job.label)
             self.toast(text)
-            if self.backend.settings.notify_download_status == "desktop" and job.kind != "prefix":
-                self.notify_desktop(f"job-{job.id}", job.title, tr('Installation abgeschlossen') if job.kind.startswith("install")
-                                    else text)
+            self._post_job(job, tr('Installation abgeschlossen') if job.kind.startswith("install") else text)
             # Aufträge ohne Spiel der Bibliothek (z. B. Galaxy-Redistributables) ändern keine Karte – kein Neuaufbau,
             # der die Bibliothek nach oben springen ließe
             if is_lib_view(self.view) and (self.backend.registry.is_installed(job.product_id)
@@ -1790,7 +1800,18 @@ class MainWindow(Adw.ApplicationWindow):
                 GLib.idle_add(lambda: (self.lib_scroll.get_vadjustment().set_value(y), False)[1])
         elif job.state == "failed":
             self.toast(tr('{0} fehlgeschlagen: {1}').format(job.label, job.error))
-            if self.backend.settings.notify_download_status == "desktop":
-                self.notify_desktop(f"job-{job.id}", job.title, tr('{0} fehlgeschlagen: {1}').format(job.label, job.error))
+            self._post_job(job, tr('{0} fehlgeschlagen: {1}').format(job.label, job.error))
         elif job.state == "cancelled":
             self.toast(tr('{0} abgebrochen: {1}').format(job.label, job.title))
+
+    def _post_job(self, job, body: str) -> None:
+        """Benachrichtigungszentrum: Download/Installation/Update fertig oder fehlgeschlagen (Prefixe nicht). Ein Klick
+        öffnet das Spiel bzw. bei Fehlern die Downloads; Galaxy-Redistributables melden sich als Problem."""
+        if job.kind == "prefix":
+            return
+        failed = job.state == "failed"
+        kind = "redist" if job.kind == "redist" and failed else "download"
+        known = self.backend.entry(job.product_id) is not None or self.backend.registry.is_installed(job.product_id)
+        action = "view:downloads" if failed or not known else f"game:{job.product_id}"
+        self.notifications.post(kind, job.title, body, action=action, product_id=job.product_id if known else "",
+                                key=f"job:{job.id}:{job.state}")

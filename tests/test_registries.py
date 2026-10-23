@@ -144,5 +144,28 @@ class UiRegistryTest(unittest.TestCase):
         self.assertEqual(sorted(ur._window_hooks), ["b", "c"])
 
 
+class LaunchEventTest(unittest.TestCase):
+    """Launch-Hooks melden Probleme (Cloud, Redistributables) an das Benachrichtigungszentrum – ohne Oberfläche nichts."""
+
+    def ctx(self, bridge):
+        from galaxy_linux.launch.hooks import LaunchContext
+        return LaunchContext(product_id="7", game=mock.Mock(), gs=mock.Mock(), settings=mock.Mock(), plan=None,
+                             install_dir=mock.Mock(), exe=None, prefix=mock.Mock(), runner="native", tool=None,
+                             log_file=mock.Mock(), status=lambda t: None, ask=lambda *a: "",
+                             launcher=mock.Mock(ui_bridge=bridge))
+
+    def test_event_reaches_bridge(self):
+        bridge = mock.Mock()
+        self.ctx(bridge).event("cloud", "Titel", "Text")
+        bridge.post.assert_called_once_with("cloud", "Titel", "Text", "7")
+
+    def test_console_bridge_without_post(self):
+        from galaxy_linux.launch.hooks import ConsoleBridge
+        self.ctx(ConsoleBridge()).event("redist", "Titel")        # kein Fehler, keine Ausgabe nötig
+        bridge = mock.Mock()
+        bridge.post.side_effect = RuntimeError("weg")
+        self.ctx(bridge).event("cloud", "Titel")                 # Fehler der Oberfläche halten den Start nicht auf
+
+
 if __name__ == "__main__":
     unittest.main()

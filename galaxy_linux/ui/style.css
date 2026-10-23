@@ -126,3 +126,16 @@ window.galaxy { background-color: #1b1b20; color: #d9d9de; }
 /* Protokoll-Fenster */
 .log-view { font-size: 9pt; }
 .log-view text { background-color: #141418; color: #d0d0d6; }
+
+/* 0.4.0: Benachrichtigungszentrum (Glocke oben links) */
+.notif-count { background-color: #8b4fd6; color: #ffffff; border-radius: 999px; font-size: 6.5pt; font-weight: 800;
+               padding: 0 4px; min-height: 13px; min-width: 7px; margin: -5px -7px 0 0; }
+.notif-list { background: transparent; }
+.notif-list > row { border-radius: 6px; margin-bottom: 2px; }
+.notif-list > row:hover { background-color: rgba(255,255,255,0.05); }
+.notif-row.unread { background-color: rgba(139,79,214,0.12); }
+.notif-title { font-weight: 600; color: #ececf0; }
+.notif-row:not(.unread) .notif-title { font-weight: 400; color: #c4c4ca; }
+.notif-body { color: #a0a0a6; font-size: 9pt; }
+.notif-icon { color: #c57be3; }
+.notif-dot { background-color: #c57be3; border-radius: 999px; min-width: 8px; min-height: 8px; }

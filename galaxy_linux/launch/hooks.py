@@ -132,6 +132,17 @@ class LaunchContext:
             except Exception:  # pragma: no cover
                 log.debug("Meldung an die Oberfläche fehlgeschlagen", exc_info=True)
 
+    def event(self, kind: str, title: str, body: str = "") -> None:
+        """Meldung für das Benachrichtigungszentrum der Oberfläche (Art wie ``notifications.KIND_TYPE``, z. B.
+        ``cloud`` oder ``redist``); ohne Oberfläche (Kommandozeile) geschieht nichts."""
+        bridge = getattr(self.launcher, "ui_bridge", None)
+        post = getattr(bridge, "post", None)
+        if callable(post):
+            try:
+                post(kind, title, body, self.product_id)
+            except Exception:  # pragma: no cover
+                log.debug("Meldung an das Benachrichtigungszentrum fehlgeschlagen", exc_info=True)
+
     def log_line(self, text: str) -> None:
         """Zeile ins Spielprotokoll schreiben."""
         try:
