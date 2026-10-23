@@ -530,19 +530,21 @@ class GamePage(Gtk.Box):
         def done(rg) -> None:
             text = tr('Läuft · {0}').format(rg.plan.description)
             self._hook_status[pid] = (text, False)
+            self.play_btn.set_sensitive(True)
             if self.pid == pid:
-                self.play_btn.set_sensitive(True)
                 self.status_lbl.set_text(text)
                 self.refresh_state()
             self.win.refresh_game_state(pid)
 
         def fail(exc: Exception) -> None:
             self._hook_status.pop(pid, None)
+            self.play_btn.set_sensitive(True)
             if self.pid == pid:
-                self.play_btn.set_sensitive(True)
                 self.status_lbl.set_text("")
                 self.refresh_state()
-            self.win.toast(tr('Start fehlgeschlagen: {0}').format(exc))
+            self.win.refresh_game_state(pid)
+            cancelled = str(exc) == tr('Start abgebrochen.')
+            self.win.toast(str(exc) if cancelled else tr('Start fehlgeschlagen: {0}').format(exc))
         run_async(lambda: self.backend.launch(pid, on_exit=on_exit, status_cb=status), done, fail)
 
     def _after_exit(self, pid: str, code: int, minutes: int) -> None:
