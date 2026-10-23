@@ -9,8 +9,9 @@ per game, prefixes and GOverlay.
 
 ## Features
 
-- **Library like Galaxy** – owned, installed and last played games, custom libraries for non-GOG games, grid/list
-  views, tags, star ratings, sort/group/filter and sidebar bookmarks, right-click menu. New purchases show up on their
+- **Library like Galaxy** – owned, installed and last played games, custom libraries for non-GOG games (official
+  names and covers, copies shown once), grid/list views, tags, star ratings, sort/group/filter, sidebar bookmarks,
+  right-click menu and *Edit …* for a custom title and cover. New purchases show up on their
   own; ⚙ → *Refresh library* (F5) forces a sync. Power Search with Ctrl+F (library, bookmarks, store).
 - **Game view with Overview / My progress / Extras** – achievements with rarity, offline installers and goodies,
   cloud saves backup; *Configure …* for game language, version rollback, beta/private channels, DLCs and custom
@@ -25,7 +26,8 @@ per game, prefixes and GOverlay.
   redistributables (shared cache, installer scripts, DOSBox/ScummVM).
 - **Proton per game** – umu-launcher, proton-cachyos, GE-Proton or Wine, one prefix per game, Proton's Wayland
   driver by default, Steam-style launch options (`mangohud %command%`).
-- **GOverlay per game** – game folders appear in GOverlay and each game's profile is applied at launch.
+- **GOverlay per game** – every installed game appears in GOverlay once, with its title and cover; its GOverlay
+  profile is applied at launch.
 - **Galaxy services in game** – achievements, stats and leaderboards for Galaxy SDK games via comet.
 - **Cloud saves** – synced before and after playing, with a conflict dialog and local backups.
 - Playtime, desktop/menu shortcuts, detection of copied game folders, German and English interface.
@@ -50,7 +52,8 @@ Update with `git pull && ./install.sh`, remove with `scripts/uninstall.sh` (`--p
 - Game page → ⚙ *Properties*: Proton/Wine version, launch options, GOverlay profile, cloud saves, prefix setup.
 - Language: *Settings → General → Interface*, or `GALAXY_LINUX_LANG=en galaxy-linux`.
 - Command line: `galaxy-linux --help` (`list`, `install`, `launch`, `cloud`, `redist`, `comet`, `goverlay`, `library` …).
-- Logs: `~/.local/share/galaxy-linux/logs/` or `galaxy-linux log`. Changes: [CHANGELOG.md](CHANGELOG.md).
+- Logs: ⚙ → *Log* (filter, search, copy), `~/.local/share/galaxy-linux/logs/` or `galaxy-linux log`.
+  Changes: [CHANGELOG.md](CHANGELOG.md).
 
 Development: `python3 -m unittest discover -s tests -t .`; translations are kept with `scripts/i18n-update.py`.
 

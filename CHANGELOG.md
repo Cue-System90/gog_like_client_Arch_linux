@@ -2,6 +2,34 @@
 
 Neueste Version zuerst. „Neu bei uns“ im Zahnrad-Menü zeigt den Abschnitt der installierten Version.
 
+## 0.3.1 (23.10.2026)
+
+Rückmeldungen aus dem ersten echten Test von 0.3.0.
+
+- **GOverlay ohne globale Konfiguration**: jedes installierte Spiel (GOG und extern, auch Linux-Spiele) erscheint in
+  GOverlay **genau einmal, mit seinem Titel und Cover** – wie ein Steam-Spiel. galaxy-linux trägt dafür statt der
+  Bibliotheks-Wurzeln einen eigenen Ordner mit einer Verknüpfung pro Spiel ein
+  (`~/.local/share/galaxy-linux/goverlay-library/`); Sicherungs- und Hilfsordner („… - Kopie“, „saved_games“) tauchen
+  nicht mehr als Spiele auf. Die früher eingetragenen Wurzeln werden entfernt, eigene Zeilen bleiben. Cover kommen aus
+  galaxy-linux (ohne Cover eine Titelkarte), GOverlay sucht nicht mehr bei Steam nach dem Ordnernamen („Freelancer
+  Simulator“); ein in GOverlay selbst gesetztes Cover bleibt. Das Profil heißt wie die Karte, Profile aus 0.3.0 (nach
+  dem Ordnernamen) gelten weiter. Das globale GOverlay-Profil gilt nur, wenn man es ausdrücklich einschaltet.
+- **Externe Spiele mit richtigem Namen**: offizieller Titel aus dem GOG-Spiel desselben Namens, dem GOG-Katalog bzw.
+  Steam (streng geprüft), der Versionsinfo der .exe oder Wikidata; Cover notfalls von Wikipedia. Beispiele:
+  „EmperorDAdRdM 1360 x 768“ → „Emperor: Rise of the Middle Kingdom (1360 x 768)“, „Herrscher des Olymp - Zeus
+  1360 x 768“ → „Zeus and Poseidon (1360 x 768)“ mit dem Cover des GOG-Spiels. Ordner werden nie umbenannt.
+- **Kopien und Varianten unterscheiden**: Kopien erkennt galaxy-linux am Inhalt (gleiche Dateien und Größen, ohne
+  Spielstände und Einstellungen), nicht am Namen. Eine Kopie erscheint wie Galaxys gestapelte Duplikate nur einmal
+  (Filter „Kopien anzeigen“, in den Details „Kopie von …“); eine Variante mit eigenem Inhalt („Freelancer HD Edition“,
+  Breitbild-Fassungen) ist ein eigenes Spiel mit eigenem Namen, z. B. „Freelancer (HD Edition)“.
+- **Bearbeiten …** wie in Galaxy (Anpassen-Menü und Rechtsklick): eigener Titel und eigenes Cover für jedes Spiel,
+  je mit „Auf Standard zurücksetzen“ – gilt in Bibliothek, Spielansicht, Suche und GOverlay.
+- **„N Update(s) verfügbar“** unten in der Seitenleiste ist jetzt ein Knopf: ein Klick öffnet die Downloads bei
+  „Erhältliche Updates“.
+- **Protokoll** (Zahnrad → Protokoll): galaxy-linux.log, comet.log und die Spielprotokolle mit Stufenfilter (Alle,
+  Warnungen, Fehler), Suche, „Ordner öffnen“, „Kopieren“ und „Leeren“; neue Einträge erscheinen sofort. Tokens bleiben
+  maskiert.
+
 ## 0.3.0 (23.10.2026)
 
 Zweiter Schritt Richtung GOG Galaxy 2.1: Bibliothek, Spielansicht, Downloads und Einstellungen wie im Original.

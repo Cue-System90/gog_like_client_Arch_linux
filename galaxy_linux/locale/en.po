@@ -154,6 +154,10 @@ msgid "Der Spiele-Ordner darf nicht im Prefix-Ordner liegen."
 msgstr "The games folder must not be inside the prefix folder."
 
 #: galaxy_linux/backend.py
+msgid "Die Bilddatei ist leer."
+msgstr "The image file is empty."
+
+#: galaxy_linux/backend.py
 msgid "Eine Bibliothek „{0}“ gibt es schon."
 msgstr "A library named “{0}” already exists."
 
@@ -550,8 +554,8 @@ msgid "GOverlay nicht gefunden ({0} fehlt)."
 msgstr "GOverlay not found ({0} is missing)."
 
 #: galaxy_linux/cli.py
-msgid "GOverlay: eingetragene Spiele-Ordner und Profil pro Spiel anzeigen"
-msgstr "GOverlay: show the registered game folders and the profile of each game"
+msgid "GOverlay: Spielkarten, eingetragene Ordner und Profil pro Spiel anzeigen"
+msgstr "GOverlay: show the game cards, registered folders and the profile of each game"
 
 #: galaxy_linux/cli.py
 msgid "Galaxy-Dienste (comet): Status anzeigen oder herunterladen"
@@ -564,6 +568,10 @@ msgstr "Show the Galaxy redistributables and the prefix setup"
 #: galaxy_linux/cli.py
 msgid "Geladen"
 msgstr "Downloaded"
+
+#: galaxy_linux/cli.py
+msgid "Geplante Spielkarten zeigen, ohne etwas zu schreiben"
+msgstr "Show the planned game cards without writing anything"
 
 #: galaxy_linux/cli.py
 msgid "Gestartet (PID {0}, {1}); Protokoll: {2}"
@@ -661,10 +669,6 @@ msgstr "don't scan the folder right away"
 msgid "Ordner oder Vorgabe ändern: games_dir, prefix_dir, tool, options, wayland (on/off/default), dpi, watch"
 msgstr "change folder or default: games_dir, prefix_dir, tool, options, wayland (on/off/default), dpi, watch"
 
-#: galaxy_linux/cli.py
-msgid "Ordnerliste abgeglichen: {0} eingetragen, {1} entfernt, {2} Cover angelegt"
-msgstr "Folder list synchronised: {0} added, {1} removed, {2} covers created"
-
 #: galaxy_linux/cli.py galaxy_linux/ui/game_page.py
 msgid "Prefix"
 msgstr "Prefix"
@@ -733,13 +737,17 @@ msgstr "Game: setup status in its prefix"
 msgid "Spiele aller eigenen Bibliotheken anzeigen"
 msgstr "show games of all custom libraries"
 
+#: galaxy_linux/cli.py
+msgid "Spiele in GOverlay anzeigen (bzw. entfernen) und Cover anlegen"
+msgstr "Show the games in GOverlay (or remove them) and create covers"
+
+#: galaxy_linux/cli.py
+msgid "Spiele in GOverlay: {0} ({1} neu, {2} entfernt), {3} Cover geschrieben"
+msgstr "Games in GOverlay: {0} ({1} new, {2} removed), {3} covers written"
+
 #: galaxy_linux/cli.py galaxy_linux/ui/dialogs.py
 msgid "Spiele-Ordner"
 msgstr "Games folder"
-
-#: galaxy_linux/cli.py
-msgid "Spiele-Ordner in GOverlay eintragen (bzw. austragen) und Cover anlegen"
-msgstr "Add (or remove) the game folders in GOverlay and create covers"
 
 #: galaxy_linux/cli.py
 msgid "Spiele-Ordner nach kopierten Spielen durchsuchen und fehlende Prefixe anlegen"
@@ -749,7 +757,7 @@ msgstr "scan games folders for copied games and create missing prefixes"
 msgid "Spielordner"
 msgstr "game folder"
 
-#: galaxy_linux/cli.py
+#: galaxy_linux/cli.py galaxy_linux/ui/edit_dialog.py
 msgid "Standard"
 msgstr "Default"
 
@@ -1193,7 +1201,7 @@ msgstr "This computer - Last modified: {0}"
 msgid "Einige Dateien aus der GOG Galaxy-Cloud stehen im Konflikt mit den Dateien auf diesem Computer. An welchem Ort befinden sich die zu verwendenden Dateien?"
 msgstr "Some user files previously uploaded to GOG Galaxy Cloud conflict with files on this computer. Which location has the most correct data?"
 
-#: galaxy_linux/content/cloudsaves.py
+#: galaxy_linux/content/cloudsaves.py galaxy_linux/ui/log_window.py
 msgid "Fehler"
 msgstr "Error"
 
@@ -1950,12 +1958,12 @@ msgid "globales GOverlay-Profil"
 msgstr "global GOverlay profile"
 
 #: galaxy_linux/launch/goverlay_profiles.py
-msgid "kein Profil – Spiele-Ordner ist nicht in GOverlay eingetragen"
-msgstr "no profile – the games folder is not registered in GOverlay"
+msgid "kein Profil – Spiel in GOverlay anklicken, um sein Profil anzulegen"
+msgstr "no profile – click the game in GOverlay to create its profile"
 
 #: galaxy_linux/launch/goverlay_profiles.py
-msgid "kein Profil – in GOverlay das Spiel anklicken"
-msgstr "no profile – click the game in GOverlay"
+msgid "kein Profil – das Spiel erscheint nicht in GOverlay (Einstellungen → Kompatibilität → GOverlay)"
+msgstr "no profile – the game does not appear in GOverlay (Settings → Compatibility → GOverlay)"
 
 #: galaxy_linux/launch/hook_cloudsaves.py galaxy_linux/ui/dialogs.py galaxy_linux/ui/ext_cloudsaves.py
 msgid "Cloud-Spielstände"
@@ -2197,7 +2205,7 @@ msgstr "Status"
 msgid "Tags"
 msgstr "Tags"
 
-#: galaxy_linux/library_view.py
+#: galaxy_linux/library_view.py galaxy_linux/ui/edit_dialog.py
 msgid "Titel"
 msgstr "Title"
 
@@ -2329,7 +2337,7 @@ msgstr "Cloud saves"
 msgid "Cloud-Speicherstände sind in den Einstellungen deaktiviert."
 msgstr "Cloud saves are disabled in the settings."
 
-#: galaxy_linux/ui/configure.py
+#: galaxy_linux/ui/configure.py galaxy_linux/ui/dialogs.py
 msgid "DLC"
 msgstr "DLC"
 
@@ -3094,8 +3102,8 @@ msgid "Name"
 msgstr "Name"
 
 #: galaxy_linux/ui/dialogs.py
-msgid "Name geändert – Cover wird neu gesucht"
-msgstr "Name changed – looking up cover art again"
+msgid "Name geändert (leer = automatisch)"
+msgstr "Name changed (empty = automatic)"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Name in der Bibliothek"
@@ -3837,7 +3845,7 @@ msgstr "Here you will see all of your completed and active game installations/up
 msgid "Ja, alles abbrechen"
 msgstr "Yes, cancel all"
 
-#: galaxy_linux/ui/downloads_view.py
+#: galaxy_linux/ui/downloads_view.py galaxy_linux/ui/log_window.py
 msgid "Leeren"
 msgstr "Clear"
 
@@ -3889,6 +3897,66 @@ msgstr "Go to game"
 msgid "{0} · {1} · {2} / {3} · {4} · ETA {5} · {6}/{7} Dateien"
 msgstr "{0} · {1} · {2} / {3} · {4} · ETA {5} · {6}/{7} files"
 
+#: galaxy_linux/ui/edit_dialog.py
+msgid "Auf Standard zurücksetzen"
+msgstr "Reset to default"
+
+#: galaxy_linux/ui/edit_dialog.py
+msgid "Automatisch · empfohlen: Hochformat, z. B. 342 × 482 Pixel"
+msgstr "Automatic · recommended: portrait, e.g. 342 × 482 pixels"
+
+#: galaxy_linux/ui/edit_dialog.py
+msgid "Bearbeiten"
+msgstr "Edit"
+
+#: galaxy_linux/ui/edit_dialog.py
+msgid "Bilder (JPEG, PNG, WebP)"
+msgstr "Images (JPEG, PNG, WebP)"
+
+#: galaxy_linux/ui/edit_dialog.py
+msgid "Cover auf Standard zurückgesetzt"
+msgstr "Cover reset to default"
+
+#: galaxy_linux/ui/edit_dialog.py
+msgid "Cover gespeichert"
+msgstr "Cover saved"
+
+#: galaxy_linux/ui/edit_dialog.py
+msgid "Cover nicht übernommen: {0}"
+msgstr "Cover not applied: {0}"
+
+#: galaxy_linux/ui/edit_dialog.py
+msgid "Cover wählen"
+msgstr "Choose cover"
+
+#: galaxy_linux/ui/edit_dialog.py
+msgid "Datei auswählen …"
+msgstr "Choose file…"
+
+#: galaxy_linux/ui/edit_dialog.py
+msgid "Eigenes Cover"
+msgstr "Custom cover"
+
+#: galaxy_linux/ui/edit_dialog.py
+msgid "Info"
+msgstr "Info"
+
+#: galaxy_linux/ui/edit_dialog.py
+msgid "Kachel"
+msgstr "Tile"
+
+#: galaxy_linux/ui/edit_dialog.py
+msgid "Medien"
+msgstr "Media"
+
+#: galaxy_linux/ui/edit_dialog.py
+msgid "Titel auf Standard zurückgesetzt"
+msgstr "Title reset to default"
+
+#: galaxy_linux/ui/edit_dialog.py
+msgid "Titel gespeichert"
+msgstr "Title saved"
+
 #: galaxy_linux/ui/ext_cloudsaves.py
 msgid "Cloud-Spielstände sind in den Einstellungen (Spielfunktionen) deaktiviert."
 msgstr "Cloud saves are disabled in the settings (Game features)."
@@ -3917,7 +3985,7 @@ msgstr "No backups yet"
 msgid "Noch keine Sicherungen – sie entstehen, bevor Spielstände aus der Cloud lokale Dateien ersetzen."
 msgstr "No backups yet - they are made before saves from the cloud replace local files."
 
-#: galaxy_linux/ui/ext_cloudsaves.py galaxy_linux/ui/store.py
+#: galaxy_linux/ui/ext_cloudsaves.py galaxy_linux/ui/log_window.py galaxy_linux/ui/store.py
 msgid "Ordner öffnen"
 msgstr "Open folder"
 
@@ -3942,12 +4010,12 @@ msgid "werden ermittelt …"
 msgstr "being determined …"
 
 #: galaxy_linux/ui/ext_goverlay.py
-msgid "Automatisch (Ordner „{0}“)"
-msgstr "Automatic (folder “{0}”)"
+msgid "Automatisch („{0}“)"
+msgstr "Automatic (“{0}”)"
 
 #: galaxy_linux/ui/ext_goverlay.py
-msgid "GOverlay findet außer Steam-Spielen nur Spiele in eingetragenen Ordnern. Ein Klick auf das Spiel in GOverlay legt sein Profil an (MangoHud, vkBasalt, OptiScaler …); galaxy-linux startet das Spiel dann mit diesem Profil statt mit der globalen Konfiguration."
-msgstr "Apart from Steam games, GOverlay only finds games in registered folders. Clicking the game in GOverlay creates its profile (MangoHud, vkBasalt, OptiScaler …); galaxy-linux then launches the game with this profile instead of the global configuration."
+msgid "Ein Klick auf das Spiel in GOverlay legt sein Profil an (MangoHud, vkBasalt, OptiScaler …); galaxy-linux startet das Spiel dann mit diesem Profil – nie mit einer globalen Konfiguration, außer du schaltest das unten ausdrücklich ein."
+msgstr "Clicking the game in GOverlay creates its profile (MangoHud, vkBasalt, OptiScaler …); galaxy-linux then launches the game with this profile – never with a global configuration unless you explicitly enable that below."
 
 #: galaxy_linux/ui/ext_goverlay.py galaxy_linux/ui/game_page.py
 msgid "GOverlay ist nicht installiert."
@@ -3958,8 +4026,8 @@ msgid "GOverlay nicht gefunden"
 msgstr "GOverlay not found"
 
 #: galaxy_linux/ui/ext_goverlay.py
-msgid "GOverlay nicht gefunden – eingetragen wird nach dem ersten Start von GOverlay."
-msgstr "GOverlay not found – the folders are added once GOverlay has been started."
+msgid "GOverlay nicht gefunden – die Spiele erscheinen nach dem ersten Start von GOverlay."
+msgstr "GOverlay not found – the games appear once GOverlay has been started."
 
 #: galaxy_linux/ui/ext_goverlay.py galaxy_linux/ui/game_page.py
 msgid "GOverlay öffnen"
@@ -3978,32 +4046,32 @@ msgid "Globales GOverlay-Profil als Rückfall"
 msgstr "Global GOverlay profile as fallback"
 
 #: galaxy_linux/ui/ext_goverlay.py
-msgid "Mit diesem GOverlay-Profil (MangoHud, vkBasalt, OptiScaler …) startet das Spiel. Automatisch = das Profil mit dem Namen des Spielordners, das GOverlay beim Anklicken des Spiels anlegt."
-msgstr "The game launches with this GOverlay profile (MangoHud, vkBasalt, OptiScaler …). Automatic = the profile named after the game folder, which GOverlay creates when you click the game."
+msgid "Jedes installierte Spiel erscheint in GOverlay genau einmal, mit seinem Titel und Cover (Kopien nicht). galaxy-linux trägt dafür einen eigenen Ordner mit Verknüpfungen in GOverlays Ordnerliste ein – deine eigenen Einträge bleiben. Danach in GOverlay „Refresh game library“ wählen oder GOverlay neu starten."
+msgstr "Every installed game appears in GOverlay exactly once, with its title and cover (copies do not). To do this, galaxy-linux adds its own folder of links to GOverlay’s folder list – your own entries stay. Then choose “Refresh game library” in GOverlay or restart GOverlay."
 
 #: galaxy_linux/ui/ext_goverlay.py
-msgid "Spiele ohne eigenes Profil starten mit dem globalen GOverlay-Profil."
-msgstr "Games without their own profile launch with the global GOverlay profile."
+msgid "Mit diesem GOverlay-Profil (MangoHud, vkBasalt, OptiScaler …) startet das Spiel. Automatisch = das Profil, das GOverlay anlegt, wenn du das Spiel dort anklickst."
+msgstr "The game launches with this GOverlay profile (MangoHud, vkBasalt, OptiScaler …). Automatic = the profile GOverlay creates when you click the game there."
 
 #: galaxy_linux/ui/ext_goverlay.py
-msgid "Spiele-Ordner in GOverlay eintragen"
-msgstr "Register game folders in GOverlay"
+msgid "Nur auf Wunsch: Spiele ohne eigenes Profil starten dann mit dem globalen GOverlay-Profil."
+msgstr "Only on request: games without their own profile then launch with the global GOverlay profile."
+
+#: galaxy_linux/ui/ext_goverlay.py
+msgid "Spiele in GOverlay"
+msgstr "Games in GOverlay"
+
+#: galaxy_linux/ui/ext_goverlay.py
+msgid "Spiele in GOverlay anzeigen"
+msgstr "Show games in GOverlay"
 
 #: galaxy_linux/ui/ext_goverlay.py
 msgid "Startet jedes Spiel mit dem bgmod-Wrapper seines GOverlay-Profils. Die eigenen Schalter MangoHud und vkBasalt entfallen dann (MangoHud bleibt bei Linux-Spielen)."
 msgstr "Launches every game with the bgmod wrapper of its GOverlay profile. The client’s own MangoHud and vkBasalt toggles are then skipped (MangoHud stays for Linux games)."
 
 #: galaxy_linux/ui/ext_goverlay.py
-msgid "Trägt den GOG-Spiele-Ordner, weitere Installationsorte und die Spiele-Ordner eigener Bibliotheken in GOverlays Ordnerliste ein (nie einzelne Spiele). Danach in GOverlay „Refresh game library“ wählen oder GOverlay neu starten."
-msgstr "Adds the GOG games folder, additional install locations and the games folders of custom libraries to GOverlay’s folder list (never single games). Then choose “Refresh game library” in GOverlay or restart GOverlay."
-
-#: galaxy_linux/ui/ext_goverlay.py
-msgid "Von galaxy-linux eingetragene Ordner"
-msgstr "Folders registered by galaxy-linux"
-
-#: galaxy_linux/ui/ext_goverlay.py
-msgid "keine (von galaxy-linux)"
-msgstr "none (from galaxy-linux)"
+msgid "{0} Spiele · Ordner {1}"
+msgstr "{0} games · folder {1}"
 
 #: galaxy_linux/ui/ext_redist.py
 msgid "Einrichtung erneut ausführen"
@@ -4049,9 +4117,17 @@ msgstr "none according to manifest"
 msgid "noch nichts geladen"
 msgstr "nothing downloaded yet"
 
+#: galaxy_linux/ui/footer.py
+msgid "{0} Update(s) verfügbar"
+msgstr "{0} update(s) available"
+
 #: galaxy_linux/ui/game_menu.py
 msgid "Aus Bibliothek entfernen …"
 msgstr "Remove from library…"
+
+#: galaxy_linux/ui/game_menu.py
+msgid "Bearbeiten …"
+msgstr "Edit…"
 
 #: galaxy_linux/ui/game_menu.py
 msgid "Bewerten"
@@ -4161,7 +4237,7 @@ msgstr "CANCEL"
 msgid "AKTUALISIEREN"
 msgstr "UPDATE"
 
-#: galaxy_linux/ui/game_page.py
+#: galaxy_linux/ui/game_page.py galaxy_linux/ui/log_window.py
 msgid "Alle"
 msgstr "All"
 
@@ -4324,6 +4400,10 @@ msgstr "No extras"
 #: galaxy_linux/ui/game_page.py
 msgid "Keine Updates für {0} verfügbar"
 msgstr "No updates available for {0}"
+
+#: galaxy_linux/ui/game_page.py
+msgid "Kopie von „{0}“"
+msgstr "Copy of “{0}”"
 
 #: galaxy_linux/ui/game_page.py
 msgid "Legendär"
@@ -4552,6 +4632,51 @@ msgstr "{0} games loaded"
 #: galaxy_linux/ui/library_sync.py
 msgid "„{0}“ wurde deiner Bibliothek hinzugefügt"
 msgstr "“{0}” was added to your library"
+
+#: galaxy_linux/ui/log_window.py
+msgid "Im Protokoll suchen"
+msgstr "Search the log"
+
+#: galaxy_linux/ui/log_window.py
+msgid "In die Zwischenablage kopiert"
+msgstr "Copied to the clipboard"
+
+#: galaxy_linux/ui/log_window.py galaxy_linux/ui/menus.py
+msgid "Protokoll"
+msgstr "Log"
+
+#: galaxy_linux/ui/log_window.py
+msgid "Protokoll leeren"
+msgstr "Clear log"
+
+#: galaxy_linux/ui/log_window.py
+msgid "Protokoll nicht geleert: {0}"
+msgstr "Log not cleared: {0}"
+
+#: galaxy_linux/ui/log_window.py
+msgid "Protokoll wählen"
+msgstr "Choose log"
+
+#: galaxy_linux/ui/log_window.py
+msgid "Stufe"
+msgstr "Level"
+
+#: galaxy_linux/ui/log_window.py
+msgid "Warnungen"
+msgstr "Warnings"
+
+#: galaxy_linux/ui/log_window.py
+msgctxt "Zwischenablage"
+msgid "Kopieren"
+msgstr "Copy"
+
+#: galaxy_linux/ui/log_window.py
+msgid "{0} · {1} von {2} Einträgen"
+msgstr "{0} · {1} of {2} entries"
+
+#: galaxy_linux/ui/log_window.py
+msgid "„{0}“ wirklich leeren? Die bisherigen Einträge gehen verloren."
+msgstr "Really clear “{0}”? The existing entries will be lost."
 
 #: galaxy_linux/ui/menus.py
 msgid "Anzeigen"
@@ -5082,6 +5207,10 @@ msgid "Durchsuchen fehlgeschlagen: {0}"
 msgstr "Scan failed: {0}"
 
 #: galaxy_linux/ui/window.py
+msgid "Erhältliche Updates anzeigen"
+msgstr "Show available updates"
+
+#: galaxy_linux/ui/window.py
 msgid "Extern"
 msgstr "External"
 
@@ -5164,6 +5293,10 @@ msgstr "Small"
 #: galaxy_linux/ui/window.py
 msgid "Konto"
 msgstr "Account"
+
+#: galaxy_linux/ui/window.py
+msgid "Kopien anzeigen"
+msgstr "Show copies"
 
 #: galaxy_linux/ui/window.py
 msgid "Kürzlich installiert"
@@ -5252,6 +5385,10 @@ msgstr "Only show visible games."
 #: galaxy_linux/ui/window.py
 msgid "Ordner durchsuchen"
 msgstr "Scan folder"
+
+#: galaxy_linux/ui/window.py
+msgid "Ordner mit gleichem Inhalt wie ein anderes Spiel (z. B. „… - Kopie“) – sonst nur einmal gezeigt"
+msgstr "Folders with the same content as another game (e.g. “… - Copy”) – otherwise shown only once"
 
 #: galaxy_linux/ui/window.py
 msgid "Ordner nach Spielen durchsuchen"
@@ -5436,10 +5573,6 @@ msgstr "{0} prefixes created"
 #: galaxy_linux/ui/window.py
 msgid "{0} Spiel(e) ausgetragen, Ordner fehlt: {1}"
 msgstr "{0} game(s) removed from the library, folder missing: {1}"
-
-#: galaxy_linux/ui/window.py
-msgid "{0} Update(s) verfügbar"
-msgstr "{0} update(s) available"
 
 #: galaxy_linux/ui/window.py
 msgid "{0} abgebrochen: {1}"
