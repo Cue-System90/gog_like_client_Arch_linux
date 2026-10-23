@@ -13,6 +13,9 @@ per game, prefixes and GOverlay.
   names and covers, copies shown once), grid/list views, tags, star ratings, sort/group/filter, sidebar bookmarks,
   right-click menu and *Edit …* for a custom title and cover. New purchases show up on their
   own; ⚙ → *Refresh library* (F5) forces a sync. Power Search with Ctrl+F (library, bookmarks, store).
+- **Discover, Recent and a notification center** – store shelves (for you, new arrivals, deals, wishlist, DLC, Good Old
+  Games) in your currency, a Recent view with playtime stats and *What to play next*, a bell for downloads, updates,
+  new games, cloud saves and wishlist discounts.
 - **Game view with Overview / My progress / Extras** – achievements with rarity, offline installers and goodies,
   cloud saves backup; *Configure …* for game language, version rollback, beta/private channels, DLCs and custom
   executables.

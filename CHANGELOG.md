@@ -2,6 +2,42 @@
 
 Neueste Version zuerst. „Neu bei uns“ im Zahnrad-Menü zeigt den Abschnitt der installierten Version.
 
+## 0.4.0 (in Arbeit)
+
+Dritter Schritt Richtung GOG Galaxy 2.1, Teil 1: die Gruppe GOG GALAXY und das Benachrichtigungszentrum.
+
+- **Seitenleiste wie Galaxy 2.1**: ganz oben die Gruppe **GOG GALAXY** mit „Entdecken“, „Suche“ (öffnet die Power
+  Search) und „Aktuelle Übersicht“ (mit „Neu“, wenn „Was als Nächstes spielen“ einen neuen Vorschlag hat). Reihenfolge
+  der Gruppen jetzt GOG GALAXY, GOG STORE, SPIELE, BIBLIOTHEKEN, LESEZEICHEN, FREUNDE. Beide Ansichten lassen sich unter
+  Einstellungen → Allgemein → „Startseite“ wählen.
+- **Entdecken**: native Seite mit waagerechten Regalen aus dem GOG-Katalog – „Spiele für dich“, „Neuerscheinungen“,
+  „Angebote“, „Aus deiner Wunschliste“ (mit aktuellen Preisen), „Zusätzliche Inhalte für deine Spiele“ (nur wenn der
+  Katalog den DLC-Filter mit der Anmeldung wirklich anwendet) und „Good Old Games“. Preise in Land und Währung des
+  Kontos, Rabatte als Pille, angemeldet ohne Spiele im Besitz; ein Spiel steht nur in einem Regal. Ein Klick öffnet die
+  Produktseite im eingebetteten Store, Spiele im Besitz ihre Spielansicht; „Alle anzeigen“ führt zur passenden
+  Store-Seite. Alles lädt im Hintergrund, Antworten bleiben 10 Minuten zwischengespeichert, ohne Verbindung erscheint
+  ein ruhiger Hinweis mit „Erneut versuchen“.
+- **Aktuelle Übersicht** mit den Widgets „Zuletzt gespielt“, „Meine Übersicht“ (Spielzeit heute, gestern, diese Woche,
+  dieser Monat und ein kleines Säulendiagramm der letzten 14 Tage), „Neu in der Bibliothek“ und „Was als Nächstes
+  spielen“ (ein Vorschlag aus installierten, nie oder selten gespielten Spielen, mit „Überrasch mich“ und „Neu
+  mischen“). „Ansicht anpassen“ schaltet Widgets an und ab und ordnet sie, die Wahl wird gespeichert. Dafür merkt sich
+  galaxy-linux jetzt jede Spielsitzung (Beginn und Ende). Freunde-Widgets können sich später über
+  `ui_registry.register_recent_widget` einhängen.
+- **Benachrichtigungszentrum**: Glocke oben links neben der Suche mit der Zahl ungelesener Meldungen; die Liste zeigt
+  die neuesten zuerst (Symbol, Text, Zeit), ein Klick führt die Aktion aus (Spielansicht, Downloads, Store-Seite …);
+  „Als gelesen markieren“ und „Alle löschen“. Meldungen kommen von fertigen und fehlgeschlagenen Downloads, verfügbaren
+  Updates, neuen Spielen in der Bibliothek, Konflikten und überschrittenem Kontingent der Cloud-Spielstände und
+  Problemen mit Galaxy-Redistributables. Gespeichert werden höchstens 200 Meldungen der letzten 30 Tage.
+- **Wunschlisten-Rabatte**: kurz nach dem Start und danach alle 6 Stunden prüft galaxy-linux angemeldet die
+  Wunschliste. Beginnt oder wächst ein Rabatt, meldet es „„Titel“ ist jetzt um 40 % reduziert – 17,99 €“; ein Spiel,
+  das vorher keinen Preis hatte, erscheint als „Neu erhältlich“. Ein Klick öffnet die Produktseite.
+- **Einstellungen → Benachrichtigungen** wie Galaxy je Art (Installation/Update, Wunschliste, Neue Spiele in der
+  Bibliothek, Cloud-Spielstände): „Desktop und Benachrichtigungszentrum“, „Nur Benachrichtigungszentrum“ oder „—“. Das
+  Galaxy-Overlay gibt es unter Linux nicht, seine Rolle übernimmt das Benachrichtigungszentrum. Desktop-Meldungen
+  erscheinen weiter nur, solange das Fenster nicht im Vordergrund ist; ein Klick darauf öffnet das Fenster und führt
+  die Aktion aus.
+- Downloads: die leere Warteschlange zeigt ihren Hinweis wieder (das „&“ im Text brach die Anzeige).
+
 ## 0.3.1 (23.10.2026)
 
 Rückmeldungen aus dem ersten echten Test von 0.3.0.
