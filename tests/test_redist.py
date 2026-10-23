@@ -163,8 +163,8 @@ class ClassificationTest(Base):
 # ----------------------------------------------------------------------------- Befehle
 class CommandTest(Base):
     def test_windows_paths_with_spaces_and_apostrophes(self):
-        self.assertEqual(redist.to_windows_path("/mnt/NVME-GAMES/GOG Games/No Man's Sky"),
-                         "Z:\\mnt\\NVME-GAMES\\GOG Games\\No Man's Sky")
+        self.assertEqual(redist.to_windows_path("/mnt/games/GOG Games/No Man's Sky"),
+                         "Z:\\mnt\\games\\GOG Games\\No Man's Sky")
         self.assertEqual(redist.to_windows_path(Path("/a/b/")), "Z:\\a\\b")
         with mock.patch.dict("os.environ", {"HOME": "/home/tester"}):
             self.assertEqual(redist.to_windows_path("~/x y"), "Z:\\home\\tester\\x y")
