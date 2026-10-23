@@ -33,18 +33,28 @@ class CloudSavesHook(LaunchHook):
             return False
         if ctx.api is None or not getattr(ctx.api, "logged_in", False):
             return False
-        return cloudsaves.enabled_for(ctx.gs, ctx.settings)
+        return cloudsaves.enabled_for(_current_gs(ctx), ctx.settings)
 
     def prepare(self, ctx: LaunchContext) -> None:
-        self.sync(ctx, "download")
+        res = self.sync(ctx, "download")
+        if res is not None and res.state == "busy":
+            # „Jetzt hochladen/herunterladen“ läuft noch (evtl. mit offener Rückfrage) – nicht auf halb ersetzten
+            # Spielständen starten, sondern warten und danach selbst abgleichen
+            ctx.status(tr('Warte auf die laufende Synchronisation der Cloud-Spielstände …'))
+            if cloudsaves.wait_idle(ctx.product_id, getattr(ctx, "cancel", None)):
+                self.sync(ctx, "download")
 
     def after_exit(self, ctx: LaunchContext, exit_code: int, minutes: int) -> None:
-        self.sync(ctx, "upload")
+        pre = ctx.data.get(f"{self.name}:download")
+        # ohne erfolgreichen Abgleich vor dem Spielen (offline, Fehler, erst während des Spielens eingeschaltet) ist
+        # eine lokal fehlende Datei kein Beleg dafür, dass sie gelöscht wurde
+        keep = not isinstance(pre, cloudsaves.SyncResult) or pre.state in ("busy", "unsupported", "cancelled")
+        self.sync(ctx, "upload", keep_cloud=keep)
 
-    def sync(self, ctx: LaunchContext, mode: str) -> cloudsaves.SyncResult | None:
+    def sync(self, ctx: LaunchContext, mode: str, keep_cloud: bool = False) -> cloudsaves.SyncResult | None:
         try:
             res = cloudsaves.sync_game(ctx.launcher, ctx.api, ctx.product_id, mode, ask=ctx.ask, status=ctx.status,
-                                       prefix=ctx.prefix, runner=ctx.runner,
+                                       prefix=ctx.prefix, runner=ctx.runner, keep_cloud=keep_cloud,
                                        save_timestamps=lambda ts: ctx.update_game_settings(cloud_timestamps=ts))
         except cloudsaves.CloudError as exc:
             log.warning("Cloud-Abgleich %s (%s) fehlgeschlagen: %s", ctx.product_id, mode, exc)
@@ -62,6 +72,18 @@ class CloudSavesHook(LaunchHook):
             if mode == "upload":
                 ctx.notify(tr('Synchronisiert in GOG Galaxy-Cloud'))
         return res
+
+
+def _current_gs(ctx: LaunchContext):
+    """Pro-Spiel-Einstellungen von jetzt – der Schalter kann während des Spielens geändert worden sein (``ctx.gs`` ist
+    der Stand beim Start)."""
+    store = getattr(ctx.launcher, "game_settings", None)
+    if store is not None:
+        try:
+            return store.get(ctx.product_id)
+        except Exception:  # pragma: no cover
+            log.debug("Pro-Spiel-Einstellungen nicht lesbar", exc_info=True)
+    return ctx.gs
 
 
 register_hook(CloudSavesHook())

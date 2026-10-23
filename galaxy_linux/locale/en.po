@@ -1266,6 +1266,10 @@ msgid "Noch nicht synchronisiert"
 msgstr "Not synced yet"
 
 #: galaxy_linux/content/cloudsaves.py
+msgid "Sicherung der Cloud-Spielstände fehlgeschlagen: {0}"
+msgstr "Backing up the cloud saves failed: {0}"
+
+#: galaxy_linux/content/cloudsaves.py
 msgid "Sicherung der lokalen Spielstände fehlgeschlagen: {0}"
 msgstr "Backing up local saves failed: {0}"
 
@@ -1828,6 +1832,10 @@ msgstr "Cloud Sync failed: {0}"
 #: galaxy_linux/launch/hook_cloudsaves.py
 msgid "Synchronisiert in GOG Galaxy-Cloud"
 msgstr "Synced with GOG Galaxy Cloud"
+
+#: galaxy_linux/launch/hook_cloudsaves.py
+msgid "Warte auf die laufende Synchronisation der Cloud-Spielstände …"
+msgstr "Waiting for the running cloud save sync …"
 
 #: galaxy_linux/launch/hook_galaxy_services.py
 msgid "Galaxy-Dienste (comet)"

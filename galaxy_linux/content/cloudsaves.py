@@ -633,6 +633,27 @@ def make_backup(product_id: str, dirs: list[tuple[str, Path]], keep: int = BACKU
     return dest
 
 
+def backup_cloud_files(product_id: str, store: "CloudStorage", files: list[tuple[str, "SyncFile"]],
+                       now: float | None = None) -> Path | None:
+    """Cloud-Dateien, die gleich gelöscht werden, vorher herunterladen und wie lokale Stände sichern (im Archiv als
+    ``cloud-<ort>``) – sonst wäre ein Löschen in der Cloud nicht rückgängig zu machen."""
+    if not files:
+        return None
+    import shutil
+    import tempfile
+    d = backup_dir(product_id)
+    d.mkdir(parents=True, exist_ok=True)
+    tmp = Path(tempfile.mkdtemp(prefix=".cloud-", dir=str(d)))
+    try:
+        dirs: dict[str, Path] = {}
+        for name, f in files:
+            base = dirs.setdefault(name, tmp / (name.replace("/", "_") or DEFAULT_LOCATION_NAME))
+            store.download(name, f, base.joinpath(*f.rel.split("/")))
+        return make_backup(product_id, [(f"cloud-{n}", p) for n, p in dirs.items()], now=now)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 # --------------------------------------------------------------------------- Zustand für die Anzeige
 _state_lock = threading.Lock()
 
@@ -668,6 +689,17 @@ def _game_lock(product_id: str) -> threading.Lock:
 
 def is_syncing(product_id: str) -> bool:
     return _game_lock(product_id).locked()
+
+
+def wait_idle(product_id: str, cancel: threading.Event | None = None, poll: float = 0.5) -> bool:
+    """Warten, bis ein laufender Abgleich des Spiels (z. B. „Jetzt hochladen“ mit offener Rückfrage) fertig ist.
+    False, wenn ``cancel`` vorher gesetzt wurde."""
+    lock = _game_lock(product_id)
+    while not lock.acquire(timeout=poll):
+        if cancel is not None and cancel.is_set():
+            return False
+    lock.release()
+    return True
 
 
 def cloud_status(product_id: str, gs, settings) -> tuple[str, float, str]:
@@ -817,10 +849,13 @@ def overwrite_question(title: str, cloud_latest: float, local_latest: float) -> 
 def sync_game(launcher, api, product_id: str, mode: str = "auto", ask: AskFn | None = None,
               status: Callable[[str], None] | None = None, prefix: Path | None = None, runner: str = "",
               save_timestamps: Callable[[dict[str, float]], Any] | None = None,
-              session: requests.Session | None = None, confirm: bool = False) -> SyncResult:
+              session: requests.Session | None = None, confirm: bool = False, keep_cloud: bool = False) -> SyncResult:
     """Spielstände eines Spiels abgleichen (läuft im Arbeits-Thread; ``ask`` darf blockieren).
-    ``confirm``: vor ``force-upload`` nachfragen, wenn dabei neuere Cloud-Dateien verloren gingen.
-    ``CloudError`` bei Netz-/Zugangsfehlern (Zustand „error“ wird vorher gespeichert)."""
+    ``confirm``: vor ``force-upload`` nachfragen, wenn dabei neuere Cloud-Dateien verloren gingen oder Cloud-Dateien
+    gelöscht würden. ``keep_cloud``: beim normalen Hochladen nichts in der Cloud löschen (z. B. wenn der Abgleich vor
+    dem Spielen fehlgeschlagen ist – dann sind lokal fehlende Dateien kein Beleg für ein Löschen).
+    Cloud-Dateien werden vor dem Löschen gesichert. ``CloudError`` bei Netz-/Zugangsfehlern (Zustand „error“ wird
+    vorher gespeichert)."""
     pid = str(product_id)
     if mode not in MODES:
         raise ValueError(f"unbekannte Betriebsart: {mode}")
@@ -832,7 +867,7 @@ def sync_game(launcher, api, product_id: str, mode: str = "auto", ask: AskFn | N
     try:
         try:
             return _sync(launcher, api, pid, mode, ask, status or (lambda _t: None), prefix, runner,
-                         save_timestamps, session, confirm)
+                         save_timestamps, session, confirm, keep_cloud)
         except CloudUnsupported as exc:
             save_state(pid, "unsupported", str(exc))
             return SyncResult(pid, "unsupported", str(exc))
@@ -847,7 +882,8 @@ def sync_game(launcher, api, product_id: str, mode: str = "auto", ask: AskFn | N
 
 
 def _sync(launcher, api, pid: str, mode: str, ask: AskFn | None, status: Callable[[str], None],
-          prefix: Path | None, runner: str, save_timestamps, session, confirm: bool = False) -> SyncResult:
+          prefix: Path | None, runner: str, save_timestamps, session, confirm: bool = False,
+          keep_cloud: bool = False) -> SyncResult:
     status(tr('Synchronisiere Cloud-Spielstände …'))
     gc = game_cloud(launcher, api, pid, prefix, runner, need_secret=True)
     if not any(loc.path is not None for loc in gc.locations):
@@ -896,8 +932,8 @@ def _sync(launcher, api, pid: str, mode: str, ask: AskFn | None, status: Callabl
 
     # Rückfrage vor dem Ersetzen neuerer Cloud-Stände (nur „Jetzt hochladen“ mit confirm)
     if mode == "force-upload" and confirm and ask is not None:
-        risky = [p for p in plans if p["normal"] in (DOWNLOAD, CONFLICT)
-                 and (p["cl"].updated_local or p["cl"].only_cloud)]
+        risky = [p for p in plans if p["cl"].only_cloud
+                 or (p["normal"] in (DOWNLOAD, CONFLICT) and p["cl"].updated_local)]
         if risky:
             heading, body, options, default = overwrite_question(
                 gc.title, max(p["lr"].cloud_latest for p in risky), max(p["lr"].local_latest for p in risky))
@@ -946,6 +982,21 @@ def _sync(launcher, api, pid: str, mode: str, ask: AskFn | None, status: Callabl
             raise CloudError(tr('Sicherung der lokalen Spielstände fehlgeschlagen: {0}').format(exc)) from exc
         result.backup = str(backup or "")
 
+    # 4b. Löschen in der Cloud: beim normalen Hochladen nicht, wenn der Abgleich vor dem Spielen fehlte; sonst vorher
+    #     sichern (lokal fehlende Dateien können auch ein zurückgesetzter Prefix sein)
+    keep = keep_cloud and not mode.startswith("force-")
+    if keep and any(p["do"] == UPLOAD and p["cl"].only_cloud for p in plans):
+        log.info("Cloud-Abgleich %s: %d Cloud-Dateien fehlen lokal – ohne Abgleich vor dem Spielen wird nichts gelöscht",
+                 pid, sum(len(p["cl"].only_cloud) for p in plans if p["do"] == UPLOAD))
+    cloud_deletes = [] if keep else [(p["loc"].name, f) for p in plans if p["do"] == UPLOAD for f in p["cl"].only_cloud]
+    if cloud_deletes:
+        try:
+            cloud_backup = backup_cloud_files(pid, store, cloud_deletes)
+        except (OSError, tarfile.TarError) as exc:
+            raise CloudError(tr('Sicherung der Cloud-Spielstände fehlgeschlagen: {0}').format(exc)) from exc
+        if cloud_backup:
+            result.backup = ", ".join(x for x in (result.backup, str(cloud_backup)) if x)
+
     # 5. Ausführen
     uploaded_locs: list[str] = []
     for p in plans:
@@ -967,7 +1018,7 @@ def _sync(launcher, api, pid: str, mode: str, ask: AskFn | None, status: Callabl
             for f in cl.updated_local:
                 store.upload(loc.name, f)
                 lr.uploaded += 1
-            for f in cl.only_cloud:
+            for f in ([] if keep else cl.only_cloud):
                 store.delete(loc.name, f.rel)
                 lr.deleted_cloud += 1
             uploaded_locs.append(loc.name)

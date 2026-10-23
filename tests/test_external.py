@@ -149,8 +149,11 @@ class ExternalBackendTest(unittest.TestCase):
         self.assertEqual(self.b.orphan_prefixes(), [orphan])
         self.assertEqual(self.b.delete_orphan_prefixes([orphan, p]), [orphan])   # p gehört einem Spiel → bleibt
         self.assertTrue(p.exists())
+        self.b.game_settings.update("ext-freelancer", cloud_timestamps={"saves": 1.0}, setup_done=["x:1"])
         self.b.reset_prefix("ext-freelancer")
         self.assertFalse(p.exists())
+        gs = self.b.game_settings.get("ext-freelancer")
+        self.assertEqual((gs.cloud_timestamps, gs.setup_done), ({}, []))      # alter Abgleich gilt nicht mehr
         self.assertEqual(self.jobs[-1].kind, "prefix")
         # Sicherheitsnetz: Wurzelordner werden nie gelöscht
         self.b.game_settings.update("ext-freelancer", prefix=str(self.extpfx))

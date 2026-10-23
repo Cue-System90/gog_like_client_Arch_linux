@@ -895,6 +895,8 @@ class Backend:
                 pass
             from .content.redist import remove_support
             remove_support(pid)
+            if self.game_settings.get(pid).cloud_timestamps:     # Spielstände im Spielordner sind mit weg
+                self.game_settings.update(pid, cloud_timestamps={})
         elif str(path) not in self.settings.ignored_paths:
             self.settings.ignored_paths.append(str(path))
             self.settings.save()
@@ -943,8 +945,10 @@ class Backend:
         import shutil
         shutil.rmtree(p, ignore_errors=True)
         gs = self.game_settings.get(product_id)
-        if gs.redist_done or gs.setup_done:     # Einrichtung (Skripte, Redistributables) läuft im neuen Prefix neu
-            self.game_settings.update(product_id, redist_done=[], setup_done=[])
+        # Einrichtung (Skripte, Redistributables) läuft im neuen Prefix neu; die Spielstände im Prefix sind weg – der
+        # letzte Cloud-Abgleich gilt nicht mehr (sonst sähe ein Hochladen die Cloud-Dateien als lokal gelöscht an)
+        if gs.redist_done or gs.setup_done or gs.cloud_timestamps:
+            self.game_settings.update(product_id, redist_done=[], setup_done=[], cloud_timestamps={})
         log.info("Prefix gelöscht: %s", p)
         return p
 

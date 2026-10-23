@@ -519,6 +519,59 @@ class SyncTest(CloudBase):
         self.assertEqual(res.state, "synced")
         self.assertEqual(self.cloud.files["saves/a.sav"]["data"], b"LOKAL")
 
+    def test_upload_after_failed_pre_sync_keeps_cloud(self):
+        """Prefix zurückgesetzt, Abgleich vor dem Spielen fehlgeschlagen, Spiel schreibt eine neue Datei: der normale
+        Upload darf die (älteren) Cloud-Stände nicht als lokal gelöscht behandeln."""
+        self.gs.update("1", cloud_timestamps={"saves": self.now - 500})
+        for i in range(3):
+            self.cloud.add(f"saves/slot{i}.sav", b"ALT", self.now - 900)
+        self.write("settings.ini", b"NEU", self.now - 10)
+        res = self.sync("upload", keep_cloud=True)
+        self.assertEqual(res.state, "synced")
+        self.assertEqual(sorted(self.cloud.files), ["saves/settings.ini", "saves/slot0.sav", "saves/slot1.sav",
+                                                    "saves/slot2.sav"])
+        self.assertEqual(res.locations[0].deleted_cloud, 0)
+
+    def test_cloud_files_backed_up_before_delete(self):
+        self.gs.update("1", cloud_timestamps={"saves": self.now - 500})
+        self.cloud.add("saves/weg.sav", b"CLOUD-ALT", self.now - 900)
+        self.cloud.add("saves/sub/weg2.sav", b"C2", self.now - 900)
+        self.write("neu.sav", b"NEU", self.now - 10)
+        res = self.sync("upload")
+        self.assertEqual(sorted(self.cloud.files), ["saves/neu.sav"])
+        self.assertEqual(res.locations[0].deleted_cloud, 2)
+        backups = cs.list_backups("1")
+        self.assertEqual(len(backups), 1)
+        self.assertEqual(res.backup, str(backups[0]))
+        with tarfile.open(backups[0]) as tar:
+            self.assertIn("cloud-saves/sub/weg2.sav", tar.getnames())
+            self.assertEqual(tar.extractfile("cloud-saves/weg.sav").read(), b"CLOUD-ALT")
+        self.assertEqual([p.name for p in cs.backup_dir("1").iterdir()], [backups[0].name])   # kein Temp-Ordner übrig
+
+    def test_failed_cloud_backup_deletes_nothing(self):
+        self.gs.update("1", cloud_timestamps={"saves": self.now - 500})
+        self.cloud.add("saves/weg.sav", b"CLOUD-ALT", self.now - 900)
+        self.write("neu.sav", b"NEU", self.now - 10)
+        orig = self.cloud.request
+
+        def no_get(method, url, **kw):
+            if method == "GET" and url != self.cloud.base:
+                return FakeResponse(503)
+            return orig(method, url, **kw)
+        self.cloud.request = no_get
+        with self.assertRaises(cs.CloudError):
+            self.sync("upload")
+        self.assertIn("saves/weg.sav", self.cloud.files)
+        self.assertEqual(self.cloud.puts(), [])
+
+    def test_force_upload_asks_when_cloud_files_would_be_deleted(self):
+        self.gs.update("1", cloud_timestamps={"saves": self.now - 500})
+        self.write("a.sav", b"LOKAL", self.now - 10)                  # normal: hochladen (lokal neuer)
+        self.cloud.add("saves/nur-cloud.sav", b"C", self.now - 900)
+        res = self.sync("force-upload", ask=lambda *a: "cancel", confirm=True)
+        self.assertEqual(res.state, "cancelled")
+        self.assertIn("saves/nur-cloud.sav", self.cloud.files)
+
     def test_force_download_replaces_local(self):
         self.write("a.sav", b"LOKAL", self.now - 10)
         self.write("extra.sav", b"E", self.now - 10)
@@ -633,6 +686,39 @@ class HookTest(CloudBase):
         self.assertEqual(self.gs.get("1").cloud_timestamps, {"saves": 42.0})
         self.assertEqual(self.notes, [tr('Synchronisiert in GOG Galaxy-Cloud')])
         self.assertIn("cloudsaves:upload", self.ctx.data)
+
+    def test_after_exit_keeps_cloud_without_successful_pre_sync(self):
+        seen = []
+
+        def fake_sync(launcher, api, pid, mode, **kw):
+            seen.append((mode, kw.get("keep_cloud")))
+            return cs.SyncResult(pid, "synced")
+        with mock.patch.object(cs, "sync_game", side_effect=cs.CloudError("offline")):
+            self.hook.prepare(self.ctx)
+        with mock.patch.object(cs, "sync_game", side_effect=fake_sync):
+            self.hook.after_exit(self.ctx, 0, 5)
+            self.hook.prepare(self.ctx)
+            self.hook.after_exit(self.ctx, 0, 5)
+        self.assertEqual(seen, [("upload", True), ("download", False), ("upload", False)])
+
+    def test_prepare_waits_for_running_manual_sync(self):
+        lock = cs._game_lock("1")
+        lock.acquire()
+        import threading
+        threading.Timer(0.3, lock.release).start()
+        results = [cs.SyncResult("1", "busy", "läuft"), cs.SyncResult("1", "synced")]
+        with mock.patch.object(cs, "sync_game", side_effect=lambda *a, **k: results.pop(0)) as sync:
+            self.hook.prepare(self.ctx)
+        self.assertEqual(sync.call_count, 2)
+        self.assertFalse(lock.locked())
+        self.assertIn(tr('Warte auf die laufende Synchronisation der Cloud-Spielstände …'), self.statuses)
+        self.assertEqual(self.ctx.data["cloudsaves:download"].state, "synced")
+
+    def test_switch_changed_during_session_counts(self):
+        self.assertTrue(self.hook.enabled(self.ctx))
+        self.gs.update("1", cloud_saves="off")                        # ctx.gs ist der Stand beim Start
+        self.assertEqual(self.ctx.gs.cloud_saves, "")
+        self.assertFalse(self.hook.enabled(self.ctx))
 
     def test_failure_never_blocks_start(self):
         with mock.patch.object(cs, "sync_game", side_effect=cs.CloudError("offline")):
