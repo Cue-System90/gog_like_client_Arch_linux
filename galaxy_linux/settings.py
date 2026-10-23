@@ -57,7 +57,8 @@ def _from_dict(cls, data: dict[str, Any] | None):
 
 DEFAULT_EXTERNAL_DIR = paths.DEFAULT_GAMES_DIR.parent / "External"
 EXTERNAL_LIBRARY_ID = "external"     # die bis 0.1.4 fest eingebaute External-Bibliothek
-VIEW_KEYS = ("layout", "cover_size", "spacing", "titles", "sections", "sort")
+# „sort“ ist die Sortierung bis 0.2.0 (0–3), ab 0.3.0 gelten „sort_by“ (Kriterium), „sort_desc“ und „group“
+VIEW_KEYS = ("layout", "cover_size", "spacing", "titles", "sections", "sort", "sort_by", "sort_desc", "group")
 
 
 @dataclass
@@ -115,7 +116,32 @@ class GlobalSettings:
     library_spacing: str = "M"        # 0 S M L
     library_titles: bool = True       # Titel unter den Covern
     library_sections: bool = True     # Abschnitte wie „Als Nächstes spielen“
-    library_sort: int = 0
+    library_sort: int = 0             # bis 0.2.0: 0 Titel, 1 Zuletzt gespielt, 2 Spielzeit, 3 Erscheinungsdatum
+    library_sort_by: str = ""         # Sortieren nach (library_view.SORT_KEYS), "" = aus library_sort
+    library_sort_desc: bool = False   # absteigend
+    library_group: str = "none"       # Gruppieren nach (library_view.GROUP_KEYS)
+    bookmarks: list[dict] = field(default_factory=list)   # Lesezeichen in der Seitenleiste (library_view.Bookmark)
+    # Allgemein (Galaxy: Einstellungen → Allgemein → Komfort)
+    starting_page: str = "all"        # session | recent | all | installed | store
+    last_view: str = "all"            # für „Vorherige Sitzung fortsetzen“
+    launch_on_startup: bool = False   # „GOG Galaxy beim Systemstart öffnen“ (XDG-Autostart)
+    keep_logged_in: bool = True       # „Eingeloggt bleiben“; aus = beim Beenden abmelden
+    presence_status: str = "online"   # online | invisible (Avatar-Menü)
+    # Oberfläche → Verhalten des Hauptfensters
+    when_minimizing: str = "taskbar"  # taskbar | tray
+    when_closing: str = "exit"        # tray | exit
+    when_launching_game: str = "nothing"   # nothing | taskbar | tray
+    # Benachrichtigungen
+    notify_download_status: str = "desktop"   # desktop | none
+    # Installieren/aktualisieren
+    extras_dir: str = ""              # Ordner für andere Downloads (Offline-Installer, Extras); "" = Downloads/GOG
+    pause_downloads_when_playing: bool = True
+    speed_in_bits: bool = False       # Download-Geschwindigkeit in Bit pro Sekunde anzeigen
+    bandwidth_limit: bool = False
+    bandwidth_limit_kib: int = 10240  # KiB/s
+    bandwidth_schedule: bool = False
+    bandwidth_schedule_start: str = "08:00"
+    bandwidth_schedule_stop: str = "23:00"
     # Bibliotheks-Abgleich mit GOG (ab 0.2.0)
     library_sync_interval: int = 10   # Minuten zwischen automatischen Abgleichen, 0 = aus
     library_sync_on_focus: bool = True
@@ -246,6 +272,14 @@ class GameSettings:
     goverlay_profile: str = ""     # "" = automatisch nach Ordnername, "none" = aus, sonst Profilname
     cloud_timestamps: dict[str, float] = field(default_factory=dict)   # Ort → Zeitpunkt der letzten Synchronisation
     setup_done: list[str] = field(default_factory=list)   # Produkt-/Build-IDs, deren Prefix-Einrichtung gelaufen ist
+    # ab 0.3.0: Bibliothek und Konfigurieren wie in Galaxy 2.1
+    tags: list[str] = field(default_factory=list)          # eigene Tags
+    rating: int = 0                # eigene Bewertung: 0 = keine, 1–5 Sterne
+    unhidden: bool = False         # bei GOG ausgeblendet, hier wieder eingeblendet
+    auto_update: bool = True       # „Automatisch auf die neuste Version aktualisieren“ (aus = Version wählbar)
+    branch_password: str = ""      # Passwort für private Beta-Kanäle
+    dlc_excluded: list[str] = field(default_factory=list)   # abgewählte DLCs – auch Updates lassen sie weg
+    custom_tasks: list[dict] = field(default_factory=list)  # eigene Dateiverknüpfungen {name, path, arguments, working_dir}
 
 
 def resolve_switch(value: str, default: bool) -> bool:
@@ -305,6 +339,13 @@ class GameSettingsStore:
             self._reload()
             raw = self._data.get(str(product_id))
         return _from_dict(GameSettings, raw)
+
+    def items(self) -> dict[str, GameSettings]:
+        """Alle Spiele mit eigenen Einstellungen (für bibliotheksweite Tags)."""
+        with self._lock:
+            self._reload()
+            raw = dict(self._data)
+        return {pid: _from_dict(GameSettings, v) for pid, v in raw.items()}
 
     def set(self, product_id: str, settings: GameSettings) -> None:
         with self._lock, file_lock(paths.GAME_SETTINGS_FILE):

@@ -123,6 +123,7 @@ class SettingsFieldsTest(TempPaths):
             launcher=types.SimpleNamespace(is_running=lambda pid: pid == "laeuft"),
             jobs=types.SimpleNamespace(active_for=lambda pid: object() if pid == "busy" else None),
             registry=types.SimpleNamespace(is_installed=lambda pid: pid != "weg"),
+            game_settings=types.SimpleNamespace(get=lambda pid: GameSettings()),
             update=lambda pid, build_id="": queued.append((pid, build_id)))
         found = {k: types.SimpleNamespace(build_id=f"b-{k}") for k in ("ok", "laeuft", "busy", "weg")}
         self.assertEqual(Backend.auto_update(fake, found), ["ok"])

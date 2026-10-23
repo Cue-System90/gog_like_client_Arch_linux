@@ -220,7 +220,7 @@ class InstallDialog(Adw.Dialog):
         # Installationsort wie im Windows-Client: Standard (globaler Spiele-Ordner), gemerkte Orte, anderer Ordner
         self._locations = [backend.settings.install_dir] + [l for l in backend.settings.install_locations if l != backend.settings.install_dir]
         self._custom_root = ""
-        self.loc_row = Adw.ComboRow(title=tr('Installationsort'))
+        self.loc_row = Adw.ComboRow(title=tr('Installationspfad'))
         self._rebuild_locations()
         self.loc_row.connect("notify::selected", self._on_location)
         grp.add(self.loc_row)
@@ -228,16 +228,33 @@ class InstallDialog(Adw.Dialog):
         self.target_row = Adw.ActionRow(title=tr('Wird installiert nach'), subtitle="")
         self.target_row.set_subtitle_selectable(True)
         grp.add(self.target_row)
-        self.dlc_row = Adw.SwitchRow(title=tr('Inkl. aller DLCs'), active=True)
-        self.dlc_row.connect("notify::active", lambda *_: self._estimate())
-        grp.add(self.dlc_row)
+        self.space_row = Adw.ActionRow(title="")
+        self.space_row.add_css_class("error")
+        self.space_row.set_visible(False)
+        grp.add(self.space_row)
         page.add(grp)
-        sc = Adw.PreferencesGroup(title=tr('Verknüpfungen'))
+        # Optionen wie Galaxys Installationsdialog
+        opt = Adw.PreferencesGroup(title=tr('Optionen'))
+        self.dlc_switch = Adw.SwitchRow(title=tr('Eigene DLCs installieren'), active=True,
+                                        subtitle=tr('Deaktivieren, um auszuwählen, welche DLCs installiert werden sollen'))
+        self.dlc_switch.connect("notify::active", self._on_dlc_mode)
+        opt.add(self.dlc_switch)
+        # Galaxy: Häkchen „Eigene DLCs installieren“ abwählen öffnet die Auswahl
+        self.dlc_row = Adw.ExpanderRow(title=tr('DLC'), expanded=True, visible=False)
+        self._dlc_checks: dict[str, Gtk.CheckButton] = {}
+        opt.add(self.dlc_row)
+        self.auto_row = Adw.SwitchRow(title=tr('Spiel automatisch aktualisieren'), active=True)
+        if not backend.settings.feature_auto_update:
+            self.auto_row.set_subtitle(tr('Automatische Updates sind in den Einstellungen deaktiviert – wir benachrichtigen dich, wenn ein Update verfügbar ist.'))
+        opt.add(self.auto_row)
+        self.goodies_row = Adw.SwitchRow(title=tr('Alle enthaltenen Extras herunterladen'), active=False,
+                                         subtitle=tr('Handbücher, Soundtracks und Artworks in den Ordner für andere Downloads'))
+        opt.add(self.goodies_row)
+        self.desktop_row = Adw.SwitchRow(title=tr('Desktopverknüpfung erstellen'), active=backend.settings.shortcut_desktop)
+        opt.add(self.desktop_row)
         self.menu_row = Adw.SwitchRow(title=tr('Verknüpfung im Startmenü anlegen'), active=backend.settings.shortcut_menu)
-        sc.add(self.menu_row)
-        self.desktop_row = Adw.SwitchRow(title=tr('Verknüpfung auf dem Schreibtisch anlegen'), active=backend.settings.shortcut_desktop)
-        sc.add(self.desktop_row)
-        page.add(sc)
+        opt.add(self.menu_row)
+        page.add(opt)
         info = Adw.PreferencesGroup(title=tr('Details'))
         self.size_row = Adw.ActionRow(title=tr('Größe'), subtitle=tr('wird ermittelt …'))
         self.version_row = Adw.ActionRow(title=tr('Version'), subtitle="–")
@@ -250,6 +267,7 @@ class InstallDialog(Adw.Dialog):
         self.set_child(tv)
         self._update_target()
         self._estimate()
+        run_async(lambda: backend.owned_dlcs(entry.id), self._fill_dlc_choices, lambda e: self._fill_dlc_choices([]))
 
     def _rebuild_locations(self) -> None:
         names = [tr('Standard – globaler Spiele-Ordner ({0})').format(self._locations[0])] + self._locations[1:] + [tr('Anderer Ordner …')]
@@ -285,15 +303,51 @@ class InstallDialog(Adw.Dialog):
     def _update_target(self) -> None:
         self.target_row.set_subtitle(str(Path(os.path.expanduser(self.current_root())) / self._dirname))
 
+    def _fill_dlc_choices(self, dlcs: list) -> None:
+        """DLC-Auswahl (eigene DLCs aus Backend.owned_dlcs, im Hintergrund geladen)."""
+        if not dlcs:
+            self.dlc_switch.set_subtitle(tr('Keine DLCs im Besitz'))
+            self.dlc_switch.set_sensitive(False)
+            return
+        allb = Gtk.Button(label=tr('Alle auswählen'), halign=Gtk.Align.END, margin_top=4, margin_bottom=4, margin_end=8)
+        allb.add_css_class("flat")
+        allb.connect("clicked", lambda *_: [c.set_active(True) for c in self._dlc_checks.values()])
+        self.dlc_row.add_row(allb)
+        for did, title, _installed in dlcs:
+            r = Adw.ActionRow(title=GLib.markup_escape_text(title), activatable=True)
+            c = Gtk.CheckButton(active=True, valign=Gtk.Align.CENTER)
+            c.connect("toggled", lambda *_: self._estimate())
+            r.add_prefix(c)
+            r.set_activatable_widget(c)
+            self.dlc_row.add_row(r)
+            self._dlc_checks[did] = c
+
+    def _on_dlc_mode(self, row: Adw.SwitchRow, _p) -> None:
+        self.dlc_row.set_visible(not row.get_active() and bool(self._dlc_checks))
+        self._estimate()
+
+    def _dlc_selection(self) -> list[str] | None:
+        """None = alle DLCs im Besitz, sonst die ausgewählten (leer = keine)."""
+        if self.dlc_switch.get_active():
+            return None
+        return [d for d, c in self._dlc_checks.items() if c.get_active()]
+
     def values(self) -> dict:
-        return {
+        sel = self._dlc_selection()
+        v = {
             "platform": self.platforms[self.platform_row.get_selected()],
             "language": LANGUAGES[self.lang_row.get_selected()][0],
             "install_root": self.current_root(),
-            "include_dlcs": self.dlc_row.get_active(),
+            "include_dlcs": sel is None or bool(sel),
+            "dlc_filter": sel,
             "shortcut_menu": self.menu_row.get_active(),
             "shortcut_desktop": self.desktop_row.get_active(),
+            "auto_update": self.auto_row.get_active(),
+            "download_goodies": self.goodies_row.get_active(),
         }
+        if sel is not None:
+            v["dlc_excluded"] = [d for d in self._dlc_checks if d not in sel]
+        return v
 
     def _estimate(self) -> None:
         v = self.values()
@@ -317,6 +371,8 @@ class InstallDialog(Adw.Dialog):
                 return {"size": size, "version": installers[0].get("version", "") if installers else "", "langs": "–", "method": tr('Offline-Installer + innoextract (kein Galaxy-Build)')}
             m = BuildManifest.parse(api.zlib_json(v2[0].link))
             depots, lang = m.select_depots(v["language"], inst.owned_ids(), v["include_dlcs"])
+            if v["dlc_filter"] is not None:
+                depots = [d for d in depots if d.product_id in ("", m.base_product_id) or d.product_id in v["dlc_filter"]]
             return {"size": sum(d.size for d in depots), "download": sum(d.compressed_size for d in depots),
                     "version": v2[0].version_name, "langs": ", ".join(m.available_languages) or "–",
                     "method": tr('Galaxy Content-System (Build {0}), Sprache {1}').format(v2[0].build_id, lang),
@@ -326,6 +382,7 @@ class InstallDialog(Adw.Dialog):
             if d.get("dirname"):
                 self._dirname = d["dirname"]
             self._update_target()
+            self._check_space(d["size"])
             s = format_bytes(d["size"])
             if d.get("download"):
                 s += tr(' (Download {0})').format(format_bytes(d['download']))
@@ -337,6 +394,18 @@ class InstallDialog(Adw.Dialog):
         def fail(exc: Exception) -> None:
             self.size_row.set_subtitle(tr('nicht ermittelbar: {0}').format(exc))
         run_async(work, done, fail)
+
+    def _check_space(self, size: int) -> None:
+        """Wie Galaxy: zu wenig Platz → Hinweis, Installieren gesperrt."""
+        from ..content.installer import SPACE_RESERVE, existing_dir, free_space
+        target = Path(os.path.expanduser(self.current_root())) / self._dirname
+        free = free_space(target)
+        short = free >= 0 and size and size + SPACE_RESERVE > free
+        self.space_row.set_visible(bool(short))
+        if short:
+            self.space_row.set_title(tr('Nicht genügend freier Speicherplatz auf „{0}“. Wähle bitte ein anderes Laufwerk, um dieses Spiel zu installieren.').format(existing_dir(target)))
+            self.space_row.set_subtitle(tr('Benötigt: {0}, frei: {1}').format(format_bytes(size), format_bytes(free)))
+        self.ok.set_sensitive(not short)
 
     def _confirm(self, *_: object) -> None:
         v = self.values()
@@ -812,13 +881,16 @@ class GameSettingsDialog(Adw.PreferencesDialog):
 # ----------------------------------------------------------------------------- Globale Einstellungen
 class PreferencesDialog(Adw.PreferencesDialog):
     def __init__(self, backend, on_changed: Callable[[], None] | None = None) -> None:
-        super().__init__(title=tr('Einstellungen'), content_width=720, content_height=640)
+        super().__init__(title=tr('Einstellungen'), content_width=980, content_height=680)
         self.backend = backend
         self.s = backend.settings
         self.on_changed = on_changed or (lambda: None)
         self._lib_ext_groups: list[Adw.PreferencesGroup] = []
         prefs_registry.load_extensions()
-        for page in (self._page_general(), self._page_libraries(), self._page_compat(), self._page_features()):
+        # Reihenfolge wie Galaxy 2.1 (Allgemein, Oberfläche, Benachrichtigungen, Installieren/aktualisieren,
+        # Spielfunktionen), danach die Linux-Seiten
+        for page in (self._page_general(), self._page_interface(), self._page_notifications(), self._page_downloads(),
+                     self._page_features(), self._page_libraries(), self._page_compat()):
             groups = prefs_registry.build_groups(page.get_name(), self)
             for grp in groups:
                 page.add(grp)
@@ -834,31 +906,44 @@ class PreferencesDialog(Adw.PreferencesDialog):
 
     def _page_general(self) -> Adw.PreferencesPage:
         page = Adw.PreferencesPage(title=tr('Allgemein'), icon_name="preferences-system-symbolic", name="general")
-        ui = Adw.PreferencesGroup(title=tr('Oberfläche'))
+        ui = Adw.PreferencesGroup(title=tr('Allgemein'))
         codes = list(UI_LANGUAGES)
-        ui_lang = Adw.ComboRow(title=tr('Sprache der Oberfläche'), subtitle=tr('wirkt nach einem Neustart des Clients'),
+        ui_lang = Adw.ComboRow(title=tr('Sprache'), subtitle=tr('wirkt nach einem Neustart des Clients'),
                                model=Gtk.StringList.new([tr(UI_LANGUAGES[c]) for c in codes]))
         ui_lang.set_selected(codes.index(self.s.ui_language) if self.s.ui_language in codes else 0)
         ui_lang.connect("notify::selected", lambda *_: (self._save(ui_language=codes[ui_lang.get_selected()]),
                                                        self.add_toast(Adw.Toast.new(tr('Sprache wird nach einem Neustart des Clients übernommen')))))
         ui.add(ui_lang)
-        ui.add(store.preferred_store_row(self))     # GOG STORE in der Seitenleiste zeigen/ausblenden
         page.add(ui)
+
+        comfort = Adw.PreferencesGroup(title=tr('Komfort'))
+        from .. import autostart
+        auto = Adw.SwitchRow(title=tr('galaxy-linux beim Systemstart öffnen'), subtitle=tr('Automatischer Start'),
+                             active=autostart.is_enabled())
+
+        def set_auto(row: Adw.SwitchRow, _p) -> None:
+            try:
+                autostart.set_enabled(row.get_active())
+            except OSError as exc:
+                self.add_toast(Adw.Toast.new(str(exc)))
+                return
+            self._save(launch_on_startup=row.get_active())
+        auto.connect("notify::active", set_auto)
+        comfort.add(auto)
+        keep = Adw.SwitchRow(title=tr('Eingeloggt bleiben'), subtitle=tr('Automatisch einloggen – aus: beim Beenden abmelden'),
+                             active=self.s.keep_logged_in)
+        keep.connect("notify::active", lambda r, _p: self._save(keep_logged_in=r.get_active()))
+        comfort.add(keep)
+        pages = [("session", tr('Vorherige Sitzung fortsetzen')), ("recent", tr('Aktuelle Übersicht')), ("store", tr('Store')),
+                 ("all", tr('Spiele im Besitz')), ("installed", tr('Installiert'))]
+        start = Adw.ComboRow(title=tr('Startseite'), model=Gtk.StringList.new([n for _k, n in pages]))
+        keys = [k for k, _n in pages]
+        start.set_selected(keys.index(self.s.starting_page) if self.s.starting_page in keys else keys.index("all"))
+        start.connect("notify::selected", lambda r, _p: self._save(starting_page=keys[r.get_selected()]))
+        comfort.add(start)
+        page.add(comfort)
+
         grp = Adw.PreferencesGroup(title=tr('Ordner'))
-        d = Adw.EntryRow(title=tr('Spiele-Ordner'), text=self.s.install_dir, show_apply_button=True)
-        d.connect("apply", lambda r: self._save(install_dir=r.get_text().strip() or str(paths.DEFAULT_GAMES_DIR)))
-        b = icon_button("folder-open-symbolic", tr('Ordner wählen'), ["flat"])
-        b.connect("clicked", lambda *_: choose_folder(self.get_root(), tr("Spiele-Ordner"), self.s.install_dir, lambda p: (d.set_text(p), self._save(install_dir=p))))
-        d.add_suffix(b)
-        grp.add(d)
-        self.loc_group = Adw.PreferencesGroup(title=tr('Weitere Installationsorte'),
-                                              description=tr('Erscheinen im Installations-Dialog zur Auswahl; Standard ist der Spiele-Ordner oben.'))
-        self._loc_rows: list[Gtk.Widget] = []
-        self._rebuild_loc_rows()
-        addb = Adw.ButtonRow(title=tr('Installationsort hinzufügen …'))
-        addb.set_start_icon_name("list-add-symbolic")
-        addb.connect("activated", lambda *_: choose_folder(self.get_root(), tr("Installationsort hinzufügen"), self.s.install_dir, self._add_location))
-        self.loc_group.add(addb)
         p = Adw.EntryRow(title=tr('Prefix-Ordner (ein Prefix pro Spiel)'), text=self.s.prefix_dir, show_apply_button=True)
         p.connect("apply", lambda r: self._save(prefix_dir=r.get_text().strip() or str(paths.DEFAULT_PREFIX_DIR)))
         b2 = icon_button("folder-open-symbolic", tr('Ordner wählen'), ["flat"])
@@ -866,7 +951,6 @@ class PreferencesDialog(Adw.PreferencesDialog):
         p.add_suffix(b2)
         grp.add(p)
         page.add(grp)
-        page.add(self.loc_group)
 
         self.ign_group = Adw.PreferencesGroup(title=tr('Ausgeschlossene Spielordner'),
                                               description=tr('Von Hand aus der Bibliothek entfernt – die Ordnersuche nimmt sie nicht wieder auf. Entfernen aus dieser Liste = beim nächsten Durchsuchen wieder aufnehmen.'))
@@ -874,20 +958,9 @@ class PreferencesDialog(Adw.PreferencesDialog):
         self._rebuild_ignored()
         page.add(self.ign_group)
 
-        dl = Adw.PreferencesGroup(title=tr('Downloads und Bibliothek'))
-        lang = Adw.ComboRow(title=tr('Bevorzugte Spielsprache'), model=Gtk.StringList.new([n for _, n in LANGUAGES]))
-        lang.set_selected(language_index(self.s.language))
-        lang.connect("notify::selected", lambda *_: self._save(language=LANGUAGES[lang.get_selected()][0]))
-        dl.add(lang)
-        w = Adw.SpinRow.new_with_range(1, 16, 1)
-        w.set_title(tr('Parallele Verbindungen'))
-        w.set_value(self.s.max_workers)
-        w.connect("notify::value", lambda *_: self._save(max_workers=int(w.get_value())))
-        dl.add(w)
+        dl = Adw.PreferencesGroup(title=tr('Bibliothek'))
         for key, title, sub in (("watch_install_dirs", tr('Kopierte Spiele in den Spiele-Ordnern erkennen'), tr('neue Spielordner im GOG-Spiele-Ordner und in den Bibliotheken automatisch übernehmen')),
                                 ("auto_create_prefixes", tr('Fehlende Wine-Prefixe automatisch anlegen'), tr('im Prefix-Ordner bzw. dem der Bibliothek, mit passender Bildschirm-Skalierung')),
-                                ("shortcut_menu", tr('Nach der Installation Verknüpfung im Startmenü anlegen'), tr('Vorgabe für den Installations-Dialog')),
-                                ("shortcut_desktop", tr('Nach der Installation Verknüpfung auf dem Schreibtisch anlegen'), tr('Vorgabe für den Installations-Dialog')),
                                 ("auto_check_updates", tr('Beim Start nach Spiel-Updates suchen'), ""),
                                 ("show_hidden", tr('Versteckte Spiele anzeigen'), ""),
                                 ("use_keyring", tr('Zugangsdaten im System-Schlüsselbund speichern'), tr('statt in ~/.config/galaxy-linux/credentials.json (0600); wirkt beim nächsten Login'))):
@@ -896,6 +969,178 @@ class PreferencesDialog(Adw.PreferencesDialog):
             dl.add(r)
         page.add(dl)
         return page
+
+    # Seite: Oberfläche (Galaxy: Anpassungen, Verhalten des Hauptfensters)
+    def _page_interface(self) -> Adw.PreferencesPage:
+        page = Adw.PreferencesPage(title=tr('Oberfläche'), icon_name="preferences-desktop-appearance-symbolic", name="interface")
+        cust = Adw.PreferencesGroup(title=tr('Anpassungen'))
+        cust.add(store.preferred_store_row(self))     # GOG STORE in der Seitenleiste zeigen/ausblenden
+        bm = Adw.ActionRow(title=tr('Lesezeichen'), subtitle=tr('Lesezeichen der Seitenleiste sichern oder übernehmen'))
+        for text, cb in ((tr('Importieren …'), self._import_bookmarks), (tr('Exportieren …'), self._export_bookmarks)):
+            b = Gtk.Button(label=text, valign=Gtk.Align.CENTER)
+            b.connect("clicked", lambda *_, cb=cb: cb())
+            bm.add_suffix(b)
+        cust.add(bm)
+        page.add(cust)
+        from .tray import watcher_available
+        win = Adw.PreferencesGroup(title=tr('Verhalten des Hauptfensters'))
+        if not watcher_available():
+            win.set_description(tr('Kein System-Tray gefunden – „Im System-Tray minimieren“ wirkt hier wie „In Taskleiste minimieren“.'))
+        for key, title, options in (
+                ("when_minimizing", tr('Bei Minimierung des Fensters'),
+                 (("taskbar", tr('In Taskleiste minimieren')), ("tray", tr('Im System-Tray minimieren')))),
+                ("when_closing", tr('Bei Schließung des Fensters'),
+                 (("tray", tr('Im System-Tray minimieren')), ("exit", tr('galaxy-linux schließen')))),
+                ("when_launching_game", tr('Wenn ein Spiel gestartet wird'),
+                 (("nothing", tr('Keine Veränderung')), ("taskbar", tr('In Taskleiste minimieren')),
+                  ("tray", tr('Im System-Tray minimieren'))))):
+            keys = [k for k, _n in options]
+            row = Adw.ComboRow(title=title, model=Gtk.StringList.new([n for _k, n in options]))
+            cur = getattr(self.s, key)
+            row.set_selected(keys.index(cur) if cur in keys else 0)
+            row.connect("notify::selected", lambda r, _p, k=key, ks=keys: self._save(**{k: ks[r.get_selected()]}))
+            win.add(row)
+        page.add(win)
+        return page
+
+    def _import_bookmarks(self) -> None:
+        from .. import library_view as lv
+        dlg = Gtk.FileDialog(title=tr('Lesezeichen importieren'), modal=True)
+
+        def done(d, res) -> None:
+            try:
+                f = d.open_finish(res)
+            except GLib.Error:
+                return
+            try:
+                n = lv.import_bookmarks(self.s, f.get_path())
+            except ValueError:
+                self.add_toast(Adw.Toast.new(tr('Lesezeichen konnten nicht importiert werden. Stelle sicher, dass die Datei gültig ist.')))
+                return
+            self.add_toast(Adw.Toast.new(tr('Lesezeichen wurden erfolgreich importiert.') + f" ({n})"))
+            self.on_changed()
+        dlg.open(self.get_root(), None, done)
+
+    def _export_bookmarks(self) -> None:
+        from .. import library_view as lv
+        dlg = Gtk.FileDialog(title=tr('Lesezeichen exportieren'), modal=True, initial_name="galaxy-linux-lesezeichen.json")
+
+        def done(d, res) -> None:
+            try:
+                f = d.save_finish(res)
+            except GLib.Error:
+                return
+            try:
+                n = lv.export_bookmarks(self.s, f.get_path())
+            except OSError as exc:
+                self.add_toast(Adw.Toast.new(str(exc)))
+                return
+            self.add_toast(Adw.Toast.new(tr('{0} Lesezeichen exportiert').format(n)))
+        dlg.save(self.get_root(), None, done)
+
+    # Seite: Benachrichtigungen
+    def _page_notifications(self) -> Adw.PreferencesPage:
+        page = Adw.PreferencesPage(title=tr('Benachrichtigungen'), icon_name="preferences-system-notifications-symbolic",
+                                   name="notifications")
+        grp = Adw.PreferencesGroup(title=tr('Benachrichtigungen'),
+                                   description=tr('Desktop-Benachrichtigungen, solange das Fenster nicht im Vordergrund ist; im Fenster erscheinen die Meldungen unten.'))
+        opts = (("desktop", tr('Nur Desktop')), ("none", "—"))
+        keys = [k for k, _n in opts]
+        row = Adw.ComboRow(title=tr('Statusmeldung Installation/Update'), model=Gtk.StringList.new([n for _k, n in opts]))
+        row.set_selected(keys.index(self.s.notify_download_status) if self.s.notify_download_status in keys else 0)
+        row.connect("notify::selected", lambda r, _p: self._save(notify_download_status=keys[r.get_selected()]))
+        grp.add(row)
+        page.add(grp)
+        return page
+
+    # Seite: Installieren/aktualisieren
+    def _page_downloads(self) -> Adw.PreferencesPage:
+        from ..content import extras
+        page = Adw.PreferencesPage(title=tr('Installieren/aktualisieren'), icon_name="folder-download-symbolic", name="downloads")
+        grp = Adw.PreferencesGroup(title=tr('Spiele installieren'))
+        lang = Adw.ComboRow(title=tr('Bevorzugte Sprache'), model=Gtk.StringList.new([n for _, n in LANGUAGES]))
+        lang.set_selected(language_index(self.s.language))
+        lang.connect("notify::selected", lambda *_: self._save(language=LANGUAGES[lang.get_selected()][0]))
+        grp.add(lang)
+        d = Adw.EntryRow(title=tr('Installationspfad für Spiele'), text=self.s.install_dir, show_apply_button=True)
+        d.connect("apply", lambda r: self._save(install_dir=r.get_text().strip() or str(paths.DEFAULT_GAMES_DIR)))
+        b = icon_button("folder-open-symbolic", tr('Ordner wählen'), ["flat"])
+        b.connect("clicked", lambda *_: choose_folder(self.get_root(), tr("Spiele-Ordner"), self.s.install_dir, lambda p: (d.set_text(p), self._save(install_dir=p))))
+        d.add_suffix(b)
+        grp.add(d)
+        for key, title in (("shortcut_desktop", tr('Verknüpfung auf Desktop erstellen')),
+                           ("shortcut_menu", tr('Verknüpfung im Startmenü anlegen'))):
+            r = Adw.SwitchRow(title=title, subtitle=tr('Vorgabe für den Installations-Dialog'), active=getattr(self.s, key))
+            r.connect("notify::active", lambda row, _, k=key: self._save(**{k: row.get_active()}))
+            grp.add(r)
+        ex = Adw.EntryRow(title=tr('Ordner für andere Downloads (leer = {0})').format(extras.default_extras_dir()),
+                          text=self.s.extras_dir, show_apply_button=True)
+        ex.set_tooltip_text(tr('Offline-Installer, Extras und Sicherungskopien der Cloud-Speicherstände'))
+        ex.connect("apply", lambda r: self._save(extras_dir=r.get_text().strip()))
+        eb = icon_button("folder-open-symbolic", tr('Ordner wählen'), ["flat"])
+        eb.connect("clicked", lambda *_: choose_folder(self.get_root(), tr('Ordner für andere Downloads'),
+                                                       str(extras.extras_dir(self.s).parent),
+                                                       lambda p: (ex.set_text(p), self._save(extras_dir=p))))
+        ex.add_suffix(eb)
+        grp.add(ex)
+        page.add(grp)
+        self.loc_group = Adw.PreferencesGroup(title=tr('Weitere Installationsorte'),
+                                              description=tr('Erscheinen im Installations-Dialog zur Auswahl; Standard ist der Installationspfad oben.'))
+        self._loc_rows: list[Gtk.Widget] = []
+        self._rebuild_loc_rows()
+        addb = Adw.ButtonRow(title=tr('Installationsort hinzufügen …'))
+        addb.set_start_icon_name("list-add-symbolic")
+        addb.connect("activated", lambda *_: choose_folder(self.get_root(), tr("Installationsort hinzufügen"), self.s.install_dir, self._add_location))
+        self.loc_group.add(addb)
+        page.add(self.loc_group)
+
+        bw = Adw.PreferencesGroup(title=tr('Bandbreite'))
+        play = Adw.SwitchRow(title=tr('Downloads während des Spiels pausieren'), subtitle=tr('Während des Spiels'),
+                             active=self.s.pause_downloads_when_playing)
+        play.connect("notify::active", lambda r, _p: self._save(pause_downloads_when_playing=r.get_active()))
+        bw.add(play)
+        bits = Adw.SwitchRow(title=tr('Download-Geschwindigkeit in Bit pro Sekunde anzeigen'),
+                             subtitle=tr('Anzeige der Download-Geschwindigkeit'), active=self.s.speed_in_bits)
+        bits.connect("notify::active", lambda r, _p: self._save(speed_in_bits=r.get_active()))
+        bw.add(bits)
+        limit = Adw.ExpanderRow(title=tr('Bandbreite begrenzen'), subtitle=tr('Bandbreitenbegrenzung'), show_enable_switch=True,
+                                enable_expansion=self.s.bandwidth_limit, expanded=self.s.bandwidth_limit)
+        limit.connect("notify::enable-expansion", lambda r, _p: self._save(bandwidth_limit=r.get_enable_expansion()))
+        rate = Adw.SpinRow.new_with_range(0.1, 1000, 0.1)
+        rate.set_digits(1)
+        rate.set_title(tr('auf (MB/s)'))
+        rate.set_value(round(self.s.bandwidth_limit_kib / 1024, 1))
+        rate.connect("notify::value", lambda r, _p: self._save(bandwidth_limit_kib=max(1, int(r.get_value() * 1024))))
+        limit.add_row(rate)
+        bw.add(limit)
+        sched = Adw.ExpanderRow(title=tr('Begrenzung planen'), subtitle=tr('Begrenzung gilt nur im Zeitraum'),
+                                show_enable_switch=True, enable_expansion=self.s.bandwidth_schedule,
+                                expanded=self.s.bandwidth_schedule)
+        sched.connect("notify::enable-expansion", lambda r, _p: self._save(bandwidth_schedule=r.get_enable_expansion()))
+        for key, title in (("bandwidth_schedule_start", tr('von')), ("bandwidth_schedule_stop", tr('bis'))):
+            row = Adw.EntryRow(title=tr('{0} (HH:MM)').format(title), text=getattr(self.s, key), show_apply_button=True)
+            row.connect("apply", lambda r, k=key: self._set_time(k, r))
+            sched.add_row(row)
+        bw.add(sched)
+        w = Adw.SpinRow.new_with_range(1, 16, 1)
+        w.set_title(tr('Parallele Verbindungen'))
+        w.set_value(self.s.max_workers)
+        w.connect("notify::value", lambda *_: self._save(max_workers=int(w.get_value())))
+        bw.add(w)
+        page.add(bw)
+        return page
+
+    def _set_time(self, key: str, row: Adw.EntryRow) -> None:
+        from ..content.bandwidth import parse_hhmm
+        text = row.get_text().strip()
+        mins = parse_hhmm(text)
+        if mins is None:
+            self.add_toast(Adw.Toast.new(tr('Uhrzeit als HH:MM angeben, z. B. 08:00')))
+            row.set_text(getattr(self.s, key))
+            return
+        value = f"{mins // 60:02d}:{mins % 60:02d}"
+        row.set_text(value)
+        self._save(**{key: value})
 
     def _rebuild_ignored(self) -> None:
         for r in self._ign_rows:

@@ -1,23 +1,30 @@
-"""Spielansicht nach GOG Galaxy 2.0: Hero-Artwork mit Logo, Play-Leiste mit Kennzahlen, Details in zwei Spalten.
+"""Spielansicht nach GOG Galaxy 2.1: Hero-Artwork mit Logo, Play-Leiste mit Kennzahlen und Anpassen-Menü, darunter
+die Tabs Übersicht / Mein Fortschritt / Extras (``GameViewTab``).
 
-Zusätzlich (wie Steam): Kompatibilitätstool und Startoptionen direkt auf der Seite.
+Zusätzlich (wie Steam): Kompatibilitätstool und Startoptionen direkt in der Übersicht. Alle Spielaktionen nehmen eine
+Produkt-ID – das Kontextmenü der Bibliothek (ui/game_menu.py) nutzt sie auch für Spiele, die gerade nicht angezeigt
+werden.
 """
 from __future__ import annotations
 
 from ..i18n import tr
 
-import time
-
 from .. import paths
+from ..content import extras as extras_mod
+from ..content.installer import InstallError
 from ..jsonstore import read_json
 from ..launch import goverlay, goverlay_profiles, launch_options
-from ..content.installer import InstallError
 from ..launch.launcher import LaunchError
 from ..settings import format_bytes, format_minutes
 from .dialogs import (GameSettingsDialog, InstallDialog, confirm_destructive, confirm_remove_game, confirm_uninstall,
                       move_installation)
-from . import store, ui_registry
-from .util import Adw, Gtk, Pango, fmt_eta, fmt_speed, icon_button, idle, label, pick_icon, relative_time, run_async
+from . import game_menu, store, ui_registry
+from .util import (Adw, Gtk, Pango, choose_folder, clamped_picture, fmt_eta, fmt_speed, icon_button, idle, label, open_uri,
+                   pick_icon, relative_time, run_async)
+
+RARITY = {"common": tr('Gewöhnlich'), "uncommon": tr('Ungewöhnlich'), "rare": tr('Selten'), "epic": tr('Episch'),
+          "legendary": tr('Legendär')}
+OS_FILTER = (("", tr('Alle')), ("windows", "Windows"), ("linux", "Linux"), ("mac", "macOS"))
 
 
 class Stat(Gtk.Box):
@@ -44,10 +51,13 @@ class GamePage(Gtk.Box):
         self.meta = None
         self._tool_ids: list[str] = []
         self._building = False
+        self._extras: list = []
+        self._extras_pid = ""
         # letzte Meldung von Start/Nachbereitung je Spiel: (Text, Ergebnis?) – Zwischenstände enden auf „…“
         self._hook_status: dict[str, tuple[str, bool]] = {}
 
         scrolled = Gtk.ScrolledWindow(vexpand=True, hscrollbar_policy=Gtk.PolicyType.NEVER)
+        self.scroller = scrolled
         content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 
         # ----- Hero
@@ -83,20 +93,26 @@ class GamePage(Gtk.Box):
         self.play_btn.connect("clicked", self._on_play)
         self.install_btn = Gtk.Button(label=tr('INSTALLIEREN'))
         self.install_btn.add_css_class("btn-install")
-        self.install_btn.connect("clicked", self._on_install)
+        self.install_btn.connect("clicked", lambda *_: self.install())
         self.update_btn = Gtk.Button(label=tr('AKTUALISIEREN'))
         self.update_btn.add_css_class("btn-secondary")
-        self.update_btn.connect("clicked", self._on_update)
+        self.update_btn.connect("clicked", lambda *_: self.update())
+        self.resume_btn = Gtk.Button(label=tr('FORTSETZEN'))
+        self.resume_btn.add_css_class("btn-install")
+        self.resume_btn.connect("clicked", lambda *_: self._resume_job())
         self.cancel_btn = Gtk.Button(label=tr('ABBRECHEN'))
         self.cancel_btn.add_css_class("btn-danger")
         self.cancel_btn.connect("clicked", self._on_cancel)
         self.stop_btn = Gtk.Button(label=tr('BEENDEN'))
         self.stop_btn.add_css_class("btn-danger")
         self.stop_btn.connect("clicked", self._on_stop)
-        self.menu_btn = Gtk.MenuButton(icon_name=pick_icon("view-more-symbolic", "open-menu-symbolic"), tooltip_text=tr('Weitere Aktionen'))
+        # Anpassen-Knopf (Galaxy: Schieberegler rechts neben „Spielen“) – Menü bei jedem Öffnen neu
+        self.menu_btn = Gtk.MenuButton(icon_name=pick_icon("emblem-system-symbolic", "view-more-symbolic", "open-menu-symbolic"),
+                                       tooltip_text=tr('Anpassen'))
         self.menu_btn.add_css_class("btn-icon-big")
-        self.menu_btn.set_popover(self._build_menu())
-        for w in (self.play_btn, self.install_btn, self.update_btn, self.cancel_btn, self.stop_btn, self.menu_btn):
+        self.menu_btn.set_create_popup_func(
+            lambda b: b.set_popover(Gtk.PopoverMenu.new_from_model(self.win.game_actions.model(self.pid or ""))))
+        for w in (self.play_btn, self.install_btn, self.update_btn, self.resume_btn, self.cancel_btn, self.stop_btn, self.menu_btn):
             w.set_valign(Gtk.Align.CENTER)
             bar.append(w)
         stats = Gtk.Box(spacing=34, margin_start=22, hexpand=True)
@@ -108,40 +124,69 @@ class GamePage(Gtk.Box):
         tool_btn.add_css_class("flat")
         tool_btn.add_css_class("stat-btn")
         tool_btn.set_tooltip_text(tr('Proton/Wine und Startoptionen (wie Steam-Eigenschaften)'))
-        tool_btn.connect("clicked", self._on_settings)
+        tool_btn.connect("clicked", lambda *_: self.open_settings())
         for w in (self.stat_time, self.stat_last, self.stat_ach, tool_btn):
             stats.append(w)
         bar.append(stats)
         self.status_lbl = label("", css=["dim"], ellipsize=True)
         self.status_lbl.set_valign(Gtk.Align.CENTER)
         bar.append(self.status_lbl)
-        self.settings_btn = icon_button(pick_icon("emblem-system-symbolic", "preferences-system-symbolic"), tr('Eigenschaften'), ["btn-icon-big"])
+        self.settings_btn = icon_button(pick_icon("preferences-other-symbolic", "emblem-system-symbolic"), tr('Eigenschaften'),
+                                        ["btn-icon-big"])
         self.settings_btn.set_valign(Gtk.Align.CENTER)
-        self.settings_btn.connect("clicked", self._on_settings)
+        self.settings_btn.connect("clicked", lambda *_: self.open_settings())
         bar.append(self.settings_btn)
         content.append(bar)
 
         # ----- Fortschritt
         self.progress_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         self.progress_box.add_css_class("progress-strip")
+        ph = Gtk.Box(spacing=8)
         self.progress_status = label("", css=["stat-key"])
+        self.progress_status.set_hexpand(True)
+        ph.append(self.progress_status)
+        self.pause_btn = Gtk.Button(label=tr('Pausieren'))
+        self.pause_btn.add_css_class("flat")
+        self.pause_btn.connect("clicked", lambda *_: self._toggle_pause())
+        ph.append(self.pause_btn)
+        downloads = Gtk.Button(label=tr('Downloads verwalten'))
+        downloads.add_css_class("flat")
+        downloads.connect("clicked", lambda *_: self.win.navigate("downloads"))
+        ph.append(downloads)
+        self.progress_box.append(ph)
         self.progress_bar = Gtk.ProgressBar()
         self.progress_detail = label("", css=["mono"], ellipsize=True)
-        for w in (self.progress_status, self.progress_bar, self.progress_detail):
+        for w in (self.progress_bar, self.progress_detail):
             self.progress_box.append(w)
         self.progress_box.set_visible(False)
         content.append(self.progress_box)
 
-        # ----- Spalten
-        cols = Gtk.Box(spacing=32, margin_start=28, margin_end=28, margin_top=18, margin_bottom=32)
+        # ----- Tabs wie Galaxy: Übersicht / Mein Fortschritt / Extras
+        self.tabs = Gtk.Stack(transition_type=Gtk.StackTransitionType.CROSSFADE, vhomogeneous=False)
+        switcher = Gtk.StackSwitcher(stack=self.tabs, halign=Gtk.Align.START)
+        switcher.add_css_class("game-tabs")
+        switcher.set_margin_start(28)
+        switcher.set_margin_top(14)
+        content.append(switcher)
+        self.tabs.add_titled(self._build_overview(stats), "overview", tr('Übersicht'))
+        self.tabs.add_titled(self._build_progress(), "progression", tr('Mein Fortschritt'))
+        self.tabs.add_titled(self._build_extras(), "extras", tr('Extras'))
+        self.tabs.connect("notify::visible-child-name", lambda *_: self._on_tab())
+        content.append(self.tabs)
+
+        scrolled.set_child(content)
+        self.append(scrolled)
+
+    # ------------------------------------------------------------------ Aufbau der Tabs
+    def _build_overview(self, stats: Gtk.Box) -> Gtk.Widget:
+        cols = Gtk.Box(spacing=32, margin_start=28, margin_end=28, margin_top=14, margin_bottom=32)
         left = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=24, hexpand=True)
         right = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=24, hexpand=False)
         right.set_size_request(380, -1)
         cols.append(left)
         cols.append(right)
-        content.append(cols)
 
-        # Links: Über das Spiel, Erfolge
+        # Links: Über das Spiel, Medien
         about = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         about.append(label(tr('ÜBER DAS SPIEL'), css=["sec-hdr"]))
         self.tag_box = Gtk.Box(spacing=6)
@@ -152,22 +197,22 @@ class GamePage(Gtk.Box):
         self.dlc_lbl = label("", css=["dim"], wrap=True)
         about.append(self.dlc_lbl)
         left.append(about)
-        self.ach_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        self.ach_hdr = label(tr('ERFOLGE'), css=["sec-hdr"])
-        self.ach_box.append(self.ach_hdr)
-        self.ach_icons = Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE, column_spacing=8, row_spacing=8,
-                                     max_children_per_line=30, halign=Gtk.Align.START)
-        self.ach_box.append(self.ach_icons)
-        self.ach_box.set_visible(False)
-        left.append(self.ach_box)
+        self.media_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        self.media_box.append(label(tr('MEDIEN'), css=["sec-hdr"]))
+        self.media_flow = Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE, column_spacing=10, row_spacing=10,
+                                      max_children_per_line=3, halign=Gtk.Align.START)
+        self.media_box.append(self.media_flow)
+        self.media_box.set_visible(False)
+        left.append(self.media_box)
 
         # Rechts: Details, Kompatibilität
         det = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         det.append(label(tr('SPIELDETAILS'), css=["sec-hdr"]))
         self.detail_grid = Gtk.Grid(column_spacing=14, row_spacing=6)
         self.details: dict[str, Gtk.Label] = {}
-        for i, key in enumerate((tr('Plattform'), tr('Status'), tr('Version'), tr('Größe'), tr('Ordner'), tr('Sprache'), tr('Genre'), tr('Entwickler'),
-                                 tr('Publisher'), tr('Veröffentlicht'), tr('Prefix'))):
+        for i, key in enumerate((tr('Plattform'), tr('Status'), tr('Version'), tr('Größe'), tr('Ordner'), tr('Sprache'), tr('Genre'),
+                                 tr('Presse-Wertung'), tr('Meine Bewertung'), tr('Tags'), tr('Entwickler'), tr('Publisher'),
+                                 tr('Veröffentlicht'), tr('Prefix'))):
             k = label(key, css=["detail-key"])
             k.set_valign(Gtk.Align.START)
             v = label("–", css=["detail-val"], selectable=True, ellipsize=True)
@@ -209,7 +254,7 @@ class GamePage(Gtk.Box):
         gov.set_sensitive(goverlay.status().goverlay)
         gov.connect("clicked", self._on_goverlay)
         more = Gtk.Button(label=tr('Eigenschaften …'))
-        more.connect("clicked", self._on_settings)
+        more.connect("clicked", lambda *_: self.open_settings())
         for b in (apply, gov, more):
             ob.append(b)
         comp.append(ob)
@@ -228,96 +273,64 @@ class GamePage(Gtk.Box):
             for w in ui_registry.build_sections(col, self):
                 box.append(w)
                 self._ext_sections.append(w)
+        return cols
 
-        scrolled.set_child(content)
-        self.append(scrolled)
+    def _build_progress(self) -> Gtk.Widget:
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18, margin_start=28, margin_end=28, margin_top=14,
+                      margin_bottom=32)
+        sums = Gtk.Box(spacing=34)
+        self.prog_time = Stat(tr('Spielzeit'))
+        self.prog_last = Stat(tr('Zuletzt gespielt'))
+        self.prog_ach = Stat(tr('Erfolge'))
+        for w in (self.prog_time, self.prog_last, self.prog_ach):
+            sums.append(w)
+        box.append(sums)
+        self.ach_hdr = label(tr('ERFOLGE'), css=["sec-hdr"])
+        box.append(self.ach_hdr)
+        self.ach_hint = label("", css=["dim"], wrap=True)
+        box.append(self.ach_hint)
+        self.ach_list = Gtk.ListBox(selection_mode=Gtk.SelectionMode.NONE)
+        self.ach_list.add_css_class("boxed-list")
+        box.append(self.ach_list)
+        return box
 
-    # ------------------------------------------------------------------ Menü
-    def _build_menu(self) -> Gtk.Popover:
-        self._menu_btns: dict[str, Gtk.Button] = {}
-        pop = Gtk.Popover()
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, margin_top=4, margin_bottom=4, margin_start=4, margin_end=4)
-        for text, cb in (
-            (tr('Dateien prüfen / reparieren'), self._on_verify),
-            (tr('Installationsordner öffnen'), lambda *_: self._open_install_dir()),
-            (tr('Installation verschieben …'), lambda *_: move_installation(self.win, self.backend, self.pid, self.refresh_state)),
-            ("__shortcut_menu__", lambda *_: self._toggle_shortcut("menu")),
-            ("__shortcut_desktop__", lambda *_: self._toggle_shortcut("desktop")),
-            (tr('Wine-Prefix öffnen'), lambda *_: self.backend.launcher.open_path(self.backend.launcher.prefix_for(self.pid))),
-            (tr('Winetricks'), self._on_winetricks),
-            (tr('Protokoll öffnen'), lambda *_: self.backend.launcher.open_path(paths.game_log_file(self.pid))),
-            (tr('Im Store anzeigen'), lambda *_: store.show_product(self.win, self.pid, self.meta, self.entry)),
-            (tr('Prefix anlegen'), lambda *_: self._prefix_action("create")),
-            (tr('Prefix neu anlegen …'), lambda *_: self._prefix_action("reset")),
-            (tr('Prefix löschen …'), lambda *_: self._prefix_action("delete")),
-            (tr('Verstecken'), lambda *_: (self.backend.game_settings.update(self.pid, hidden=True), self.win.toast(tr('Spiel versteckt (Filter → Versteckte anzeigen)')))),
-            (tr('Aus Bibliothek entfernen …'), self._on_remove),
-            (tr('Deinstallieren'), self._on_uninstall),
-        ):
-            b = Gtk.Button(label=text)
-            b.add_css_class("flat")
-            b.get_child().set_xalign(0)
-            b.connect("clicked", lambda _b, cb=cb: (pop.popdown(), cb()))
-            self._menu_btns[text] = b
-            if text == "__shortcut_menu__":
-                self.menu_shortcut_btn = b
-            elif text == "__shortcut_desktop__":
-                self.desktop_shortcut_btn = b
-            box.append(b)
-        # Einträge der Erweiterungen (ui_registry.register_game_action) nach „Im Store anzeigen“
-        anchor = self._menu_btns.get(tr('Im Store anzeigen'))
-        self._ext_actions: list[tuple[object, Gtk.Button]] = []
-        for act in ui_registry.game_actions():
-            b = Gtk.Button(label=act.label)
-            b.add_css_class("flat")
-            b.get_child().set_xalign(0)
-            b.connect("clicked", lambda _b, act=act: (pop.popdown(), ui_registry.run_action(act, self, self.pid)))
-            box.insert_child_after(b, anchor)
-            anchor = b
-            self._ext_actions.append((act, b))
-        pop.connect("show", lambda *_: self._on_menu_show())
-        pop.set_child(box)
-        return pop
-
-    def _on_menu_show(self) -> None:
-        self._update_shortcut_labels()
-        for act, b in self._ext_actions:
-            b.set_visible(ui_registry.action_visible(act, self, self.pid))
-
-    def _update_shortcut_labels(self) -> None:
-        if not self.pid:
-            return
-        installed = self.backend.registry.is_installed(self.pid)
-        has_menu, has_desktop = self.backend.shortcut_state(self.pid)
-        self.menu_shortcut_btn.set_label(tr('Startmenü-Verknüpfung entfernen') if has_menu else tr('Verknüpfung im Startmenü anlegen'))
-        self.desktop_shortcut_btn.set_label(tr('Schreibtisch-Verknüpfung entfernen') if has_desktop else tr('Verknüpfung auf dem Schreibtisch anlegen'))
-        self.menu_shortcut_btn.set_sensitive(installed)
-        self.desktop_shortcut_btn.set_sensitive(installed)
-        g = self.backend.registry.get(self.pid)
-        ext = bool(g and g.method == "external")
-        win = bool(g and g.platform == "windows")
-        has_prefix = win and self.backend.launcher.prefix_exists(self.pid)
-        vis = {tr('Dateien prüfen / reparieren'): installed and not ext, tr('Im Store anzeigen'): not ext and self.pid.isdigit(),
-               tr('Installation verschieben …'): installed and not ext, tr('Prefix anlegen'): win and not has_prefix,
-               tr('Prefix neu anlegen …'): has_prefix, tr('Prefix löschen …'): has_prefix,
-               tr('Aus Bibliothek entfernen …'): installed, tr('Deinstallieren'): installed and not ext}
-        for text, v in vis.items():
-            if text in self._menu_btns:
-                self._menu_btns[text].set_visible(v)
-
-    def _toggle_shortcut(self, which: str) -> None:
-        pid = self.pid
-        has_menu, has_desktop = self.backend.shortcut_state(pid)
-        menu, desktop = which == "menu", which == "desktop"
-        exists = has_menu if menu else has_desktop
-        where = tr('Startmenü') if menu else tr('Schreibtisch')
-
-        def done(_r) -> None:
-            self.win.toast(tr('Verknüpfung ({0}) {1}').format(where, tr('entfernt') if exists else tr('angelegt')))
-        if exists:
-            run_async(lambda: self.backend.remove_shortcuts(pid, menu=menu, desktop=desktop), done, lambda e: self.win.toast(str(e)))
-        else:
-            run_async(lambda: self.backend.create_shortcuts(pid, menu=menu, desktop=desktop), done, lambda e: self.win.toast(str(e)))
+    def _build_extras(self) -> Gtk.Widget:
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14, margin_start=28, margin_end=28, margin_top=14,
+                      margin_bottom=32)
+        top = Gtk.Box(spacing=10)
+        top.append(label(tr('Betriebssystem:'), css=["dim"]))
+        self.os_dd = Gtk.DropDown.new_from_strings([n for _k, n in OS_FILTER])
+        self.os_dd.connect("notify::selected", lambda *_: self._render_extras())
+        top.append(self.os_dd)
+        top.append(label(tr('Sprache:'), css=["dim"]))
+        self.lang_dd = Gtk.DropDown.new_from_strings([tr('Alle')])
+        self._extra_langs: list[str] = [""]
+        self.lang_dd.connect("notify::selected", lambda *_: self._render_extras())
+        top.append(self.lang_dd)
+        sp = Gtk.Box(hexpand=True)
+        top.append(sp)
+        self.dl_all_btn = Gtk.Button(label=tr('Alle herunterladen'))
+        self.dl_all_btn.add_css_class("btn-secondary")
+        self.dl_all_btn.connect("clicked", lambda *_: self._download_extras(self._visible_extras()))
+        top.append(self.dl_all_btn)
+        folder = Gtk.Button(label=tr('Download-Ordner öffnen'))
+        folder.add_css_class("flat")
+        folder.connect("clicked", lambda *_: self._open_extras_dir())
+        top.append(folder)
+        box.append(top)
+        self.extras_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        box.append(self.extras_box)
+        self.cloud_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        self.cloud_box.append(label(tr('SICHERUNGSKOPIE DEINER CLOUD-SPEICHERSTÄNDE'), css=["sec-hdr"]))
+        crow = Gtk.Box(spacing=10)
+        crow.append(label(tr('Alle Spielstände aus der GOG Galaxy-Cloud als Archiv in den Ordner für andere Downloads laden.'),
+                          css=["dim"], wrap=True))
+        cb = Gtk.Button(label=tr('Herunterladen'), valign=Gtk.Align.CENTER)
+        cb.connect("clicked", lambda *_: self._cloud_backup())
+        crow.append(cb)
+        self.cloud_box.append(crow)
+        box.append(self.cloud_box)
+        return box
 
     # ------------------------------------------------------------------ Anzeige
     def set_game(self, pid: str) -> None:
@@ -332,8 +345,13 @@ class GamePage(Gtk.Box):
         self.summary_lbl.set_text("")
         self.dlc_lbl.set_text("")
         self._clear(self.tag_box)
-        self.ach_box.set_visible(False)
-        self._clear_flow(self.ach_icons)
+        self.media_flow.remove_all()
+        self.media_box.set_visible(False)
+        self.ach_list.remove_all()
+        self.ach_hint.set_text("")
+        self.ach_hdr.set_text(tr('ERFOLGE'))
+        self._extras, self._extras_pid = [], ""
+        self.tabs.set_visible_child_name("overview")
         self.status_lbl.set_text(self._hook_status.get(self.pid, ("", False))[0]
                                  if self.backend.launcher.is_running(self.pid) else "")
         pid = self.pid
@@ -341,6 +359,9 @@ class GamePage(Gtk.Box):
         self._fill_quick()
         self.refresh_state()
         self._load_achievements()
+        # Spielzeit aller Geräte von GOG übernehmen (höchstens alle 10 Minuten je Spiel)
+        run_async(lambda: self.backend.pull_playtime([pid], max_age=600),
+                  lambda n: n and pid == self.pid and self.refresh_state(), lambda e: None)
         ui_registry.notify_sections(self._ext_sections, "set_game", self.pid)
 
     def _fill_meta(self, m) -> None:
@@ -365,19 +386,29 @@ class GamePage(Gtk.Box):
             self.images.load(m.logo, logo_cb)
         d = self.details
         d[tr('Genre')].set_text(", ".join(m.genres) or "–")
+        d[tr('Presse-Wertung')].set_text(f"{m.rating:.0f} / 100" if m.rating is not None else "–")
         d[tr('Entwickler')].set_text(", ".join(m.developers) or "–")
         d[tr('Publisher')].set_text(", ".join(m.publishers) or "–")
         d[tr('Veröffentlicht')].set_text(m.release_date or "–")
-        owned = {e.id for e in self.backend.library}
-        dlcs = [x for x in m.dlc_ids if x in owned]
         if m.dlc_ids:
-            inst = self.backend.registry.get(self.pid)
-            installed_dlcs = set(inst.installed_dlcs) if inst else set()
-            names = []
-            for x in dlcs:
-                e = self.backend.entry(x)
-                names.append((e.title if e else x) + (" ✓" if x in installed_dlcs else ""))
-            self.dlc_lbl.set_text(tr('DLCs im Besitz: {0} von {1}').format(len(dlcs), len(m.dlc_ids)) + (" – " + ", ".join(names) if names else ""))
+            total = len(m.dlc_ids)
+
+            def show(dlcs: list) -> None:
+                if pid != self.pid:
+                    return
+                names = [t + (" ✓" if inst else "") for _d, t, inst in dlcs]
+                self.dlc_lbl.set_text(tr('DLCs im Besitz: {0} von {1}').format(len(dlcs), total)
+                                      + (" – " + ", ".join(names) if names else ""))
+            run_async(lambda: self.backend.owned_dlcs(pid), show, lambda e: None)
+        self.media_flow.remove_all()
+        for url in m.screenshots[:6]:
+            frame, pic = clamped_picture(240, 135, ["cover"])
+            btn = Gtk.Button(child=frame)
+            btn.add_css_class("flat")
+            btn.connect("clicked", lambda _b, u=url: open_uri(u))
+            self.media_flow.append(btn)
+            self.images.load(url, pic.set_paintable)
+        self.media_box.set_visible(bool(m.screenshots))
 
     def _fill_quick(self) -> None:
         self._building = True
@@ -431,10 +462,12 @@ class GamePage(Gtk.Box):
         state = self.backend.state(self.pid)
         job = self.backend.jobs.active_for(self.pid)
         inst = self.backend.registry.get(self.pid)
+        paused = job is not None and job.state == "paused"
         self.play_btn.set_visible(state in ("installed", "update"))
         self.install_btn.set_visible(state == "not_installed")
         self.update_btn.set_visible(state == "update")
-        self.cancel_btn.set_visible(state == "busy")
+        self.resume_btn.set_visible(paused)
+        self.cancel_btn.set_visible(state == "busy" and not paused)
         phase = self.backend.launcher.phase(self.pid) if state == "running" else ""
         # während der Nachbereitung (Cloud-Upload …) gibt es nichts zu beenden; vor dem Start bricht BEENDEN ab
         self.stop_btn.set_visible(state == "running" and phase != "finishing")
@@ -443,8 +476,10 @@ class GamePage(Gtk.Box):
         if job:
             self.on_job(job)
         minutes, last = self.backend.playtime.get(self.pid)
-        self.stat_time.set(format_minutes(minutes) if minutes else "–")
-        self.stat_last.set(relative_time(last) if last else "–")
+        for w in (self.stat_time, self.prog_time):
+            w.set(format_minutes(minutes) if minutes else "–")
+        for w in (self.stat_last, self.prog_last):
+            w.set(relative_time(last) if last else "–")
         gs = self.backend.game_settings.get(self.pid)
         platform = inst.platform if inst else ("windows" if (self.entry and "windows" in self.entry.platforms) else "linux")
         tool = self.backend.launcher.resolve_tool(gs, platform, self.pid)
@@ -465,7 +500,10 @@ class GamePage(Gtk.Box):
                                   "imported": tr('Installiert · aus Spiele-Ordner übernommen'),
                                   "external": tr('Extern · Bibliothek „{0}“').format(lib.name if lib else tr('unbekannt'))}.get(inst.method, tr('Installiert'))
                                  + (tr(' · Update verfügbar') if state == "update" else ""))
-            d[tr('Version')].set_text((inst.version_name or "–") + (tr('  (Build {0})').format(inst.build_id) if inst.build_id else ""))
+            ver = (inst.version_name or "–") + (tr('  (Build {0})').format(inst.build_id) if inst.build_id else "")
+            if inst.branch:
+                ver += f" · {inst.branch}"
+            d[tr('Version')].set_text(ver)
             d[tr('Größe')].set_text(format_bytes(inst.install_size) if inst.install_size else "–")
             d[tr('Ordner')].set_text(inst.install_path)
             d[tr('Sprache')].set_text(inst.language or "–")
@@ -477,6 +515,9 @@ class GamePage(Gtk.Box):
             for k in (tr('Version'), tr('Größe'), tr('Ordner'), tr('Prefix')):
                 d[k].set_text("–")
             d[tr('Sprache')].set_text(self.backend.settings.language)
+        from .. import library_view as lv
+        d[tr('Meine Bewertung')].set_text(lv.stars(gs.rating) if gs.rating else "–")
+        d[tr('Tags')].set_text(", ".join(gs.tags) or "–")
         gov = goverlay_profiles.status_for(self.backend, self.pid)
         self.gov_lbl.set_text(gov or "")
         self.gov_lbl.set_visible(bool(gov))
@@ -488,27 +529,45 @@ class GamePage(Gtk.Box):
             return
         p = job.progress
         if job.active:
+            from ..content import phases
             self.progress_box.set_visible(True)
-            self.progress_status.set_text(f"{job.label.upper()} · {job.status.upper()}")
+            paused = job.state == "paused"
+            head = tr('PAUSIERT') if paused else (phases.label(job.step) or job.status).upper()
+            self.progress_status.set_text(f"{job.label.upper()} · {head}")
+            self.progress_box.set_tooltip_text(phases.tooltip(job.steps, job.step) or None)
+            self.pause_btn.set_visible(job.pausable)
+            self.pause_btn.set_label(tr('Fortsetzen') if paused else tr('Pausieren'))
             if p.total_bytes:
                 self.progress_bar.set_fraction(p.fraction)
                 self.progress_detail.set_text(
                     tr('{0:.1f} %   {1} / {2}   ↓ {3}   ETA {4}   {5}/{6} Dateien   {7}').format(p.fraction * 100, format_bytes(p.done_bytes), format_bytes(p.total_bytes), fmt_speed(p.speed), fmt_eta(p.eta_seconds), p.files_done, p.files_total, p.current))
-            else:
+            elif not paused:
                 self.progress_bar.pulse()
                 self.progress_detail.set_text(p.current or "")
-            self.cancel_btn.set_visible(True)
+            self.cancel_btn.set_visible(not paused)
+            self.resume_btn.set_visible(paused)
             for w in (self.install_btn, self.play_btn, self.update_btn):
                 w.set_visible(False)
         else:
             self.refresh_state()
 
-    # ------------------------------------------------------------------ Aktionen
-    def _on_play(self, *_: object) -> None:
-        pid = self.pid
-        self.play_btn.set_sensitive(False)
-        self.status_lbl.set_text(tr('Starte …'))
+    def _on_tab(self) -> None:
+        if self.tabs.get_visible_child_name() == "extras" and self.pid and self._extras_pid != self.pid:
+            self._load_extras()
 
+    # ------------------------------------------------------------------ Spielen
+    def _on_play(self, *_: object) -> None:
+        if self.pid:
+            self.play(self.pid)
+
+    def play(self, pid: str | None = None, task=None) -> None:
+        """Spiel starten (auch aus dem Kontextmenü oder der Power Search für ein anderes Spiel)."""
+        pid = str(pid or self.pid)
+        if not self.backend.registry.is_installed(pid) or self.backend.launcher.is_running(pid):
+            return
+        if pid == self.pid:
+            self.play_btn.set_sensitive(False)
+            self.status_lbl.set_text(tr('Starte …'))
         self._hook_status[pid] = (tr('Starte …'), False)
 
         def on_exit(p: str, code: int, minutes: int) -> None:
@@ -530,22 +589,36 @@ class GamePage(Gtk.Box):
         def done(rg) -> None:
             text = tr('Läuft · {0}').format(rg.plan.description)
             self._hook_status[pid] = (text, False)
-            self.play_btn.set_sensitive(True)
             if self.pid == pid:
+                self.play_btn.set_sensitive(True)
                 self.status_lbl.set_text(text)
                 self.refresh_state()
             self.win.refresh_game_state(pid)
+            self.win.game_launched(pid)
 
         def fail(exc: Exception) -> None:
             self._hook_status.pop(pid, None)
-            self.play_btn.set_sensitive(True)
             if self.pid == pid:
+                self.play_btn.set_sensitive(True)
                 self.status_lbl.set_text("")
                 self.refresh_state()
             self.win.refresh_game_state(pid)
             cancelled = str(exc) == tr('Start abgebrochen.')
             self.win.toast(str(exc) if cancelled else tr('Start fehlgeschlagen: {0}').format(exc))
-        run_async(lambda: self.backend.launch(pid, on_exit=on_exit, status_cb=status), done, fail)
+        run_async(lambda: self.backend.launch(pid, task=task, on_exit=on_exit, status_cb=status), done, fail)
+
+    def run_task(self, pid: str, task) -> None:
+        """Zusätzliche Dateiverknüpfung: Programme über Proton/Wine starten, Handbücher und Links normal öffnen."""
+        g = self.backend.registry.get(pid)
+        if g is None:
+            return
+        launcher = self.backend.launcher
+        if task.type == "URLTask":
+            open_uri(task.link)
+        elif launcher.opens_with_desktop(task):
+            launcher.open_path(launcher.task_path(g, task))
+        else:
+            self.play(pid, task)
 
     def _after_exit(self, pid: str, code: int, minutes: int) -> None:
         last, final = self._hook_status.pop(pid, ("", False))
@@ -553,6 +626,7 @@ class GamePage(Gtk.Box):
             self.status_lbl.set_text("")
             self.refresh_state()
         self.win.refresh_game_state(pid)
+        self.win.game_exited(pid)
         e = self.backend.entry(pid)
         text = tr('{0} beendet (Exit-Code {1}, {2})').format(e.title if e else pid, code, format_minutes(minutes))
         if final and last:                     # Ergebnis der Nachbereitung (z. B. Cloud-Upload) nicht verlieren
@@ -567,29 +641,64 @@ class GamePage(Gtk.Box):
         if rg and rg.poll() is None:
             rg.terminate()
 
-    def _on_install(self, *_: object) -> None:
-        if not self.entry:
+    # ------------------------------------------------------------------ Installieren und verwalten
+    def install(self, pid: str | None = None) -> None:
+        pid = str(pid or self.pid)
+        entry = self.backend.entry(pid)
+        if not entry:
             return
         if not self.backend.api.logged_in:
             self.win.toast(tr('Bitte zuerst bei GOG anmelden.'))
             self.win.do_login()
             return
-        pid = self.pid
 
         def confirm(v: dict) -> None:
+            goodies = v.pop("download_goodies", False)
+            auto = v.pop("auto_update", True)
+            excluded = v.pop("dlc_excluded", None)
+            self.backend.game_settings.update(pid, auto_update=auto, **({"dlc_excluded": excluded} if excluded is not None else {}))
             self.backend.install(pid, **v)
-            self.refresh_state()
+            if goodies:
+                run_async(lambda: [i for i in self.backend.extras(pid) if i.kind == "goodie"],
+                          lambda items: items and self.backend.download_extras(pid, items), lambda e: None)
+            if pid == self.pid:
+                self.refresh_state()
             self.win.refresh_game_state(pid)
-        InstallDialog(self.backend, self.entry, self.meta, confirm).present(self.win)
+        InstallDialog(self.backend, entry, self.meta if pid == self.pid else None, confirm).present(self.win)
 
-    def _on_update(self, *_: object) -> None:
-        self.backend.update(self.pid)
+    def update(self, pid: str | None = None) -> None:
+        pid = str(pid or self.pid)
+        self.backend.update(pid)
         self.refresh_state()
 
-    def _on_verify(self, *_: object) -> None:
-        if self.backend.registry.is_installed(self.pid):
-            self.backend.verify(self.pid)
-            self.refresh_state()
+    def verify(self, pid: str | None = None) -> None:
+        pid = str(pid or self.pid)
+        if self.backend.registry.is_installed(pid):
+            self.backend.verify(pid)
+            self.win.refresh_game_state(pid)
+            if pid == self.pid:
+                self.refresh_state()
+
+    def check_updates(self, pid: str | None = None) -> None:
+        """„Nach Updates suchen“ für ein Spiel (Galaxy: Snackbar „… wird geprüft“ bzw. „Keine Updates …“)."""
+        pid = str(pid or self.pid)
+        g = self.backend.registry.get(pid)
+        if g is None:
+            return
+        self.win.toast(tr('Suche nach Updates für {0} …').format(g.title))
+        pw = self.backend.game_settings.get(pid).branch_password
+
+        def done(build) -> None:
+            if build is not None:
+                self.backend.updates[pid] = build
+                self.win.toast(tr('Update verfügbar für {0}: {1}').format(g.title, build.version_name or build.build_id))
+            else:
+                self.backend.updates.pop(pid, None)
+                self.win.toast(tr('Keine Updates für {0} verfügbar').format(g.title))
+            self.win.refresh_game_state(pid)
+            if pid == self.pid:
+                self.refresh_state()
+        run_async(lambda: self.backend.installer.check_update(g, pw), done, lambda e: self.win.toast(str(e)))
 
     def _on_cancel(self, *_: object) -> None:
         job = self.backend.jobs.active_for(self.pid)
@@ -597,12 +706,29 @@ class GamePage(Gtk.Box):
             self.backend.jobs.cancel(job)
             self.progress_status.set_text(tr('WIRD ABGEBROCHEN …'))
 
-    def _on_settings(self, *_: object) -> None:
-        self.open_settings()
+    def _toggle_pause(self) -> None:
+        job = self.backend.jobs.active_for(self.pid)
+        if job is None:
+            return
+        if job.state == "paused":
+            self.backend.jobs.resume(job)
+        else:
+            self.backend.jobs.pause(job)
 
-    def open_settings(self, page: str = "") -> None:
+    def _resume_job(self) -> None:
+        job = self.backend.jobs.active_for(self.pid)
+        if job is not None:
+            self.backend.jobs.resume(job)
+
+    def open_settings(self, page: str = "", pid: str | None = None) -> None:
         """Eigenschaften öffnen (optional auf einer Seite); Änderungen erscheinen sofort auf der Spielseite."""
-        dlg = GameSettingsDialog(self.backend, self.pid, on_changed=lambda: (self._fill_quick(), self.refresh_state()))
+        pid = str(pid or self.pid)
+
+        def changed() -> None:
+            if pid == self.pid:
+                self._fill_quick()
+                self.refresh_state()
+        dlg = GameSettingsDialog(self.backend, pid, on_changed=changed)
         if page:
             dlg.set_visible_page_name(page)
         dlg.present(self.win)
@@ -630,22 +756,63 @@ class GamePage(Gtk.Box):
         if not goverlay.open_goverlay():
             self.win.toast(tr('GOverlay ist nicht installiert.'))
 
-    def _on_winetricks(self, *_: object) -> None:
+    def winetricks(self, pid: str | None = None) -> None:
         try:
-            self.backend.launcher.run_winetricks(self.pid)
+            self.backend.launcher.run_winetricks(str(pid or self.pid))
         except LaunchError as exc:
             self.win.toast(str(exc))
 
-    def _open_install_dir(self) -> None:
-        inst = self.backend.registry.get(self.pid)
+    def open_install_dir(self, pid: str | None = None) -> None:
+        inst = self.backend.registry.get(str(pid or self.pid))
         if inst:
             self.backend.launcher.open_path(inst.install_path)
 
-    def _on_uninstall(self, *_: object) -> None:
-        inst = self.backend.registry.get(self.pid)
+    def open_log(self, pid: str | None = None) -> None:
+        self.backend.launcher.open_path(paths.game_log_file(str(pid or self.pid)))
+
+    def move(self, pid: str | None = None) -> None:
+        pid = str(pid or self.pid)
+        move_installation(self.win, self.backend, pid, lambda: self.win.refresh_game_state(pid))
+
+    def import_folder(self, pid: str | None = None) -> None:
+        """„Ordner importieren“: vorhandene Installation des Spiels aus einem Ordner übernehmen."""
+        pid = str(pid or self.pid)
+        entry = self.backend.entry(pid)
+
+        def chosen(path: str) -> None:
+            def work():
+                info = self.backend.inspect_folder(path)
+                if info["kind"] != "gog" or info["product_id"] != pid:
+                    raise InstallError(tr('In diesem Ordner liegt keine Installation von {0}.').format(entry.title if entry else pid))
+                return self.backend.add_game_manually(path)
+
+            def done(game) -> None:
+                self.win.toast(tr('„{0}“ übernommen').format(game.title))
+                self.win.populate()
+                if pid == self.pid:
+                    self.refresh_state()
+            run_async(work, done, lambda e: self.win.toast(str(e)))
+        choose_folder(self.win, tr('Ordner importieren'), self.backend.settings.install_dir, chosen)
+
+    def toggle_shortcut(self, which: str, pid: str | None = None) -> None:
+        pid = str(pid or self.pid)
+        has_menu, has_desktop = self.backend.shortcut_state(pid)
+        menu, desktop = which == "menu", which == "desktop"
+        exists = has_menu if menu else has_desktop
+        where = tr('Startmenü') if menu else tr('Schreibtisch')
+
+        def done(_r) -> None:
+            self.win.toast(tr('Verknüpfung ({0}) {1}').format(where, tr('entfernt') if exists else tr('angelegt')))
+        if exists:
+            run_async(lambda: self.backend.remove_shortcuts(pid, menu=menu, desktop=desktop), done, lambda e: self.win.toast(str(e)))
+        else:
+            run_async(lambda: self.backend.create_shortcuts(pid, menu=menu, desktop=desktop), done, lambda e: self.win.toast(str(e)))
+
+    def uninstall(self, pid: str | None = None) -> None:
+        pid = str(pid or self.pid)
+        inst = self.backend.registry.get(pid)
         if not inst:
             return
-        pid = self.pid
 
         def do(remove_prefix: bool) -> None:
             def done(_r) -> None:
@@ -656,27 +823,30 @@ class GamePage(Gtk.Box):
             run_async(lambda: self.backend.uninstall(pid, remove_prefix), done, lambda e: self.win.toast(str(e)))
         confirm_uninstall(self.win, inst.title, do)
 
-    def _on_remove(self, *_: object) -> None:
-        inst = self.backend.registry.get(self.pid)
+    def remove(self, pid: str | None = None) -> None:
+        pid = str(pid or self.pid)
+        inst = self.backend.registry.get(pid)
         if not inst:
             return
-        pid = self.pid
-
         lib = self.backend.library_of(pid)
 
         def do(delete_files: bool, delete_prefix: bool) -> None:
             def done(_r) -> None:
                 self.win.toast(tr('„{0}“ entfernt').format(inst.title))
                 self.win.populate()
-                self.win.navigate(f"lib:{lib.id}" if lib is not None else "all")
+                if self.win.current_pid == pid:
+                    self.win.navigate(f"lib:{lib.id}" if lib is not None else "all")
             run_async(lambda: self.backend.remove_game(pid, delete_files, delete_prefix), done, lambda e: self.win.toast(str(e)))
         confirm_remove_game(self.win, inst.title, inst.method == "external", do)
 
-    def _prefix_action(self, action: str) -> None:
-        pid = self.pid
+    def prefix_action(self, pid: str | None, action: str) -> None:
+        pid = str(pid or self.pid)
+        if action == "open":
+            self.backend.launcher.open_path(self.backend.launcher.prefix_for(pid))
+            return
         if action == "create":
             self.win.toast(tr('Prefix wird angelegt …') if self.backend.queue_prefix(pid) else tr('Prefix wird bereits bearbeitet'))
-            self.refresh_state()
+            self.win.refresh_game_state(pid)
             return
 
         def run() -> None:
@@ -688,57 +858,227 @@ class GamePage(Gtk.Box):
                     self.win.toast(tr('Prefix gelöscht') if self.backend.delete_prefix(pid) else tr('Kein Prefix vorhanden'))
             except InstallError as exc:
                 self.win.toast(str(exc))
-            self.refresh_state()
+            if pid == self.pid:
+                self.refresh_state()
         if action == "reset":
             confirm_destructive(self.win, tr('Prefix neu anlegen?'), tr('Der Prefix wird gelöscht und frisch angelegt. Spielstände, die im Prefix liegen, gehen dabei verloren.'), tr('Neu anlegen'), run)
         else:
             confirm_destructive(self.win, tr('Prefix löschen?'), tr('Der Prefix-Ordner wird gelöscht – inklusive Spielständen darin.'),
                                 tr('Löschen'), run)
 
-    # ------------------------------------------------------------------ Erfolge
+    def open_product_link(self, pid: str | None, which: str) -> None:
+        pid = str(pid or self.pid)
+        if which == "store":
+            store.show_product(self.win, pid, self.meta if pid == self.pid else None, self.backend.entry(pid))
+            return
+        game_menu.open_product_link(self.backend, pid, which,
+                                    lambda url: open_uri(url) if url else self.win.toast(tr('Kein Link verfügbar')))
+
+    def show_patch_notes(self, pid: str | None = None) -> None:
+        """„Patch-Notizen anzeigen“: Änderungsprotokoll des Spiels von GOG."""
+        pid = str(pid or self.pid)
+
+        def show(m) -> None:
+            text = (m.changelog if m else "") or tr('Für dieses Spiel gibt es keine Patch-Notizen.')
+            dlg = Adw.Dialog(title=tr('Patch-Notizen'), content_width=620, content_height=560)
+            tv = Adw.ToolbarView()
+            tv.add_top_bar(Adw.HeaderBar())
+            lbl = label(text, wrap=True, selectable=True)
+            lbl.set_margin_top(12)
+            lbl.set_margin_bottom(18)
+            lbl.set_margin_start(20)
+            lbl.set_margin_end(20)
+            scroll = Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER, vexpand=True)
+            scroll.set_child(lbl)
+            tv.set_content(scroll)
+            dlg.set_child(tv)
+            dlg.present(self.win)
+        run_async(lambda: self.backend.meta(pid), show, lambda e: show(None))
+
+    # ------------------------------------------------------------------ Mein Fortschritt
     def _load_achievements(self) -> None:
         pid = self.pid
         self.stat_ach.set("–")
+        self.prog_ach.set("–")
         if not self.backend.settings.feature_achievements:     # Einstellungen → Spielfunktionen → Erfolge
+            self.ach_hint.set_text(tr('Erfolge sind in den Einstellungen ausgeschaltet.'))
             return
         rec = read_json(paths.MANIFEST_DIR / f"{pid}.json", {})
         cid, secret = rec.get("client_id"), rec.get("client_secret")
         if not (cid and secret and self.backend.api.logged_in):
+            self.ach_hint.set_text(tr('Für dieses Spiel gibt es keine Erfolge') if self.backend.registry.is_installed(pid)
+                                   else tr('Erfolge erscheinen, sobald das Spiel installiert ist.'))
             return
 
         def done(d: dict) -> None:
             if pid != self.pid:
                 return
-            items = [a for a in (d.get("items") or []) if a.get("visible", True) or a.get("date_unlocked")]
+            items = list(d.get("items") or [])
             if not items:
+                self.ach_hint.set_text(tr('Für dieses Spiel gibt es keine Erfolge'))
                 return
             unlocked = [a for a in items if a.get("date_unlocked")]
             pct = int(round(100 * len(unlocked) / len(items))) if items else 0
-            self.stat_ach.set(f"{len(unlocked)} / {len(items)}  ({pct} %)")
+            for w in (self.stat_ach, self.prog_ach):
+                w.set(f"{len(unlocked)} / {len(items)}  ({pct} %)")
             self.ach_hdr.set_text(tr('ERFOLGE · {0} VON {1} FREIGESCHALTET').format(len(unlocked), len(items)))
-            self._clear_flow(self.ach_icons)
-            items.sort(key=lambda a: (not a.get("date_unlocked"), a.get("date_unlocked") or "", a.get("name", "")))
-            for a in items[:48]:
-                frame = Gtk.Box()
-                frame.add_css_class("achievement-icon")
-                if not a.get("date_unlocked"):
-                    frame.add_css_class("locked")
-                frame.set_overflow(Gtk.Overflow.HIDDEN)
-                frame.set_size_request(56, 56)
-                pic = Gtk.Picture(content_fit=Gtk.ContentFit.COVER, can_shrink=True, hexpand=True, vexpand=True)
-                frame.append(pic)
-                url = a.get("image_url_unlocked") if a.get("date_unlocked") else (a.get("image_url_locked") or a.get("image_url_unlocked"))
-                if url:
-                    self.images.load(url, pic.set_paintable)
-                tip = a.get("name", "")
-                if a.get("description"):
-                    tip += "\n" + a["description"]
-                if a.get("date_unlocked"):
-                    tip += tr('\nFreigeschaltet: {0}').format(str(a['date_unlocked'])[:10])
-                frame.set_tooltip_text(tip)
-                self.ach_icons.append(frame)
-            self.ach_box.set_visible(True)
-        run_async(lambda: self.backend.api.achievements(cid, secret), done, lambda e: None)
+            self.ach_hint.set_text("" if unlocked else tr('Bisher keine Erfolge freigeschaltet.'))
+            items.sort(key=lambda a: (not a.get("date_unlocked"), a.get("date_unlocked") or "",
+                                      -(float(a.get("rarity") or 0)), a.get("name", "")))
+            self.ach_list.remove_all()
+            for a in items:
+                self.ach_list.append(self._achievement_row(a))
+        run_async(lambda: self.backend.api.achievements(cid, secret), done,
+                  lambda e: pid == self.pid and self.ach_hint.set_text(tr('Erfolge nicht abrufbar: {0}').format(e)))
+
+    def _achievement_row(self, a: dict) -> Gtk.Widget:
+        got = bool(a.get("date_unlocked"))
+        secret = not got and not a.get("visible", True)
+        row = Gtk.Box(spacing=12, margin_top=6, margin_bottom=6, margin_start=8, margin_end=12)
+        frame = Gtk.Box()
+        frame.add_css_class("achievement-icon")
+        if not got:
+            frame.add_css_class("locked")
+        frame.set_overflow(Gtk.Overflow.HIDDEN)
+        frame.set_size_request(48, 48)
+        pic = Gtk.Picture(content_fit=Gtk.ContentFit.COVER, can_shrink=True, hexpand=True, vexpand=True)
+        frame.append(pic)
+        url = a.get("image_url_unlocked") if got else (a.get("image_url_locked") or a.get("image_url_unlocked"))
+        if url and not secret:
+            self.images.load(url, pic.set_paintable)
+        row.append(frame)
+        mid = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2, hexpand=True, valign=Gtk.Align.CENTER)
+        mid.append(label(tr('Geheime Erfolge') if secret else a.get("name", ""), css=["heading"], ellipsize=True))
+        desc = tr('Weiterspielen um diesen Erfolg freizuschalten') if secret else (a.get("description") or "")
+        if desc:
+            d = label(desc, css=["dim"], wrap=True)
+            d.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+            mid.append(d)
+        row.append(mid)
+        right = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2, valign=Gtk.Align.CENTER)
+        right.append(label(str(a["date_unlocked"])[:10] if got else tr('Nicht erreicht'), css=["caption"], xalign=1))
+        slug = str(a.get("rarity_level_slug") or "").lower()
+        rarity = a.get("rarity")
+        if slug in RARITY or rarity is not None:
+            text = RARITY.get(slug, "")
+            if rarity is not None:
+                try:
+                    text = (text + " · " if text else "") + f"{float(rarity):.1f} %"
+                except (TypeError, ValueError):
+                    pass
+            right.append(label(text, css=["dim", "caption"], xalign=1))
+        row.append(right)
+        return row
+
+    # ------------------------------------------------------------------ Extras
+    def _load_extras(self) -> None:
+        pid = self.pid
+        self._extras_pid = pid
+        self._clear(self.extras_box)
+        is_gog = bool(pid and pid.isdigit())
+        self.cloud_box.set_visible(is_gog and self._cloud_possible(pid))
+        if not is_gog:
+            self.extras_box.append(label(tr('Keine Extras'), css=["dim"]))
+            self.dl_all_btn.set_sensitive(False)
+            return
+        if not self.backend.api.logged_in:
+            self.extras_box.append(label(tr('Bitte zuerst bei GOG anmelden.'), css=["dim"]))
+            self.dl_all_btn.set_sensitive(False)
+            return
+        spinner = Gtk.Spinner(spinning=True, halign=Gtk.Align.START)
+        self.extras_box.append(spinner)
+
+        def done(items: list) -> None:
+            if pid != self.pid:
+                return
+            self._extras = items
+            langs = extras_mod.languages(items)
+            self._extra_langs = [""] + [c for c, _n in langs]
+            self.lang_dd.set_model(Gtk.StringList.new([tr('Alle')] + [n for _c, n in langs]))
+            want = self.backend.settings.language.split("-")[0].lower()
+            if want in self._extra_langs:
+                self.lang_dd.set_selected(self._extra_langs.index(want))
+            g = self.backend.registry.get(pid)
+            os_keys = [k for k, _n in OS_FILTER]
+            if g is not None and g.platform in os_keys:
+                self.os_dd.set_selected(os_keys.index("mac" if g.platform == "osx" else g.platform))
+            self._render_extras()
+
+        def fail(exc: Exception) -> None:
+            if pid == self.pid:
+                self._clear(self.extras_box)
+                self.extras_box.append(label(tr('Serververbindung fehlgeschlagen.') + f" {exc}", css=["dim"], wrap=True))
+        run_async(lambda: self.backend.extras(pid), done, fail)
+
+    def _cloud_possible(self, pid: str) -> bool:
+        g = self.backend.registry.get(pid)
+        return bool(g and g.platform == "windows" and g.method != "external" and self.backend.api.logged_in)
+
+    def _visible_extras(self) -> list:
+        os_name = OS_FILTER[self.os_dd.get_selected()][0] if self.os_dd.get_selected() < len(OS_FILTER) else ""
+        i = self.lang_dd.get_selected()
+        lang = self._extra_langs[i] if 0 <= i < len(self._extra_langs) else ""
+        return extras_mod.filter_items(self._extras, os_name, lang)
+
+    def _render_extras(self) -> None:
+        if self._extras_pid != self.pid:
+            return
+        self._clear(self.extras_box)
+        items = self._visible_extras()
+        self.dl_all_btn.set_sensitive(bool(items))
+        if not self._extras:
+            self.extras_box.append(label(tr('Keine Extras'), css=["sec-hdr"]))
+            self.extras_box.append(label(tr('Dieses Spiel bietet scheinbar keine zusätzlichen Inhalte zum Download.'), css=["dim"]))
+            return
+        if not items:
+            self.extras_box.append(label(tr('Keine Dateien mit aktuellen Filtern gefunden.'), css=["dim"]))
+            return
+        for kind in extras_mod.KINDS:
+            group = [i for i in items if i.kind == kind]
+            if not group:
+                continue
+            total = sum(i.size for i in group)
+            self.extras_box.append(label(f"{tr(extras_mod.KIND_NAMES[kind]).upper()}  ({len(group)} · {format_bytes(total)})",
+                                         css=["sec-hdr"]))
+            lst = Gtk.ListBox(selection_mode=Gtk.SelectionMode.NONE)
+            lst.add_css_class("boxed-list")
+            for it in group:
+                lst.append(self._extra_row(it))
+            self.extras_box.append(lst)
+
+    def _extra_row(self, it) -> Gtk.Widget:
+        row = Gtk.Box(spacing=12, margin_top=6, margin_bottom=6, margin_start=10, margin_end=10)
+        mid = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2, hexpand=True, valign=Gtk.Align.CENTER)
+        title = it.name + (f" ({it.product_title})" if it.is_dlc else "")
+        mid.append(label(title, css=["heading"], ellipsize=True))
+        bits = [x for x in ({"windows": "Windows", "linux": "Linux", "mac": "macOS"}.get(it.os, it.os),
+                            it.language_full, (tr('Version {0}').format(it.version) if it.version else ""), it.category,
+                            format_bytes(it.size) if it.size else "") if x]
+        mid.append(label(" · ".join(bits), css=["dim", "caption"], ellipsize=True))
+        row.append(mid)
+        btn = Gtk.Button(label=tr('Herunterladen'), valign=Gtk.Align.CENTER)
+        btn.connect("clicked", lambda *_: self._download_extras([it]))
+        row.append(btn)
+        return row
+
+    def _download_extras(self, items: list) -> None:
+        if not items or not self.pid:
+            return
+        job = self.backend.download_extras(self.pid, items)
+        self.win.toast(tr('Zu den Downloads hinzugefügt') + f": {job.title}")
+
+    def _open_extras_dir(self) -> None:
+        e = self.backend.entry(self.pid or "")
+        d = extras_mod.game_dir(self.backend.settings, e.title if e else str(self.pid))
+        if not d.is_dir():
+            d = extras_mod.extras_dir(self.backend.settings)
+            d.mkdir(parents=True, exist_ok=True)
+        self.backend.launcher.open_path(d)
+
+    def _cloud_backup(self) -> None:
+        if self.pid:
+            job = self.backend.backup_cloud_saves(self.pid)
+            self.win.toast(tr('Zu den Downloads hinzugefügt') + f": {job.title}")
 
     @staticmethod
     def _clear(box: Gtk.Box) -> None:
@@ -747,7 +1087,3 @@ class GamePage(Gtk.Box):
             nxt = child.get_next_sibling()
             box.remove(child)
             child = nxt
-
-    @staticmethod
-    def _clear_flow(flow: Gtk.FlowBox) -> None:
-        flow.remove_all()

@@ -31,6 +31,8 @@ CDN_META = "https://gog-cdn-fastly.gog.com/content-system/v2/meta"
 CDN_DEP_META = "https://gog-cdn-fastly.gog.com/content-system/v2/dependencies/meta"
 GAMEPLAY = "https://gameplay.gog.com"
 USERS = "https://users.gog.com"
+PRESENCE = "https://presence.gog.com"
+CATALOG = "https://catalog.gog.com"
 
 ProgressCb = Callable[[int, int], None]
 
@@ -280,9 +282,13 @@ class GogApi:
         return self.get_json(f"{EMBED}/account/gameDetails/{product_id}.json")
 
     # ------------------------------------------------------------------ Content-System (Galaxy-Downloads)
-    def builds(self, product_id: str, platform: str = "windows") -> list[dict]:
+    def builds(self, product_id: str, platform: str = "windows", password: str = "") -> list[dict]:
+        """Builds aller Kanäle; mit ``password`` zusätzlich die privaten Beta-Kanäle (wie gogdl ``--password``)."""
+        params: dict[str, Any] = {"generation": 2}
+        if password:
+            params["password"] = password
         d = self.get_json(f"{CONTENT_SYSTEM}/products/{product_id}/os/{platform}/builds",
-                          params={"generation": 2}, authenticated=self.logged_in)
+                          params=params, authenticated=self.logged_in)
         return list(d.get("items") or [])
 
     def depot_manifest(self, md5: str) -> dict:
@@ -328,8 +334,13 @@ class GogApi:
 
     def stream_download(self, url: str, dest: Path, progress: Callable[[int, int], None] | None = None,
                         cancel: threading.Event | None = None, authenticated: bool = False,
-                        chunk_size: int = 1 << 20) -> Path:
-        """Lädt eine (große) Datei mit Fortsetzung herunter; schreibt nach dest."""
+                        chunk_size: int = 1 << 20, throttle: Any = None) -> Path:
+        """Lädt eine (große) Datei mit Fortsetzung herunter; schreibt nach dest. Abbrechen (auch Pausieren) wirft
+        ``DownloadCancelled`` und lässt die ``.part``-Datei für das Fortsetzen liegen; ``throttle`` begrenzt die
+        Bandbreite (content/bandwidth.Throttle)."""
+        from ..content.downloader import DownloadCancelled
+        if throttle is not None and throttle.rate() > 0:
+            chunk_size = min(chunk_size, 64 * 1024)
         dest.parent.mkdir(parents=True, exist_ok=True)
         part = dest.with_name(dest.name + ".part")
         have = part.stat().st_size if part.exists() else 0
@@ -347,7 +358,9 @@ class GogApi:
         with open(part, mode) as fh:
             for block in r.iter_content(chunk_size):
                 if cancel is not None and cancel.is_set():
-                    raise ApiError(tr('Download abgebrochen'))
+                    raise DownloadCancelled()
+                if throttle is not None:
+                    throttle.consume(len(block), cancel)
                 fh.write(block)
                 have += len(block)
                 if progress:
@@ -369,6 +382,59 @@ class GogApi:
         except ApiError as exc:
             log.warning("Spielzeit konnte nicht übertragen werden: %s", exc)
             return False
+
+    def playtime(self, product_id: str) -> tuple[int, float] | None:
+        """Spielzeit bei GOG (Summe aller Geräte, wie Galaxys „Periodic Game Times Sync“): (Minuten, letzte Sitzung)
+        oder None, wenn GOG nichts liefert."""
+        uid = self.user_id
+        if not self.logged_in or not uid:
+            return None
+        r = self.request("GET", f"{GAMEPLAY}/games/{product_id}/users/{uid}/sessions", timeout=20, retries=1)
+        if r.status_code == 404:
+            return None
+        if not r.ok:
+            raise ApiError(tr('HTTP {0} für {1}').format(r.status_code, "gameplay sessions"))
+        try:
+            d = r.json()
+        except ValueError:
+            return None
+        return parse_playtime(d)
+
+    def set_presence(self, game_id: str = "") -> bool:
+        """Online-Status bei GOG setzen (Freunde sehen „online“ bzw. das laufende Spiel) – wie Galaxy alle 5 min."""
+        uid = self.user_id
+        if not self.logged_in or not uid:
+            return False
+        from .. import APP_NAME, __version__
+        body: dict[str, Any] = {"application_type": APP_NAME, "force_update": False, "presence": "online",
+                                "version": __version__}
+        if game_id:
+            body["game_id"] = str(game_id)
+        r = self.request("POST", f"{PRESENCE}/users/{uid}/status", json=body, timeout=15, retries=1)
+        return r.ok
+
+    def clear_presence(self) -> bool:
+        """Offline bzw. „Unsichtbar“: Status bei GOG löschen."""
+        uid = self.user_id
+        if not self.logged_in or not uid:
+            return False
+        r = self.request("DELETE", f"{PRESENCE}/users/{uid}/status", timeout=4, retries=0)
+        return r.ok or r.status_code == 404
+
+    def catalog_search(self, query: str, limit: int = 8, locale: str = "de-DE", country: str = "") -> list[dict]:
+        """Store-Suche über catalog.gog.com (Power Search „Im Store kaufen“): Spiele und Pakete."""
+        params: dict[str, Any] = {"limit": limit, "order": "desc:score", "productType": "in:game,pack",
+                                  "query": f"like:{query}", "locale": locale}
+        if country:
+            params["countryCode"] = country
+        r = self.request("GET", f"{CATALOG}/v1/catalog", params=params, authenticated=False, timeout=15, retries=1)
+        if not r.ok:
+            raise ApiError(tr('HTTP {0} für {1}').format(r.status_code, "catalog.gog.com"))
+        try:
+            d = r.json()
+        except ValueError as exc:
+            raise ApiError(tr('Ungültige JSON-Antwort von {0}').format("catalog.gog.com")) from exc
+        return [p for p in (d.get("products") or []) if isinstance(p, dict)]
 
     def game_token(self, client_id: str, client_secret: str) -> auth.Credentials:
         with self._lock:
@@ -415,3 +481,27 @@ class GogApi:
             tmp.write_bytes(r.content)
             tmp.replace(dest)
             return dest
+
+
+def parse_playtime(d: Any) -> tuple[int, float] | None:
+    """Antwort von gameplay …/sessions: ``time_sum`` (Minuten) und ``last_session_date`` (Unixzeit oder ISO)."""
+    if not isinstance(d, dict) or d.get("time_sum") is None:
+        return None
+    try:
+        minutes = int(d.get("time_sum") or 0)
+    except (TypeError, ValueError):
+        return None
+    last = d.get("last_session_date")
+    ts = 0.0
+    if isinstance(last, (int, float)):
+        ts = float(last)
+    elif isinstance(last, str) and last:
+        if last.isdigit():
+            ts = float(last)
+        else:
+            from datetime import datetime
+            try:
+                ts = datetime.fromisoformat(last.replace("Z", "+00:00")).timestamp()
+            except ValueError:
+                ts = 0.0
+    return max(0, minutes), ts

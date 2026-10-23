@@ -29,6 +29,7 @@ GAME_SETTINGS_FILE = CONFIG_DIR / "games.json"
 CREDENTIALS_FILE = CONFIG_DIR / "credentials.json"
 INSTALLED_FILE = DATA_DIR / "installed.json"
 PLAYTIME_FILE = DATA_DIR / "playtime.json"
+JOBS_FILE = DATA_DIR / "jobs.json"          # offene Downloads (überstehen einen Neustart der Oberfläche)
 
 
 def ensure_dirs() -> None:

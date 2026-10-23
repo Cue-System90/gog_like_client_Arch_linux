@@ -329,7 +329,7 @@ class Launcher:
             if game.executable and game.executable not in cands and (install_dir / to_posix(game.executable)).exists():
                 cands.insert(0, game.executable)
             primary = game.executable if game.executable in cands else (cands[0] if cands else "")
-            return [PlayTask(name=c, path=c, is_primary=(c == primary)) for c in cands]
+            return [PlayTask(name=c, path=c, is_primary=(c == primary)) for c in cands] + self.custom_tasks(game.product_id)
         info = read_game_info(install_dir, game.product_id)
         tasks = file_tasks(info)
         if game.platform == "linux":
@@ -341,7 +341,52 @@ class Launcher:
             g = guess_executable(install_dir)
             if g:
                 tasks.append(g)
-        return tasks
+        return tasks + self.custom_tasks(game.product_id)
+
+    def custom_tasks(self, product_id: str) -> list[PlayTask]:
+        """Eigene Dateiverknüpfungen (Konfigurieren → Start-Parameter): Pfad relativ zum Spielordner oder absolut."""
+        out = []
+        for d in self.game_settings.get(str(product_id)).custom_tasks:
+            if isinstance(d, dict) and str(d.get("path") or "").strip():
+                path = str(d["path"]).strip()
+                out.append(PlayTask(name=str(d.get("name") or "").strip() or Path(path).name, path=path,
+                                    arguments=str(d.get("arguments") or ""), working_dir=str(d.get("working_dir") or ""),
+                                    category="game", type="FileTask", link="custom"))
+        return out
+
+    def additional_tasks(self, game: InstalledGame) -> list[PlayTask]:
+        """„Zusätzliche Dateiverknüpfungen“: alle Einträge außer dem Standard-Start – auch Handbücher und Links
+        (``URLTask``) aus goggame-*.info sowie die eigenen Einträge."""
+        gs = self.game_settings.get(game.product_id)
+        try:
+            default = self.select_task(game, gs)
+        except LaunchError:
+            default = None
+        tasks = list(play_tasks(read_game_info(Path(game.install_path), game.product_id))) if game.method != "external" else []
+        names = {t.name for t in tasks}
+        tasks += [t for t in self.tasks_for(game) if t.name not in names]
+        out, seen = [], set()
+        for t in tasks:
+            key = (t.name, t.path, t.link if t.type != "FileTask" else "")
+            if key in seen or (default is not None and t.name == default.name and t.path == default.path):
+                continue
+            if not (t.is_file or (t.type == "URLTask" and t.link)):
+                continue
+            seen.add(key)
+            out.append(t)
+        return out
+
+    def task_path(self, game: InstalledGame, task: PlayTask) -> Path:
+        p = Path(os.path.expanduser(task.path))
+        return p if p.is_absolute() else Path(game.install_path) / to_posix(task.path)
+
+    @staticmethod
+    def opens_with_desktop(task: PlayTask) -> bool:
+        """Handbuch, Bild, Text …: mit dem Standardprogramm öffnen statt über Proton/Wine."""
+        if task.type == "URLTask":
+            return True
+        suffix = Path(task.path).suffix.lower()
+        return task.category == "document" or suffix not in ("", ".exe", ".bat", ".cmd", ".lnk", ".sh", ".x86", ".x86_64")
 
     def select_task(self, game: InstalledGame, gs: GameSettings, task_name: str | None = None) -> PlayTask:
         tasks = self.tasks_for(game)
@@ -383,7 +428,7 @@ class Launcher:
             runner = "native"
         else:
             task = task or self.select_task(game, gs)
-            exe = install_dir / to_posix(task.path)
+            exe = self.task_path(game, task)
             if game.platform == "linux" and task.path.endswith("start.sh") and not exe.exists():
                 exe = install_dir / "start.sh"
             if not exe.exists():

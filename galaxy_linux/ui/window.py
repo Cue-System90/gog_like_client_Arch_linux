@@ -1,10 +1,12 @@
 """Hauptfenster im Aufbau von GOG Galaxy 2.0.
 
-Titelleiste: links Zahnrad-Menü (wie Galaxy 2.1, siehe ui/menus.py) · Avatar-Menü · Suche (über der Seitenleiste),
-rechts Zurück/Vor, Lesezeichen, Filter, „+“, Suchfeld, Ansicht und die Fensterknöpfe.
+Titelleiste: links Zahnrad-Menü (wie Galaxy 2.1, siehe ui/menus.py) · Avatar-Menü · Power Search (Strg+F, über der
+Seitenleiste), rechts Zurück/Vor, Lesezeichen, Filter, „+“, Suchfeld, Ansicht (Sortieren nach, Gruppieren nach …) und
+die Fensterknöpfe (Minimieren/Schließen je nach „Verhalten des Hauptfensters“, auch in den System-Tray).
 Seitenleiste wie im Original: GOG STORE (eingebettete gog.com-Seiten, ui/store.py), SPIELE (Zuletzt gespielt, Alle
-Spiele, Installiert, Downloads), darunter BIBLIOTHEKEN (eigene Bibliotheken für Nicht-GOG-Spiele, je ein Eintrag mit
-Zähler), FREUNDE. Inhalt: Cover-Raster in Abschnitten, Downloads-Seite, Spielansicht, Store.
+Spiele, Installiert, Downloads), LESEZEICHEN, darunter BIBLIOTHEKEN (eigene Bibliotheken für Nicht-GOG-Spiele, je ein
+Eintrag mit Zähler), FREUNDE. Inhalt: Cover-Raster in Abschnitten oder Gruppen, Downloads-Seite, Spielansicht, Store.
+Rechtsklick auf ein Spiel öffnet das Kontextmenü wie in Galaxy (ui/game_menu.py).
 """
 from __future__ import annotations
 
@@ -15,16 +17,20 @@ import socket
 import time
 from pathlib import Path
 
-from .. import APP_NAME, __version__, i18n
+from .. import APP_ID, APP_NAME, __version__, i18n, library_view as lv, paths
 from ..api.client import NotLoggedIn
+from ..presence import Presence
 from ..settings import format_bytes, format_minutes
-from . import menus, prefs_registry, store, ui_registry
+from . import menus, prefs_registry, store, ui_registry, util
 from .bridge import GtkBridge
 from .dialogs import LoginDialog, PreferencesDialog
+from .downloads_view import DownloadsView
+from .game_menu import GameActions, attach_context_menu
 from .game_page import GamePage
 from .library_sync import LibrarySyncController
-from .util import (Adw, Gdk, Gio, GLib, Gtk, ImageLoader, Pango, choose_folder, clamped_picture, fmt_eta, fmt_speed, icon_button, idle, label,
-                   open_uri, pick_icon, relative_time, run_async)
+from .tray import Tray
+from .util import (Adw, Gdk, Gio, GLib, Gtk, ImageLoader, Pango, choose_folder, clamped_picture, icon_button, idle, label,
+                   pick_icon, relative_time, run_async)
 
 log = logging.getLogger(__name__)
 
@@ -33,12 +39,12 @@ COVER_SIZES = {"XS": (96, 135), "S": (116, 163), "M": (136, 191), "L": (164, 231
 SIZE_NAMES = {"XS": tr('Sehr klein'), "S": tr('Klein'), "M": tr('Mittel'), "L": tr('Groß'), "XL": tr('Sehr groß')}
 SPACING = {"0": (4, 6), "S": (12, 16), "M": (24, 30), "L": (40, 46)}   # (Spalten, Zeilen) in px
 SPACING_NAMES = {"0": tr('Keiner'), "S": tr('Klein'), "M": tr('Mittel'), "L": tr('Groß')}
-LIB_VIEWS = ("all", "installed", "recent")        # dazu "lib:<ID>" je eigener Bibliothek
-SORTS = [tr('Titel (A–Z)'), tr('Zuletzt gespielt'), tr('Spielzeit'), tr('Erscheinungsdatum')]
+LIB_VIEWS = ("all", "installed", "recent")        # dazu "lib:<ID>" je eigener Bibliothek, "bm:<ID>" je Lesezeichen
+START_VIEWS = ("recent", "all", "installed")
 
 
 def is_lib_view(view: str) -> bool:
-    return view in LIB_VIEWS or view.startswith("lib:")
+    return view in LIB_VIEWS or view.startswith("lib:") or view.startswith("bm:")
 
 
 # ----------------------------------------------------------------------------- Bausteine
@@ -132,7 +138,7 @@ class CoverCard(Gtk.FlowBoxChild):
             self.progress.set_fraction(fraction)
 
 
-LIST_COLUMNS = ((tr('Status'), 18), (tr('Spielzeit'), 11), (tr('Zuletzt gespielt'), 14), (tr('Größe'), 9))
+LIST_COLUMNS = ((tr('Status'), 18), (tr('Bewertung'), 8), (tr('Spielzeit'), 11), (tr('Zuletzt gespielt'), 14), (tr('Größe'), 9))
 
 
 class GameListRow(Gtk.ListBoxRow):
@@ -166,7 +172,9 @@ class GameListRow(Gtk.ListBoxRow):
         minutes, last = b.playtime.get(entry.id)
         size = format_bytes(g.install_size) if g and g.install_size else "–"
         self.status = label("", css=["row-cell"], ellipsize=True)
-        values = [self.status, label(format_minutes(minutes) if minutes else "–", css=["row-cell"]),
+        rating = b.game_settings.get(entry.id).rating
+        values = [self.status, label("★" * rating if rating else "–", css=["row-cell"]),
+                  label(format_minutes(minutes) if minutes else "–", css=["row-cell"]),
                   label(relative_time(last) if last else "–", css=["row-cell"]), label(size, css=["row-cell"])]
         for (_, width), lbl in zip(LIST_COLUMNS, values):
             lbl.set_width_chars(width)
@@ -255,6 +263,7 @@ class LibrarySection(Gtk.Box):
             card = GameListRow(self.win, e) if self.layout == "list" else CoverCard(e, size, show_title)
             self.cards[e.id] = card
             self.flow.append(card)
+            attach_context_menu(self.win, card, lambda c=card: c.entry.id)
             self.win.load_cover(e, card.pic)
             self.win.apply_card_state(card)
             card.set_new(self.win.library_sync.is_new(e.id))
@@ -275,11 +284,14 @@ class MainWindow(Adw.ApplicationWindow):
         self.current_pid: str | None = None
         self.history: list[tuple[str, str | None]] = []
         self.hist_idx = -1
-        self.filters = {"installed": False, "not_installed": False, "favorites": False, "updates": False,
-                        "windows": False, "linux": False}
+        self.filter = lv.LibraryFilter()          # Filter-Knopf wie Galaxy (Status, OS, Plattform, Genre, Tags …)
         self._search = ""
+        self._facts: dict[str, lv.GameFacts] = {}
+        self._view_override: dict = {}            # Sortierung/Gruppierung eines geöffneten Lesezeichens
         self.sections: list[LibrarySection] = []
         self.library_sync = LibrarySyncController(self)   # Abgleich mit GOG: Start, Intervall, Fokus, Login, Kauf, F5
+        self.game_actions = GameActions(self)     # Anpassen-Menü und Kontextmenü der Spiele (Aktionsgruppe „game“)
+        util.SPEED_IN_BITS[0] = backend.settings.speed_in_bits
 
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         root.append(self._build_header())
@@ -298,12 +310,9 @@ class MainWindow(Adw.ApplicationWindow):
                                margin_start=28, margin_end=28, valign=Gtk.Align.START)
         self.lib_scroll.set_child(self.lib_box)
         self.stack.add_named(self.lib_scroll, "library")
-        # Downloads
-        self.dl_scroll = Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER)
-        self.dl_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10, margin_top=18, margin_bottom=28,
-                              margin_start=28, margin_end=28, valign=Gtk.Align.START)
-        self.dl_scroll.set_child(self.dl_box)
-        self.stack.add_named(self.dl_scroll, "downloads")
+        # Downloads (Warteschlange, Updates, Abgeschlossen, Fehlgeschlagen)
+        self.downloads = DownloadsView(self)
+        self.stack.add_named(self.downloads, "downloads")
         # Spielansicht
         self.page = GamePage(self)
         self.stack.add_named(self.page, "game")
@@ -329,11 +338,22 @@ class MainWindow(Adw.ApplicationWindow):
         self._seen_unknown: set[str] = set()
         self._prefix_done: list[str] = []
         self._update_avatar()
-        self.navigate("all")
+        self.navigate(self._start_view())
         self.setup_folder_watch()
         GLib.timeout_add_seconds(2, lambda: (self.scan_folders_async(quiet=True), False)[1])
         # Bibliothek aus dem Cache steht schon – Abgleich kurz danach (leerer Cache: sofort), danach Update-Suche
         self.library_sync.start()
+        # offene Downloads vom letzten Mal wieder einreihen (pausierte bleiben pausiert)
+        self.backend.jobs.enable_persistence(paths.JOBS_FILE)
+        # Online-Status bei GOG (Avatar-Menü „Online“/„Unsichtbar“) und System-Tray
+        self.presence = Presence(self.backend.api, self.backend.settings)
+        if self.backend.api.logged_in:
+            self.presence.start()
+        self.tray = Tray(APP_ID, APP_NAME, APP_ID, self.show_from_tray, self.request_quit, (tr('Öffnen'), tr('Beenden')))
+        self.apply_window_settings()
+        # Spielzeit aller Geräte von GOG: kurz nach dem Start und dann halbstündlich (je Spiel höchstens alle 6 h)
+        GLib.timeout_add_seconds(25, lambda: (self.pull_playtime_async(), False)[1])
+        GLib.timeout_add_seconds(1800, lambda: (self.pull_playtime_async(), True)[1])
         ui_registry.run_window_hooks(self)      # Erweiterungen (ui/ext_*.py): Timer, Fokus, eigene Seiten …
 
     # ------------------------------------------------------------------ Kopfzeile
@@ -365,10 +385,10 @@ class MainWindow(Adw.ApplicationWindow):
         left.append(self.avatar_btn)
         sp2 = Gtk.Box(hexpand=True)
         left.append(sp2)
-        sb = icon_button(pick_icon("system-search-symbolic", "edit-find-symbolic"), tr('Suchen'), ["flat", "hdr-btn"])
+        sb = icon_button(pick_icon("system-search-symbolic", "edit-find-symbolic"), tr('Suche (Strg+F)'), ["flat", "hdr-btn"])
         sb.set_margin_end(10)
         sb.set_valign(Gtk.Align.CENTER)
-        sb.connect("clicked", lambda *_: self.search.grab_focus())
+        sb.connect("clicked", lambda *_: self.open_power_search())
         left.append(sb)
         bar.append(left)
 
@@ -380,7 +400,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.fwd_btn = icon_button(pick_icon("go-next-symbolic"), tr('Vor'), ["flat", "hdr-btn"])
         self.fwd_btn.connect("clicked", lambda *_: self.go_forward())
         self.bookmark_btn = Gtk.ToggleButton(icon_name=pick_icon("user-bookmarks-symbolic", "bookmark-new-symbolic", "starred-symbolic"),
-                                             tooltip_text=tr('Favorit'))
+                                             tooltip_text=tr('Lesezeichen'))
         self.bookmark_btn.add_css_class("flat")
         self.bookmark_btn.add_css_class("hdr-btn")
         self.bookmark_btn.connect("toggled", self._on_bookmark)
@@ -389,17 +409,20 @@ class MainWindow(Adw.ApplicationWindow):
             right.append(w)
 
         center = Gtk.Box(spacing=8, halign=Gtk.Align.CENTER, hexpand=True, valign=Gtk.Align.CENTER)
-        self.filter_btn = Gtk.MenuButton(popover=self._filter_popover())
+        self.filter_btn = Gtk.MenuButton()
+        # bei jedem Öffnen neu: Genres, Tags und Bibliotheken können sich geändert haben
+        self.filter_btn.set_create_popup_func(lambda b: b.set_popover(self._filter_popover()))
         fb = Gtk.Box(spacing=6)
         fb.append(Gtk.Image(icon_name=pick_icon("funnel-symbolic", "view-filter-symbolic", "edit-find-replace-symbolic"), pixel_size=14))
-        fb.append(label(tr('Filter')))
+        self.filter_lbl = label(tr('Filter'))
+        fb.append(self.filter_lbl)
         self.filter_btn.set_child(fb)
         self.filter_btn.add_css_class("hdr-pill")
         center.append(self.filter_btn)
         plus = Gtk.MenuButton(icon_name=pick_icon("list-add-symbolic"), popover=self._plus_popover(), tooltip_text=tr('Bibliothek'))
         plus.add_css_class("hdr-pill")
         center.append(plus)
-        self.search = Gtk.SearchEntry(placeholder_text=tr('Spiele suchen'))
+        self.search = Gtk.SearchEntry(placeholder_text=tr('Suche Spiele'))
         self.search.add_css_class("hdr-search")
         self.search.set_size_request(230, -1)
         self.search.connect("search-changed", self._on_search)
@@ -413,7 +436,16 @@ class MainWindow(Adw.ApplicationWindow):
         right.append(center)
         self.spinner = Gtk.Spinner(valign=Gtk.Align.CENTER)
         right.append(self.spinner)
-        controls = Gtk.WindowControls(side=Gtk.PackType.END, valign=Gtk.Align.CENTER)
+        # Minimieren selbst übernehmen („Bei Minimierung des Fensters“: Taskleiste oder System-Tray)
+        layout = Gtk.Settings.get_default().get_property("gtk-decoration-layout") or ":minimize,maximize,close"
+        end = [b for b in layout.split(":", 1)[-1].split(",") if b]
+        if "minimize" in end:
+            mini = icon_button(pick_icon("window-minimize-symbolic"), tr('Minimieren'), ["flat", "hdr-btn", "minimize-btn"])
+            mini.set_valign(Gtk.Align.CENTER)
+            mini.connect("clicked", lambda *_: self.minimize_window())
+            right.append(mini)
+        controls = Gtk.WindowControls(side=Gtk.PackType.END, valign=Gtk.Align.CENTER,
+                                      decoration_layout=":" + ",".join(b for b in end if b != "minimize"))
         controls.set_margin_end(6)
         right.append(controls)
         bar.append(right)
@@ -438,31 +470,68 @@ class MainWindow(Adw.ApplicationWindow):
         return pop
 
     def _filter_popover(self) -> Gtk.Popover:
+        """Filter wie Galaxy: Status, Betriebssystem, Plattform, Genre, Bewertung, Tags, Favoriten, Ausgeblendet –
+        innerhalb einer Kategorie ODER, zwischen den Kategorien UND; jede Änderung wirkt sofort."""
         pop = Gtk.Popover()
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4, margin_top=8, margin_bottom=8, margin_start=10, margin_end=10)
-        box.append(label(tr('FILTER'), css=["sec-hdr"]))
-        self.filter_checks: dict[str, Gtk.CheckButton] = {}
-        for key, text in (("installed", tr('Installiert')), ("not_installed", tr('Nicht installiert')), ("favorites", tr('Favoriten')),
-                          ("updates", tr('Update verfügbar')), ("windows", tr('Windows')), ("linux", tr('Linux-nativ'))):
-            c = Gtk.CheckButton(label=text)
-            c.connect("toggled", lambda b, k=key: self._set_filter(k, b.get_active()))
-            self.filter_checks[key] = c
-            box.append(c)
+        outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6, margin_top=8, margin_bottom=8, margin_start=10, margin_end=10)
+        head = Gtk.Box(spacing=6)
+        h = label(tr('FILTER'), css=["sec-hdr"])
+        h.set_hexpand(True)
+        head.append(h)
+        reset = Gtk.Button(label=tr('Zurücksetzen'))
+        reset.add_css_class("flat")
+        reset.connect("clicked", lambda *_: (pop.popdown(), self.reset_filter()))
+        head.append(reset)
+        outer.append(head)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        scroll = Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER, propagate_natural_height=True,
+                                    max_content_height=560, min_content_width=280)
+        scroll.set_child(box)
+        outer.append(scroll)
+        flt = self.filter
+
+        def category(title: str, cat: str, options: list) -> None:
+            if not options:
+                return
+            chosen = getattr(flt, cat)
+            exp = Gtk.Expander(label=title + (f"  ({len(chosen)})" if chosen else ""), expanded=bool(chosen))
+            inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2, margin_start=10)
+            for value, text in options:
+                c = Gtk.CheckButton(label=text, active=value in chosen)
+                c.connect("toggled", lambda b, v=value, k=cat: self._set_filter(k, v, b.get_active()))
+                inner.append(c)
+            exp.set_child(inner)
+            box.append(exp)
+
+        facts = list(self._facts.values())
+        category(tr('Status'), "status", [(k, tr(lv.STATUS_NAMES[k])) for k in lv.STATUS_KEYS])
+        category(tr('Betriebssystem & Konsolen'), "os", list(lv.OS_NAMES.items()))
+        category(tr('Plattform'), "sources", [("gog", "GOG.com")] + [(f"lib:{l.id}", l.name) for l in self.backend.libraries()])
+        category(tr('Genre'), "genres", [(g, g) for g in sorted({g for f in facts for g in f.genres}, key=str.lower)])
+        category(tr('Bewertung'), "ratings", [(n, lv.stars(n)) for n in range(lv.MAX_RATING, 0, -1)] + [(0, tr('Keine Bewertung'))])
+        tags = lv.all_tags(self.backend.game_settings)
+        category(tr('Tags'), "tags", [(t, t) for t in tags] + [("", tr('Keine Tags'))])
+        fav = Gtk.CheckButton(label=tr('Favoriten'), active=flt.favorites)
+        fav.connect("toggled", lambda b: self._set_filter("favorites", True, b.get_active()))
+        box.append(fav)
+        hid_keys = ["", "hidden", "visible"]
+        hid = Gtk.DropDown.new_from_strings([tr('Ausgeblendete wie eingestellt'), tr('Nur ausgeblendete Spiele anzeigen.'),
+                                             tr('Nur sichtbare Spiele anzeigen.')])
+        hid.set_selected(hid_keys.index(flt.hidden) if flt.hidden in hid_keys else 0)
+        hid.connect("notify::selected", lambda d, _p: self._set_filter("hidden", hid_keys[d.get_selected()], True))
+        box.append(label(tr('Ausgeblendet'), css=["dim", "caption"]))
+        box.append(hid)
         hidden = Gtk.CheckButton(label=tr('Versteckte Spiele anzeigen'), active=self.backend.settings.show_hidden)
         hidden.connect("toggled", self._toggle_hidden)
         box.append(hidden)
-        reset = Gtk.Button(label=tr('Zurücksetzen'))
-        reset.add_css_class("flat")
-        reset.connect("clicked", lambda *_: [c.set_active(False) for c in self.filter_checks.values()])
-        box.append(reset)
-        pop.set_child(box)
+        pop.set_child(outer)
         return pop
 
     def _view_popover(self) -> Gtk.Popover:
-        """Ansicht der Bibliothek: Raster/Liste, Covergröße, Abstand, Titel, Abschnitte, Sortierung (wird gespeichert –
-        für die GOG-Ansichten gemeinsam, für jede eigene Bibliothek getrennt)."""
+        """Ansicht der Bibliothek: Raster/Liste, Covergröße, Abstand, Titel, Abschnitte, Sortieren nach (auf-/absteigend)
+        und Gruppieren nach (wird gespeichert – für die GOG-Ansichten gemeinsam, für jede eigene Bibliothek getrennt)."""
         lib = self._view_lib()
-        v = self.backend.settings.view_settings(lib)
+        v = self._current_view(lib)
         pop = Gtk.Popover()
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8, margin_top=10, margin_bottom=10, margin_start=12, margin_end=12)
         scope = label(tr('Gilt für die Bibliothek „{0}“').format(lib.name) if lib else tr('Gilt für Alle Spiele, Installiert und Zuletzt gespielt'),
@@ -488,11 +557,33 @@ class MainWindow(Adw.ApplicationWindow):
         secs = Gtk.CheckButton(label=tr('Abschnitte (Als Nächstes spielen …)'), active=v["sections"])
         secs.connect("toggled", lambda b: self._set_view(sections=b.get_active()))
         box.append(secs)
-        box.append(label(tr('SORTIEREN'), css=["sec-hdr"]))
-        sort_dd = Gtk.DropDown.new_from_strings(SORTS)
-        sort_dd.set_selected(v["sort"] if 0 <= v["sort"] < len(SORTS) else 0)
-        sort_dd.connect("notify::selected", lambda d, _: self._set_view(sort=d.get_selected()))
+        box.append(label(tr('SORTIEREN NACH'), css=["sec-hdr"]))
+        keys = list(lv.SORT_KEYS)
+        sort_key, desc = lv.resolve_sort(v)
+        sort_dd = Gtk.DropDown.new_from_strings([tr(lv.SORT_NAMES[k]) for k in keys])
+        sort_dd.set_selected(keys.index(sort_key))
         box.append(sort_dd)
+        order = Adw.ToggleGroup()
+        order.add(Adw.Toggle(name="asc", label=tr('Aufsteigend')))
+        order.add(Adw.Toggle(name="desc", label=tr('Absteigend')))
+        order.set_active_name("desc" if desc else "asc")
+        box.append(order)
+
+        def sort_changed(d, _p) -> None:
+            k = keys[d.get_selected()]
+            default_desc = k in lv.DESC_BY_DEFAULT
+            order.set_active_name("desc" if default_desc else "asc")
+            self._set_view(sort_by=k, sort_desc=default_desc)
+        sort_dd.connect("notify::selected", sort_changed)
+        order.connect("notify::active-name", lambda g, _p: self._set_view(sort_by=keys[sort_dd.get_selected()],
+                                                                           sort_desc=g.get_active_name() == "desc"))
+        box.append(label(tr('GRUPPIEREN NACH'), css=["sec-hdr"]))
+        gkeys = list(lv.GROUP_KEYS)
+        gcur = v.get("group") if v.get("group") in gkeys else "none"
+        group_dd = Gtk.DropDown.new_from_strings([tr(lv.GROUP_NAMES[k]) for k in gkeys])
+        group_dd.set_selected(gkeys.index(gcur))
+        group_dd.connect("notify::selected", lambda d, _p: self._set_view(group=gkeys[d.get_selected()]))
+        box.append(group_dd)
         pop.set_child(box)
         return pop
 
@@ -533,6 +624,12 @@ class MainWindow(Adw.ApplicationWindow):
         item("all", tr('Spiele im Besitz'), pick_icon("view-grid-symbolic", "view-app-grid-symbolic"))
         item("installed", tr('Installiert'), pick_icon("computer-symbolic", "video-display-symbolic"))
         item("downloads", tr('Downloads'), pick_icon("folder-download-symbolic", "go-down-symbolic"))
+        # LESEZEICHEN: gespeicherte Ansichten (mit Filter, Suche, Sortierung) und Spiele – Rechtsklick öffnet ihr Menü
+        self.bm_header = label(tr('LESEZEICHEN'), css=["nav-section"])
+        box.append(self.bm_header)
+        self.bmnav_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        box.append(self.bmnav_box)
+        self._rebuild_bookmark_nav()
         # BIBLIOTHEKEN: eigene Bibliotheken (wie die Plattform-Einträge in Galaxy 2.0), „+“ legt eine neue an
         head = Gtk.Box()
         head.add_css_class("nav-section-row")
@@ -594,10 +691,154 @@ class MainWindow(Adw.ApplicationWindow):
         if getattr(self, "view", "").startswith("lib:") and self.view in self.nav:
             self.nav[self.view].set_selected(True)
 
+    # ------------------------------------------------------------------ Lesezeichen
+    def _bookmark(self, bid: str) -> lv.Bookmark | None:
+        return next((b for b in lv.bookmarks(self.backend.settings) if b.id == bid), None)
+
+    def _rebuild_bookmark_nav(self) -> None:
+        for key in [k for k in self.nav if k.startswith("bm:")]:
+            self.nav.pop(key)
+        child = self.bmnav_box.get_first_child()
+        while child is not None:
+            nxt = child.get_next_sibling()
+            self.bmnav_box.remove(child)
+            child = nxt
+        items = lv.bookmarks(self.backend.settings)
+        self.bm_header.set_visible(bool(items))
+        for b in items:
+            icon = pick_icon("applications-games-symbolic") if b.view == "game" else \
+                pick_icon("user-bookmarks-symbolic", "bookmark-new-symbolic", "starred-symbolic")
+            it = NavItem(b.name, icon)
+            it.set_tooltip_text(b.name)
+            it.connect("clicked", lambda _b, bid=b.id: self.open_bookmark(bid))
+            click = Gtk.GestureClick(button=3)
+            click.connect("pressed", lambda _g, _n, x, y, w=it, bid=b.id: self._bookmark_menu(bid, w).popup())
+            it.add_controller(click)
+            self.nav[f"bm:{b.id}"] = it
+            self.bmnav_box.append(it)
+        if getattr(self, "view", "") in self.nav:
+            self.nav[self.view].set_selected(True)
+
+    def _bookmark_menu(self, bid: str, parent: Gtk.Widget) -> Gtk.Popover:
+        """Wie Galaxys Lesezeichen-Menü: umbenennen, hoch/runter verschieben, löschen."""
+        pop = Gtk.Popover()
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2, margin_top=6, margin_bottom=6, margin_start=6, margin_end=6)
+        for text, cb in ((tr('Lesezeichen umbenennen'), lambda: self._rename_bookmark(bid)),
+                         (tr('Hoch verschieben'), lambda: self._move_bookmark(bid, -1)),
+                         (tr('Runter verschieben'), lambda: self._move_bookmark(bid, 1)),
+                         (tr('Lesezeichen löschen'), lambda: self._delete_bookmark(bid))):
+            b = Gtk.Button(label=text)
+            b.add_css_class("flat")
+            b.get_child().set_xalign(0)
+            if text == tr('Lesezeichen löschen'):
+                b.add_css_class("destructive-text")
+            b.connect("clicked", lambda _b, cb=cb: (pop.popdown(), cb()))
+            box.append(b)
+        pop.set_child(box)
+        pop.set_parent(parent)
+        pop.set_has_arrow(True)
+        pop.connect("closed", lambda p: GLib.idle_add(lambda: (p.unparent(), False)[1]))
+        return pop
+
+    def _rename_bookmark(self, bid: str) -> None:
+        b = self._bookmark(bid)
+        if b is None:
+            return
+        dlg = Adw.AlertDialog.new(tr('Lesezeichen umbenennen'), None)
+        entry = Gtk.Entry(text=b.name, activates_default=True)
+        dlg.set_extra_child(entry)
+        dlg.add_response("cancel", tr('Abbrechen'))
+        dlg.add_response("ok", tr('Umbenennen'))
+        dlg.set_response_appearance("ok", Adw.ResponseAppearance.SUGGESTED)
+        dlg.set_default_response("ok")
+
+        def resp(_d, r: str) -> None:
+            if r == "ok" and lv.rename_bookmark(self.backend.settings, bid, entry.get_text()):
+                self._rebuild_bookmark_nav()
+        dlg.connect("response", resp)
+        dlg.present(self)
+
+    def _move_bookmark(self, bid: str, delta: int) -> None:
+        if lv.move_bookmark(self.backend.settings, bid, delta):
+            self._rebuild_bookmark_nav()
+
+    def _delete_bookmark(self, bid: str) -> None:
+        if lv.remove_bookmark(self.backend.settings, bid):
+            self._rebuild_bookmark_nav()
+            if self.view == f"bm:{bid}":
+                self.navigate("all")
+            else:
+                self._sync_bookmark()
+            self.toast(tr('Lesezeichen gelöscht'))
+
+    def open_bookmark(self, bid: str) -> None:
+        b = self._bookmark(bid)
+        if b is None:
+            return
+        if b.view == "game":
+            self.show_game(b.pid)
+        else:
+            self.navigate(f"bm:{b.id}")
+
+    def _bookmark_candidate(self) -> lv.Bookmark | None:
+        """Was der Lesezeichen-Knopf jetzt anlegen würde: die Spielansicht oder die Bibliotheksansicht mit Filter, Suche,
+        Sortierung und Gruppierung (Store und Downloads lassen sich nicht anlegen)."""
+        if self.view == "game" and self.current_pid:
+            e = self.backend.entry(self.current_pid)
+            return lv.Bookmark(id="", name=e.title if e else self.current_pid, view="game", pid=self.current_pid)
+        if not is_lib_view(self.view):
+            return None
+        base = self._base_view()
+        lib = self._view_lib()
+        name = {"all": tr('Spiele im Besitz'), "installed": tr('Installiert'), "recent": tr('Zuletzt gespielt')}.get(base) \
+            or (lib.name if lib else base)
+        text = self.search.get_text().strip()
+        if text:
+            name += f" · „{text}“"
+        if not self.filter.is_empty():
+            name += " · " + tr('{0} Filter').format(self.filter.count())
+        ov = self._view_override
+        return lv.Bookmark(id="", name=name, view=base, filter=self.filter.to_dict(), search=text,
+                           sort_by=ov.get("sort_by", ""), sort_desc=bool(ov.get("sort_desc", False)), group=ov.get("group", ""))
+
+    def _base_view(self) -> str:
+        """Ansicht hinter einem Lesezeichen („bm:<ID>“), sonst die aktuelle."""
+        if self.view.startswith("bm:"):
+            b = self._bookmark(self.view[3:])
+            return b.view if b is not None and b.view != "game" else "all"
+        return self.view
+
+    def _set_search_text(self, text: str) -> None:
+        self._search_guard = True
+        self.search.set_text(text)
+        self._search_guard = False
+        self._search = text.strip().lower()
+
     # ------------------------------------------------------------------ Navigation
     def navigate(self, view: str, pid: str | None = None, push: bool = True) -> None:
         if view.startswith("lib:") and self.backend.get_library(view[4:]) is None:
             view = "all"                     # Bibliothek wurde inzwischen gelöscht
+        prev = getattr(self, "view", "")
+        if view.startswith("bm:"):
+            bm = self._bookmark(view[3:])
+            if bm is None:
+                view = "all"
+            elif bm.view == "game":
+                view, pid = "game", bm.pid
+            else:
+                # Lesezeichen öffnen: seine Filter, Suche, Sortierung und Gruppierung gelten, bis eine andere Ansicht kommt
+                self.filter = lv.LibraryFilter.from_dict(bm.filter)
+                ov: dict = {}
+                if bm.sort_by:
+                    ov.update(sort_by=bm.sort_by, sort_desc=bm.sort_desc)
+                if bm.group:
+                    ov["group"] = bm.group
+                self._view_override = ov
+                self._set_search_text(bm.search)
+        elif prev.startswith("bm:") and is_lib_view(view):
+            self.filter = lv.LibraryFilter()
+            self._view_override = {}
+            self._set_search_text("")
         if push:
             self.history = self.history[: self.hist_idx + 1]
             self.history.append((view, pid))
@@ -611,7 +852,7 @@ class MainWindow(Adw.ApplicationWindow):
             self.page.set_game(pid)
             self.stack.set_visible_child_name("game")
         elif view == "downloads":
-            self._rebuild_downloads()
+            self.downloads.rebuild()
             self.stack.set_visible_child_name("downloads")
         elif view.startswith("store:") and getattr(self, "store_page", None) is not None:
             self.stack.set_visible_child_name("store")
@@ -626,6 +867,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.back_btn.set_sensitive(self.hist_idx > 0)
         self.fwd_btn.set_sensitive(self.hist_idx < len(self.history) - 1)
         self._sync_bookmark()
+        self._update_filter_label()
         self.update_nav_badges()
 
     def go_back(self) -> None:
@@ -645,40 +887,63 @@ class MainWindow(Adw.ApplicationWindow):
         self.navigate("all")
 
     def _sync_bookmark(self) -> None:
-        self.bookmark_btn.set_sensitive(self.view == "game")
+        cand = self._bookmark_candidate()
+        self.bookmark_btn.set_sensitive(cand is not None)
         self._bookmark_guard = True
-        self.bookmark_btn.set_active(bool(self.current_pid and self.backend.game_settings.get(self.current_pid).favorite))
+        self.bookmark_btn.set_active(bool(cand is not None and lv.find_bookmark(self.backend.settings, cand)))
         self._bookmark_guard = False
 
     def _on_bookmark(self, btn: Gtk.ToggleButton) -> None:
-        if getattr(self, "_bookmark_guard", False) or not self.current_pid:
+        """Lesezeichen-Knopf wie Galaxy: aktuelle Ansicht bzw. das Spiel in die Seitenleiste legen oder wieder lösen."""
+        if getattr(self, "_bookmark_guard", False):
             return
-        self.backend.game_settings.update(self.current_pid, favorite=btn.get_active())
-        self.toast(tr('Als Favorit markiert') if btn.get_active() else tr('Favorit entfernt'))
+        cand = self._bookmark_candidate()
+        if cand is None:
+            return
+        found = lv.find_bookmark(self.backend.settings, cand)
+        if btn.get_active() and found is None:
+            b = lv.add_bookmark(self.backend.settings, cand)
+            self.toast(tr('Lesezeichen angelegt: {0}').format(b.name))
+        elif not btn.get_active() and found is not None:
+            lv.remove_bookmark(self.backend.settings, found.id)
+            self.toast(tr('Lesezeichen gelöscht'))
+            if self.view == f"bm:{found.id}":
+                self.view = found.view if found.view != "game" else self.view
+        self._rebuild_bookmark_nav()
 
     # ------------------------------------------------------------------ Bibliothek
     def _view_lib_id(self) -> str | None:
-        return self.view[4:] if self.view.startswith("lib:") else None
+        base = self._base_view()
+        return base[4:] if base.startswith("lib:") else None
 
     def _view_lib(self):
         lid = self._view_lib_id()
         return self.backend.get_library(lid) if lid else None
 
-    def _custom_entries(self, lib_id: str | None = None) -> list:
-        """Spiele der eigenen Bibliotheken (oder nur einer) als Bibliothekseinträge."""
+    def _current_view(self, lib=None) -> dict:
+        """Gespeicherte Ansicht plus Sortierung/Gruppierung eines geöffneten Lesezeichens."""
+        v = self.backend.settings.view_settings(lib)
+        v.update(self._view_override)
+        return v
+
+    def _custom_entries(self, lib_id: str | None = None, include_hidden: bool = True) -> list:
+        """Spiele der eigenen Bibliotheken (oder nur einer) als Bibliothekseinträge; ausgeblendete nur mit
+        ``include_hidden`` (die Bibliotheksansicht entscheidet dann per Filter)."""
         out = []
         games = self.backend.library_games(lib_id) if lib_id else [g for g in self.backend.registry.all() if g.method == "external"]
+        show = include_hidden or self.backend.settings.show_hidden
         for g in games:
-            if self.backend.game_settings.get(g.product_id).hidden and not self.backend.settings.show_hidden:
+            if not show and self.backend.game_settings.get(g.product_id).hidden:
                 continue
             e = self.backend.entry(g.product_id)
             if e:
                 out.append(e)
         return out
 
-    def _entries(self) -> list:
-        """GOG-Bibliothek plus installierte GOG-Spiele (ohne externe Spiele)."""
-        entries = {e.id: e for e in self.backend.visible_library()}
+    def _entries(self, include_hidden: bool = False) -> list:
+        """GOG-Bibliothek plus installierte GOG-Spiele (ohne externe Spiele); ausgeblendete nur mit ``include_hidden``
+        bzw. „Versteckte Spiele anzeigen“."""
+        entries = {e.id: e for e in self.backend.visible_library(include_hidden=True if include_hidden else None)}
         for g in self.backend.registry.all():
             if g.method == "external":
                 continue
@@ -688,15 +953,17 @@ class MainWindow(Adw.ApplicationWindow):
                     entries[e.id] = e
         return list(entries.values())
 
-    def _sorted(self, entries: list, sort: int = 0) -> list:
-        pt = self.backend.playtime
-        if sort == 1:
-            return sorted(entries, key=lambda e: -pt.get(e.id)[1])
-        if sort == 2:
-            return sorted(entries, key=lambda e: -pt.get(e.id)[0])
-        if sort == 3:
-            return sorted(entries, key=lambda e: e.release_date or "", reverse=True)
-        return sorted(entries, key=lambda e: e.title.lower())
+    def _fact(self, entry) -> lv.GameFacts:
+        f = self._facts.get(entry.id)
+        if f is None:
+            f = lv.facts(self.backend, entry)
+            self._facts[entry.id] = f
+        return f
+
+    def _sorted(self, entries: list, view: dict | None = None) -> list:
+        key, desc = lv.resolve_sort(view if isinstance(view, dict) else {"sort": view or 0})
+        by_id = {e.id: e for e in entries}
+        return [by_id[f.id] for f in lv.sort_facts([self._fact(e) for e in entries], key, desc)]
 
     def _rebuild_library(self) -> None:
         child = self.lib_box.get_first_child()
@@ -705,11 +972,14 @@ class MainWindow(Adw.ApplicationWindow):
             self.lib_box.remove(child)
             child = nxt
         self.sections.clear()
+        self._facts.clear()
         lib = self._view_lib()
-        v = self.backend.settings.view_settings(lib)
+        base = self._base_view()
+        v = self._current_view(lib)
         size = COVER_SIZES.get(v["cover_size"], COVER_SIZES["S"])
         reg, pt = self.backend.registry, self.backend.playtime
-        ents = [] if lib else self._sorted(self._entries(), v["sort"])
+        ents = [] if lib else self._sorted(self._entries(include_hidden=True), v)
+        group_key = v.get("group") if v.get("group") in lv.GROUP_KEYS else "none"
 
         def add(title: str, items: list) -> None:
             if not items:
@@ -719,18 +989,27 @@ class MainWindow(Adw.ApplicationWindow):
             self.sections.append(sec)
             self.lib_box.append(sec)
 
+        def add_grouped(title: str, items: list) -> None:
+            """„Gruppieren nach“: eine Gruppe je Tag, Genre, Plattform … statt einer Liste."""
+            if group_key == "none":
+                add(title, items)
+                return
+            by_id = {e.id: e for e in items}
+            for name, facts in lv.group_facts([self._fact(e) for e in items], group_key):
+                add(name, [by_id[f.id] for f in facts])
+
         if lib is not None:
             self.lib_box.append(self._library_header(lib))
-            games = self._sorted(self._custom_entries(lib.id), v["sort"])
+            games = self._sorted(self._custom_entries(lib.id), v)
             if v["sections"]:
                 add(tr('Als Nächstes spielen'), [e for e in games if pt.get(e.id)[0] == 0][:12])
-            add(lib.name, games)
+            add_grouped(lib.name, games)
             if not games:
                 hint = label(tr('Noch keine Spiele in „{0}“. Spielordner nach {1} kopieren – sie werden nach dem Kopieren automatisch übernommen – oder einen beliebigen Ordner mit „Spiel hinzufügen …“ aufnehmen.').format(lib.name, lib.games_dir), css=["dim"], wrap=True)
                 self.lib_box.append(hint)
-        elif self.view == "installed":
-            add(tr('Installiert'), [e for e in ents if reg.is_installed(e.id)])
-        elif self.view == "recent":
+        elif base == "installed":
+            add_grouped(tr('Installiert'), [e for e in ents if reg.is_installed(e.id)])
+        elif base == "recent":
             ents = ents + self._custom_entries()
             played = [e for e in ents if pt.get(e.id)[1] > 0]
             played.sort(key=lambda e: -pt.get(e.id)[1])
@@ -743,13 +1022,14 @@ class MainWindow(Adw.ApplicationWindow):
             if not played and not inst:
                 self.lib_box.append(label(tr('Noch nichts gespielt – installiere ein Spiel aus „Spiele im Besitz“.'), css=["dim"]))
         else:
-            if v["sections"]:
+            if v["sections"] and group_key == "none":
                 add(tr('Neu in der Bibliothek'), self.library_sync.new_entries(ents))
                 next_to_play = [e for e in ents if reg.is_installed(e.id) and pt.get(e.id)[0] == 0]
                 add(tr('Als Nächstes spielen'), next_to_play[:12])
-            add(tr('Alle Spiele'), ents)
+            add_grouped(tr('Alle Spiele'), ents)
             if not ents:
                 self.lib_box.append(label(tr('Keine Spiele in der Bibliothek. Über das Zahnrad → „Bibliothek aktualisieren“ (F5) die Bibliothek von GOG laden.'), css=["dim"]))
+        self._refilter()
 
     def _library_header(self, lib) -> Gtk.Widget:
         """Kopf der Bibliotheksansicht: Ordner und die häufigsten Aktionen als Knöpfe, der Rest im „⋯“-Menü."""
@@ -823,24 +1103,34 @@ class MainWindow(Adw.ApplicationWindow):
         run_async(lambda: self.backend.cover_url(pid), got, lambda e: got(""))
 
     def card_filter(self, child: CoverCard) -> bool:
-        e = child.entry
-        if self._search and self._search not in e.title.lower():
+        """Suche (Titel, Tags, Genres, Entwickler) und Filter; der Status kommt aus der Karte (Downloads, Updates)."""
+        f = self._fact(child.entry)
+        f.state = child.state
+        if not lv.matches_search(f, self._search):
             return False
-        st = child.state
-        f = self.filters
-        if f["installed"] and st not in ("installed", "update", "running", "busy"):
-            return False
-        if f["not_installed"] and st != "not_installed":
-            return False
-        if f["favorites"] and not self.backend.game_settings.get(e.id).favorite:
-            return False
-        if f["updates"] and st != "update":
-            return False
-        if f["windows"] and "windows" not in e.platforms:
-            return False
-        if f["linux"] and "linux" not in e.platforms:
-            return False
-        return True
+        return self.filter.matches(f, self.backend.settings.show_hidden)
+
+    def _refilter(self) -> None:
+        """Filter neu anwenden; Abschnitte zeigen die Zahl der sichtbaren Spiele, leere verschwinden."""
+        for sec in self.sections:
+            sec.flow.invalidate_filter()
+            n = sum(1 for c in sec.cards.values() if self.card_filter(c))
+            sec.count_lbl.set_text(str(n))
+            sec.set_visible(n > 0)
+
+    def reset_filter(self) -> None:
+        self.filter = lv.LibraryFilter()
+        self._update_filter_label()
+        self._refilter()
+        self._sync_bookmark()
+
+    def _update_filter_label(self) -> None:
+        n = self.filter.count()
+        self.filter_lbl.set_text(tr('Filter') + (f" ({n})" if n else ""))
+        if n:
+            self.filter_btn.add_css_class("accent")
+        else:
+            self.filter_btn.remove_css_class("accent")
 
     def apply_card_state(self, card: CoverCard) -> None:
         pid = card.entry.id
@@ -865,6 +1155,8 @@ class MainWindow(Adw.ApplicationWindow):
                 self.apply_card_state(card)
                 sec.flow.invalidate_filter()
         self.update_nav_badges()
+        if self.view == "downloads":
+            self.downloads.refresh()
 
     update_row_status = refresh_game_state  # Kompatibilität
 
@@ -876,23 +1168,31 @@ class MainWindow(Adw.ApplicationWindow):
         for lib in self.backend.libraries():
             it = self.nav.get(f"lib:{lib.id}")
             if it is not None:
-                it.set_badge(str(len(self._custom_entries(lib.id))))
+                it.set_badge(str(len(self._custom_entries(lib.id, include_hidden=False))))
         active = len(self.backend.jobs.active())
         self.nav["downloads"].set_badge(str(active) if active else "", accent=bool(active))
         upd = len(self.backend.updates)
         self.status_lbl.set_text(tr('{0} Update(s) verfügbar').format(upd) if upd else "")
 
     def _on_search(self, entry: Gtk.SearchEntry) -> None:
+        if getattr(self, "_search_guard", False):
+            return
         self._search = entry.get_text().strip().lower()
-        if (self.view in ("game", "downloads") or self.view.startswith("store:")) and self._search:
+        if (self.view in ("game", "downloads", "welcome") or self.view.startswith("store:")) and self._search:
             self.navigate("all")
-        for sec in self.sections:
-            sec.flow.invalidate_filter()
+        self._refilter()
+        self._sync_bookmark()
 
-    def _set_filter(self, key: str, val: bool) -> None:
-        self.filters[key] = val
-        for sec in self.sections:
-            sec.flow.invalidate_filter()
+    def _set_filter(self, key: str, val, on: bool) -> None:
+        if key == "favorites":
+            self.filter.favorites = on
+        elif key == "hidden":
+            self.filter.hidden = val
+        else:
+            self.filter.toggle(key, val, on)
+        self._update_filter_label()
+        self._refilter()
+        self._sync_bookmark()
 
     def _toggle_hidden(self, btn: Gtk.CheckButton) -> None:
         self.backend.settings.show_hidden = btn.get_active()
@@ -900,8 +1200,56 @@ class MainWindow(Adw.ApplicationWindow):
         if is_lib_view(self.view):
             self._rebuild_library()
 
+    # ------------------------------------------------------------------ Tags, Bewertung, Ausblenden, Konfigurieren
+    def game_meta_changed(self, pid: str = "") -> None:
+        """Tags oder Bewertung geändert: Ansicht neu sortieren/gruppieren bzw. Filter neu anwenden."""
+        v = self._current_view(self._view_lib())
+        key, _desc = lv.resolve_sort(v)
+        if is_lib_view(self.view) and (v.get("group") in ("tags", "rating") or key in ("tags", "rating")):
+            y = self.lib_scroll.get_vadjustment().get_value()
+            self._rebuild_library()
+            GLib.idle_add(lambda: (self.lib_scroll.get_vadjustment().set_value(y), False)[1])
+        else:
+            if pid:
+                self._facts.pop(str(pid), None)
+            else:
+                self._facts.clear()
+            self._refilter()
+        if self.current_pid and (not pid or pid == self.current_pid):
+            self.page.refresh_state()
+
+    def manage_game_tags(self, pid: str) -> None:
+        from .tags import TagsDialog
+        TagsDialog(self.backend, pid, self.game_meta_changed).present(self)
+
+    def set_game_hidden(self, pid: str, hidden: bool) -> None:
+        """„Spiel ausblenden“ mit „Rückgängig“ wie Galaxy; „Spiel wieder einblenden“ auch für bei GOG ausgeblendete."""
+        e = self.backend.entry(pid)
+        if hidden:
+            self.backend.game_settings.update(pid, hidden=True, unhidden=False)
+            toast = Adw.Toast.new(GLib.markup_escape_text(tr('Das Spiel wurde ausgeblendet.')))
+            toast.set_button_label(tr('Rückgängig'))
+            toast.connect("button-clicked", lambda *_: self.set_game_hidden(pid, False))
+            self.toasts.add_toast(toast)
+        else:
+            self.backend.game_settings.update(pid, hidden=False, unhidden=bool(e is not None and e.is_hidden))
+        self._facts.pop(str(pid), None)
+        if is_lib_view(self.view):
+            self._rebuild_library()
+        self.update_nav_badges()
+
+    def configure_game(self, pid: str) -> None:
+        from .configure import ConfigureDialog
+        ConfigureDialog(self, pid).present(self)
+
+    def open_power_search(self, text: str = "") -> None:
+        from .power_search_dialog import PowerSearchDialog
+        PowerSearchDialog(self, text).present(self)
+
     def _set_view(self, **changes) -> None:
         """Ansicht speichern: in einer eigenen Bibliothek nur für diese, sonst für die GOG-Ansichten."""
+        for k in changes:                     # eigene Wahl geht vor der Sortierung/Gruppierung eines Lesezeichens
+            self._view_override.pop(k, None)
         lib = self._view_lib()
         if lib is not None:
             self.backend.update_library(lib.id, view={**lib.view, **changes})
@@ -1167,10 +1515,123 @@ class MainWindow(Adw.ApplicationWindow):
         # Adw.Toast deutet den Text als Markup – Namen wie „Rock & Roll“ sonst leer
         self.toasts.add_toast(Adw.Toast.new(GLib.markup_escape_text(text)))
 
+    # ------------------------------------------------------------------ Verhalten des Hauptfensters, Tray
+    def _start_view(self) -> str:
+        """Einstellungen → Allgemein → Startseite (wie Galaxy, ohne „Entdecken“)."""
+        s = self.backend.settings
+        page = s.starting_page
+        if page == "session":
+            last = s.last_view or "all"
+            if last.startswith("game:") and self.backend.entry(last[5:]) is not None:
+                GLib.idle_add(lambda: (self.show_game(last[5:]), False)[1])
+                return "all"
+            if last.startswith("bm:") and self._bookmark(last[3:]) is not None:
+                return last
+            if last.startswith("lib:") and self.backend.get_library(last[4:]) is not None:
+                return last
+            if last.startswith("store:") or last == "store":
+                GLib.idle_add(lambda: (self.open_store(""), False)[1])
+                return "all"
+            return last if last in (*START_VIEWS, "downloads") else "all"
+        if page == "store":
+            GLib.idle_add(lambda: (self.open_store(""), False)[1])
+            return "all"
+        return page if page in START_VIEWS else "all"
+
+    def remember_view(self) -> None:
+        """Für „Vorherige Sitzung fortsetzen“ beim Beenden merken, wo man war."""
+        view = f"game:{self.current_pid}" if self.view == "game" and self.current_pid else self.view
+        if view != self.backend.settings.last_view:
+            self.backend.settings.last_view = view
+            self.backend.save_settings()
+
+    def _tray_wanted(self) -> bool:
+        s = self.backend.settings
+        return "tray" in (s.when_minimizing, s.when_closing, s.when_launching_game)
+
+    def apply_window_settings(self) -> None:
+        """Nach dem Start und nach Änderungen in den Einstellungen: Tray-Symbol, Bit/s-Anzeige, Online-Status."""
+        util.SPEED_IN_BITS[0] = self.backend.settings.speed_in_bits
+        if self._tray_wanted():
+            self.tray.show()
+        elif self.get_visible():
+            self.tray.hide()
+        if self.backend.api.logged_in:
+            self.presence.start()
+            self.presence.refresh()
+
+    def _to_tray(self) -> bool:
+        """Ins System-Tray: Fenster ausblenden, der Client läuft weiter. False, wenn es keinen Tray gibt."""
+        if not self.tray.show():
+            return False
+        self.set_visible(False)
+        log.info("Fenster in den System-Tray minimiert")
+        return True
+
+    def minimize_window(self) -> None:
+        if self.backend.settings.when_minimizing == "tray" and self._to_tray():
+            return
+        self.minimize()
+
+    def show_from_tray(self) -> None:
+        self.set_visible(True)
+        self.present()
+        if not self._tray_wanted():
+            self.tray.hide()
+
+    def game_launched(self, pid: str) -> None:
+        """„Wenn ein Spiel gestartet wird“: nichts, in die Taskleiste oder in den System-Tray; Online-Status mit Spiel."""
+        mode = self.backend.settings.when_launching_game
+        if mode == "tray" and self._to_tray():
+            pass
+        elif mode in ("taskbar", "tray"):
+            self.minimize()
+        self.presence.set_game(pid)
+
+    def game_exited(self, pid: str) -> None:
+        running = [p for p in self.backend.launcher.active_ids() if p != pid]
+        self.presence.set_game(running[0] if running else "")
+
+    def pull_playtime_async(self) -> None:
+        """Spielzeit aller Geräte von GOG für installierte und zuletzt gespielte Spiele (je Spiel höchstens alle 6 h)."""
+        if not self.backend.api.logged_in or not self.backend.settings.sync_playtime:
+            return
+        pids = [g.product_id for g in self.backend.registry.all() if g.method != "external"]
+        pids += [e.id for e in self.backend.library if self.backend.playtime.get(e.id)[1] > 0 and e.id not in pids]
+
+        def done(n: int) -> None:
+            if n:
+                if is_lib_view(self.view):
+                    self._facts.clear()
+                    self._refilter()
+                if self.current_pid:
+                    self.page.refresh_state()
+        run_async(lambda: self.backend.pull_playtime(pids, limit=60), done, lambda e: None)
+
+    def notify_desktop(self, key: str, title: str, body: str = "") -> None:
+        """Desktop-Benachrichtigung, solange das Fenster nicht im Vordergrund ist (sonst genügt die Meldung unten)."""
+        if self.is_active() and self.get_visible():
+            return
+        app = self.get_application()
+        if app is None:
+            return
+        n = Gio.Notification.new(title)
+        if body:
+            n.set_body(body)
+        n.set_default_action("app.activate-window")
+        try:
+            app.send_notification(key, n)
+        except Exception as exc:  # pragma: no cover
+            log.debug("Benachrichtigung nicht möglich: %s", exc)
+
     # ------------------------------------------------------------------ Schließen / Beenden
     def _on_close_request(self, *_: object) -> bool:
-        """Fenster schließen: laufen Spiele (oder ihre Nachbereitung: Spielzeit, Cloud-Upload, comet), wird es nur
-        ausgeblendet und der Client endet erst danach – wie Galaxy, das im Infobereich weiterläuft."""
+        """Fenster schließen: „Bei Schließung des Fensters“ → System-Tray blendet nur aus. Laufen Spiele (oder ihre
+        Nachbereitung: Spielzeit, Cloud-Upload, comet), wird es ebenfalls nur ausgeblendet und der Client endet erst
+        danach – wie Galaxy, das im Infobereich weiterläuft."""
+        self.remember_view()
+        if self.backend.settings.when_closing == "tray" and self._to_tray():
+            return True
         self.bridge.cancel_all()
         if self.backend.launcher.active_ids():
             self._hide_until_games_end()
@@ -1178,7 +1639,8 @@ class MainWindow(Adw.ApplicationWindow):
         return False
 
     def request_quit(self) -> None:
-        """„Beenden“ (Zahnrad, Strg+Q): wie Schließen – mit laufenden Spielen erst nach deren Ende."""
+        """„Beenden“ (Zahnrad, Strg+Q, Tray): wie Schließen – mit laufenden Spielen erst nach deren Ende."""
+        self.remember_view()
         if self.backend.launcher.active_ids():
             self.bridge.cancel_all()
             self._hide_until_games_end()
@@ -1195,8 +1657,8 @@ class MainWindow(Adw.ApplicationWindow):
             self._quit_timer = GLib.timeout_add_seconds(2, self._quit_when_idle)
 
     def _quit_when_idle(self) -> bool:
-        if self.get_visible():                 # wieder geöffnet (Anwendungsmenü, Verknüpfung, Rückfrage)
-            self._quit_timer = 0
+        if self.get_visible() or (self.tray.shown and self.backend.settings.when_closing == "tray"):
+            self._quit_timer = 0                # wieder geöffnet bzw. bleibt im System-Tray
             return False
         if self.backend.launcher.active_ids():
             return True
@@ -1212,10 +1674,16 @@ class MainWindow(Adw.ApplicationWindow):
     def _after_login(self, user: dict) -> None:
         self.toast(tr('Angemeldet als {0}').format(user.get('username', '')))
         self._update_avatar()
+        self.presence.start()
+        self.presence.refresh()
         store.on_login(self)            # Store-Seite mit den neuen Cookies neu laden, Wunschliste zählen
         self.request_library_refresh("login", force=True)
 
     def do_logout(self) -> None:
+        # erst offline gehen (braucht noch die Anmeldung), dann abmelden
+        run_async(lambda: self.presence.tick(final=True), lambda _r: self._finish_logout(), lambda _e: self._finish_logout())
+
+    def _finish_logout(self) -> None:
         self.backend.logout()
         store.on_logout(self)           # auch die Store-Sitzung (Cookies) abmelden
         self.backend.library = []
@@ -1228,6 +1696,8 @@ class MainWindow(Adw.ApplicationWindow):
         def changed() -> None:
             self.libraries_changed()
             self.backend.launcher.tools(refresh=True)
+            self.apply_window_settings()
+            self._rebuild_bookmark_nav()
             if self.current_pid:
                 self.page.refresh_state()
         dlg = PreferencesDialog(self.backend, changed)
@@ -1239,93 +1709,34 @@ class MainWindow(Adw.ApplicationWindow):
     def _on_job(self, job) -> None:
         self.refresh_game_state(job.product_id)
         self.page.on_job(job)
-        if self.backend.jobs.active():
+        if any(j.state == "running" for j in self.backend.jobs.active()):
             self.spinner.start()
         else:
             self.spinner.stop()
         if self.view == "downloads":
-            self._update_download_rows(job)
+            self.downloads.refresh()
         if job.kind == "prefix" and job.state == "done":
             self._prefix_done.append(job.title)
             if not any(j.kind == "prefix" for j in self.backend.jobs.active()):
                 done, self._prefix_done = self._prefix_done, []
                 self.toast(tr('Prefix angelegt: {0}').format(done[0]) if len(done) == 1 else tr('{0} Prefixe angelegt').format(len(done)))
         elif job.state == "done":
-            self.toast(tr('{0} abgeschlossen: {1}').format(job.label, job.title) if job.title != job.label
-                       else tr('{0} abgeschlossen').format(job.label))
+            text = tr('{0} abgeschlossen: {1}').format(job.label, job.title) if job.title != job.label \
+                else tr('{0} abgeschlossen').format(job.label)
+            self.toast(text)
+            if self.backend.settings.notify_download_status == "desktop" and job.kind != "prefix":
+                self.notify_desktop(f"job-{job.id}", job.title, tr('Installation abgeschlossen') if job.kind.startswith("install")
+                                    else text)
             # Aufträge ohne Spiel der Bibliothek (z. B. Galaxy-Redistributables) ändern keine Karte – kein Neuaufbau,
             # der die Bibliothek nach oben springen ließe
             if is_lib_view(self.view) and (self.backend.registry.is_installed(job.product_id)
                                            or self.backend.entry(job.product_id) is not None):
+                y = self.lib_scroll.get_vadjustment().get_value()
                 self._rebuild_library()
+                GLib.idle_add(lambda: (self.lib_scroll.get_vadjustment().set_value(y), False)[1])
         elif job.state == "failed":
             self.toast(tr('{0} fehlgeschlagen: {1}').format(job.label, job.error))
+            if self.backend.settings.notify_download_status == "desktop":
+                self.notify_desktop(f"job-{job.id}", job.title, tr('{0} fehlgeschlagen: {1}').format(job.label, job.error))
         elif job.state == "cancelled":
             self.toast(tr('{0} abgebrochen: {1}').format(job.label, job.title))
-
-    def _rebuild_downloads(self) -> None:
-        child = self.dl_box.get_first_child()
-        while child is not None:
-            nxt = child.get_next_sibling()
-            self.dl_box.remove(child)
-            child = nxt
-        self.dl_rows: dict[str, dict] = {}
-        jobs = list(self.backend.jobs.jobs)
-        active = [j for j in jobs if j.active]
-        done = [j for j in jobs if not j.active]
-        self.dl_box.append(label(tr('DOWNLOADS'), css=["sec-hdr"]))
-        if not active:
-            self.dl_box.append(label(tr('Keine aktiven Downloads.'), css=["dim"]))
-        for j in active:
-            self.dl_box.append(self._download_row(j))
-        if done:
-            hist = label(tr('VERLAUF'), css=["sec-hdr"])
-            hist.set_margin_top(18)
-            self.dl_box.append(hist)
-            for j in reversed(done[-20:]):
-                self.dl_box.append(self._download_row(j))
-
-    def _download_row(self, job) -> Gtk.Widget:
-        row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        row.add_css_class("dl-row")
-        top = Gtk.Box(spacing=10)
-        pic_frame, pic = clamped_picture(40, 56, ["cover"])
-        e = self.backend.entry(job.product_id)
-        if e:
-            self.load_cover(e, pic)
-        top.append(pic_frame)
-        tb = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, hexpand=True, valign=Gtk.Align.CENTER)
-        tb.append(label(job.title, css=["heading"], ellipsize=True))
-        status = label("", css=["dim", "caption"], ellipsize=True)
-        tb.append(status)
-        top.append(tb)
-        if job.active:
-            c = icon_button(pick_icon("process-stop-symbolic", "window-close-symbolic"), tr('Abbrechen'), ["flat", "hdr-btn"])
-            c.set_valign(Gtk.Align.CENTER)
-            c.connect("clicked", lambda _b, j=job: self.backend.jobs.cancel(j))
-            top.append(c)
-        row.append(top)
-        bar = Gtk.ProgressBar()
-        bar.set_visible(job.active)
-        row.append(bar)
-        self.dl_rows[job.id] = {"status": status, "bar": bar}
-        self._update_download_rows(job)
-        return row
-
-    def _update_download_rows(self, job) -> None:
-        w = getattr(self, "dl_rows", {}).get(job.id)
-        if not w:
-            if job.active or self.view == "downloads":
-                self._rebuild_downloads()
-            return
-        p = job.progress
-        if job.active:
-            if p.total_bytes:
-                w["bar"].set_fraction(p.fraction)
-                w["status"].set_text(tr('{0} · {1} · {2} / {3} · {4} · ETA {5} · {6}/{7} Dateien').format(job.label, job.status, format_bytes(p.done_bytes), format_bytes(p.total_bytes), fmt_speed(p.speed), fmt_eta(p.eta_seconds), p.files_done, p.files_total))
-            else:
-                w["bar"].pulse()
-                w["status"].set_text(f"{job.label} · {job.status}")
-        else:
-            w["bar"].set_visible(False)
-            w["status"].set_text(f"{job.label} · {job.status}" + (f" · {job.error}" if job.error else ""))

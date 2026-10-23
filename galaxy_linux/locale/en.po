@@ -42,10 +42,6 @@ msgid "unbekannter Fehler"
 msgstr "unknown error"
 
 #: galaxy_linux/api/client.py
-msgid "Download abgebrochen"
-msgstr "Download canceled"
-
-#: galaxy_linux/api/client.py
 msgid "Download fehlgeschlagen (HTTP {0}) für {1}"
 msgstr "Download failed (HTTP {0}) for {1}"
 
@@ -85,7 +81,7 @@ msgstr "Invalid JSON response from {0}"
 msgid " (mehrdeutig)"
 msgstr " (ambiguous)"
 
-#: galaxy_linux/backend.py
+#: galaxy_linux/backend.py galaxy_linux/ui/downloads_view.py
 msgid "Abgebrochen"
 msgstr "Canceled"
 
@@ -166,10 +162,18 @@ msgid "Erst beenden bzw. abwarten: {0}"
 msgstr "Quit or wait for these first: {0}"
 
 #: galaxy_linux/backend.py
+msgid "Extras herunterladen"
+msgstr "Download extras"
+
+#: galaxy_linux/backend.py
+msgid "Falsches Passwort für diesen Kanal!"
+msgstr "Incorrect private channel password!"
+
+#: galaxy_linux/backend.py galaxy_linux/ui/downloads_view.py
 msgid "Fehlgeschlagen"
 msgstr "Failed"
 
-#: galaxy_linux/backend.py galaxy_linux/content/downloader.py galaxy_linux/content/installer.py
+#: galaxy_linux/backend.py galaxy_linux/content/downloader.py galaxy_linux/content/extras.py
 msgid "Fertig"
 msgstr "Done"
 
@@ -177,7 +181,11 @@ msgstr "Done"
 msgid "Herunterladen ({0} Dateien)"
 msgstr "Downloading ({0} files)"
 
-#: galaxy_linux/backend.py galaxy_linux/ui/dialogs.py
+#: galaxy_linux/backend.py galaxy_linux/ui/downloads_view.py
+msgid "In der Warteschlange"
+msgstr "Queued"
+
+#: galaxy_linux/backend.py galaxy_linux/power_search.py galaxy_linux/ui/dialogs.py
 msgid "Installieren"
 msgstr "Install"
 
@@ -188,6 +196,10 @@ msgstr "Install (Linux)"
 #: galaxy_linux/backend.py
 msgid "Installieren (Offline-Installer)"
 msgstr "Install (offline installer)"
+
+#: galaxy_linux/backend.py
+msgid "Kanal nicht verfügbar."
+msgstr "Channel not available."
 
 #: galaxy_linux/backend.py
 msgid "Kein Galaxy-Build – nutze Offline-Installer …"
@@ -202,6 +214,10 @@ msgid "Keine startbare .exe gefunden – bitte die Startdatei angeben."
 msgstr "No launchable .exe found – please specify the executable."
 
 #: galaxy_linux/backend.py
+msgid "Nur für Spiele, die über das GOG-Content-System installiert sind."
+msgstr "Only for games installed through the GOG content system."
+
+#: galaxy_linux/backend.py
 msgid "Ordner nicht gefunden: {0}"
 msgstr "Folder not found: {0}"
 
@@ -209,7 +225,11 @@ msgstr "Folder not found: {0}"
 msgid "Ordner wird aus Sicherheitsgründen nicht gelöscht: {0}"
 msgstr "For safety reasons, the folder will not be deleted: {0}"
 
-#: galaxy_linux/backend.py galaxy_linux/ui/game_page.py
+#: galaxy_linux/backend.py galaxy_linux/ui/downloads_view.py
+msgid "Pausiert"
+msgstr "Paused"
+
+#: galaxy_linux/backend.py galaxy_linux/ui/game_menu.py
 msgid "Prefix anlegen"
 msgstr "Create prefix"
 
@@ -226,12 +246,20 @@ msgid "Prefix-Ordner wird aus Sicherheitsgründen nicht gelöscht: {0}"
 msgstr "For safety reasons, the prefix folder will not be deleted: {0}"
 
 #: galaxy_linux/backend.py
+msgid "Sicherungskopie deiner Cloud-Speicherstände"
+msgstr "Cloud saves backup"
+
+#: galaxy_linux/backend.py
 msgid "Sortierung muss eine Zahl sein (0–3)"
 msgstr "Sort order must be a number (0–3)"
 
 #: galaxy_linux/backend.py galaxy_linux/cli.py
 msgid "Spiel ist nicht in der Bibliothek."
 msgstr "Game is not in the library."
+
+#: galaxy_linux/backend.py galaxy_linux/cli.py galaxy_linux/content/cloudsaves.py
+msgid "Spiel ist nicht installiert."
+msgstr "Game is not installed."
 
 #: galaxy_linux/backend.py
 msgid "Spiele- und Prefix-Ordner müssen verschieden sein."
@@ -268,6 +296,10 @@ msgstr "Waiting…"
 #: galaxy_linux/backend.py
 msgid "Wayland-Treiber: on, off oder leer (globale Vorgabe)"
 msgstr "Wayland driver: on, off or empty (global default)"
+
+#: galaxy_linux/backend.py
+msgid "Wird pausiert …"
+msgstr "Pausing …"
 
 #: galaxy_linux/backend.py galaxy_linux/ui/ext_cloudsaves.py
 msgid "keine"
@@ -693,10 +725,6 @@ msgstr "remove game from the library"
 msgid "Spiel aus einem beliebigen Ordner hinzufügen (GOG oder extern)"
 msgstr "add a game from any folder (GOG or external)"
 
-#: galaxy_linux/cli.py galaxy_linux/content/cloudsaves.py galaxy_linux/content/installer.py
-msgid "Spiel ist nicht installiert."
-msgstr "Game is not installed."
-
 #: galaxy_linux/cli.py
 msgid "Spiel: Status der Einrichtung in seinem Prefix"
 msgstr "Game: setup status in its prefix"
@@ -1097,7 +1125,7 @@ msgstr "GitHub not reachable: {0}"
 msgid "(nicht auflösbar)"
 msgstr "(cannot be resolved)"
 
-#: galaxy_linux/content/cloudsaves.py galaxy_linux/ui/dialogs.py galaxy_linux/ui/window.py
+#: galaxy_linux/content/cloudsaves.py galaxy_linux/ui/dialogs.py galaxy_linux/ui/downloads_view.py
 msgid "Abbrechen"
 msgstr "Cancel"
 
@@ -1409,7 +1437,7 @@ msgstr "Chunk {0}… could not be downloaded: {1}"
 msgid "HTTP {0}"
 msgstr "HTTP {0}"
 
-#: galaxy_linux/content/downloader.py
+#: galaxy_linux/content/downloader.py galaxy_linux/ui/game_page.py
 msgid "Herunterladen"
 msgstr "Downloading"
 
@@ -1437,9 +1465,61 @@ msgstr "Access denied (HTTP {0}) – link expired?"
 msgid "kleine Dateien"
 msgstr "small files"
 
+#: galaxy_linux/content/extras.py galaxy_linux/content/phases.py
+msgid "Cloud-Speicher wird synchronisiert"
+msgstr "Syncing cloud storage"
+
+#: galaxy_linux/content/extras.py galaxy_linux/content/installer.py
+msgid "Download-Link konnte nicht aufgelöst werden."
+msgstr "Could not resolve the download link."
+
+#: galaxy_linux/content/extras.py galaxy_linux/ui/game_page.py
+msgid "Extras"
+msgstr "Extras"
+
+#: galaxy_linux/content/extras.py
+msgid "In der GOG Galaxy-Cloud liegen keine Spielstände für dieses Spiel."
+msgstr "There are no saves for this game in the GOG Galaxy Cloud."
+
+#: galaxy_linux/content/extras.py
+msgid "Offline-Versionen der Spiele-Installationsdateien"
+msgstr "Offline backup installers"
+
+#: galaxy_linux/content/extras.py
+msgid "Patches"
+msgstr "Patches"
+
+#: galaxy_linux/content/extras.py
+msgid "Sprachpakete"
+msgstr "Language packs"
+
+#: galaxy_linux/content/extras.py galaxy_linux/content/phases.py
+msgid "Wird heruntergeladen"
+msgstr "Downloading"
+
+#: galaxy_linux/content/extras.py
+msgid "{0} - Extras"
+msgstr "{0} - Extras"
+
+#: galaxy_linux/content/extras.py
+msgid "{0} - Offline-Sicherungskopie der Spiele-Installationsdatei"
+msgstr "{0} - Offline backup installer"
+
+#: galaxy_linux/content/extras.py
+msgid "{0} - Sicherungskopie deiner Speicherstände"
+msgstr "{0} - Saves backup"
+
+#: galaxy_linux/content/extras.py
+msgid "{0} wird heruntergeladen …"
+msgstr "Downloading {0} …"
+
 #: galaxy_linux/content/installer.py
 msgid "Abhängigkeit {0} …"
 msgstr "Dependency {0}…"
+
+#: galaxy_linux/content/installer.py galaxy_linux/ui/dialogs.py
+msgid "Benötigt: {0}, frei: {1}"
+msgstr "Needed: {0}, free: {1}"
 
 #: galaxy_linux/content/installer.py
 msgid "Build {0} nicht gefunden."
@@ -1460,10 +1540,6 @@ msgstr "Loading depot {0}/{1}…"
 #: galaxy_linux/content/installer.py
 msgid "Der Zielordner darf nicht innerhalb des Spielordners liegen."
 msgstr "The destination folder must not be inside the game folder."
-
-#: galaxy_linux/content/installer.py
-msgid "Download-Link konnte nicht aufgelöst werden."
-msgstr "Could not resolve the download link."
 
 #: galaxy_linux/content/installer.py
 msgid "Entpacken"
@@ -1494,6 +1570,10 @@ msgid "Installer suchen …"
 msgstr "Looking for installer…"
 
 #: galaxy_linux/content/installer.py
+msgid "Kanal nicht mehr verfügbar."
+msgstr "Channel no longer available."
+
+#: galaxy_linux/content/installer.py
 msgid "Kein Linux-Installer für dieses Spiel gefunden."
 msgstr "No Linux installer found for this game."
 
@@ -1510,12 +1590,20 @@ msgid "Manifest laden …"
 msgstr "Loading manifest…"
 
 #: galaxy_linux/content/installer.py
+msgid "Nicht genügend Speicherplatz auf {0}."
+msgstr "Not enough free disk space in {0}."
+
+#: galaxy_linux/content/installer.py
 msgid "Offline-Installer"
 msgstr "Offline installer"
 
 #: galaxy_linux/content/installer.py
 msgid "Prüfen ist nur für Galaxy-Installationen möglich."
 msgstr "Verifying is only possible for Galaxy installations."
+
+#: galaxy_linux/content/installer.py galaxy_linux/content/phases.py
+msgid "Speicherplatz wird zugewiesen"
+msgstr "Allocating disk space"
 
 #: galaxy_linux/content/installer.py
 msgid "Updates sind nur für Galaxy-Installationen möglich (Spiel neu installieren)."
@@ -1553,6 +1641,46 @@ msgstr "Only generation 2 content system manifests are supported"
 msgid "Unzulässiger Pfad im Manifest: {0!r}"
 msgstr "Invalid path in manifest: {0!r}"
 
+#: galaxy_linux/content/phases.py
+msgid "Ausstehend"
+msgstr "Pending"
+
+#: galaxy_linux/content/phases.py
+msgid "Dateien werden verifiziert"
+msgstr "Verifying patched files"
+
+#: galaxy_linux/content/phases.py
+msgid "Dateiliste wird abgerufen"
+msgstr "Getting file list"
+
+#: galaxy_linux/content/phases.py
+msgid "Einrichtung wird ausgeführt"
+msgstr "Executing setup"
+
+#: galaxy_linux/content/phases.py galaxy_linux/ui/window.py
+msgid "Installation abgeschlossen"
+msgstr "Installation complete"
+
+#: galaxy_linux/content/phases.py
+msgid "Installation begonnen"
+msgstr "Installation started"
+
+#: galaxy_linux/content/phases.py
+msgid "Installierte Dateien werden gescannt"
+msgstr "Scanning installed files"
+
+#: galaxy_linux/content/phases.py
+msgid "Patches werden ausgeführt"
+msgstr "Applying patches"
+
+#: galaxy_linux/content/phases.py
+msgid "Verschiebe Dateien"
+msgstr "Moving files"
+
+#: galaxy_linux/content/phases.py
+msgid "Wird finalisiert"
+msgstr "Finalizing"
+
 #: galaxy_linux/content/redist.py
 msgid "Abhängigkeits-Repository abrufen …"
 msgstr "Fetching the dependency repository …"
@@ -1581,7 +1709,7 @@ msgstr "Failed (exit code {0}) – will not be tried again"
 msgid "Installationsskript (ISI) für {0}"
 msgstr "Install script (ISI) for {0}"
 
-#: galaxy_linux/content/redist.py galaxy_linux/ui/game_page.py galaxy_linux/ui/window.py
+#: galaxy_linux/content/redist.py galaxy_linux/library_view.py galaxy_linux/power_search.py
 msgid "Installiert"
 msgstr "Installed"
 
@@ -1901,7 +2029,7 @@ msgstr "Choice [Enter = default]: "
 msgid "Nachbereitung „{0}“ fehlgeschlagen: {1}"
 msgstr "Post-processing \"{0}\" failed: {1}"
 
-#: galaxy_linux/launch/hooks.py
+#: galaxy_linux/launch/hooks.py galaxy_linux/ui/game_page.py
 msgid "Start abgebrochen."
 msgstr "Launch cancelled."
 
@@ -1981,6 +2109,150 @@ msgstr "Open game page in client"
 msgid "Über galaxy-linux starten"
 msgstr "Launch via galaxy-linux"
 
+#: galaxy_linux/library_view.py galaxy_linux/ui/window.py
+msgid "Bewertung"
+msgstr "Rating"
+
+#: galaxy_linux/library_view.py
+msgid "Datum hinzugefügt"
+msgstr "Date added"
+
+#: galaxy_linux/library_view.py
+msgid "Datum unbekannt"
+msgstr "Date unknown"
+
+#: galaxy_linux/library_view.py
+msgid "Demnächst"
+msgstr "Upcoming"
+
+#: galaxy_linux/library_view.py
+msgid "Dieses Jahr"
+msgstr "This year"
+
+#: galaxy_linux/library_view.py
+msgid "Dieses Jahr veröffentlicht"
+msgstr "Released this year"
+
+#: galaxy_linux/library_view.py galaxy_linux/power_search.py galaxy_linux/ui/game_page.py
+msgid "Genre"
+msgstr "Genre"
+
+#: galaxy_linux/library_view.py
+msgid "Genres"
+msgstr "Genres"
+
+#: galaxy_linux/library_view.py
+msgid "Größe auf der Festplatte"
+msgstr "Size on disk"
+
+#: galaxy_linux/library_view.py
+msgid "Heute"
+msgstr "Today"
+
+#: galaxy_linux/library_view.py
+msgid "Kein Genre"
+msgstr "No genre"
+
+#: galaxy_linux/library_view.py galaxy_linux/ui/window.py
+msgid "Keine Bewertung"
+msgstr "No rating"
+
+#: galaxy_linux/library_view.py
+msgid "Keine Lesezeichen in der Datei"
+msgstr "No bookmarks in the file"
+
+#: galaxy_linux/library_view.py galaxy_linux/ui/tags.py galaxy_linux/ui/window.py
+msgid "Keine Tags"
+msgstr "No tags"
+
+#: galaxy_linux/library_view.py
+msgid "Letzten 30 Tage"
+msgstr "Last 30 days"
+
+#: galaxy_linux/library_view.py
+msgid "Nicht gruppieren"
+msgstr "Don't group"
+
+#: galaxy_linux/library_view.py galaxy_linux/ui/game_page.py galaxy_linux/ui/window.py
+msgid "Nicht installiert"
+msgstr "Not installed"
+
+#: galaxy_linux/library_view.py galaxy_linux/ui/dialogs.py galaxy_linux/ui/game_page.py
+msgid "Plattform"
+msgstr "Platform"
+
+#: galaxy_linux/library_view.py galaxy_linux/ui/game_page.py
+msgid "Presse-Wertung"
+msgstr "Critics rating"
+
+#: galaxy_linux/library_view.py galaxy_linux/ui/game_page.py galaxy_linux/ui/window.py
+msgid "Spielzeit"
+msgstr "Playtime"
+
+#: galaxy_linux/library_view.py galaxy_linux/ui/game_page.py galaxy_linux/ui/window.py
+msgid "Status"
+msgstr "Status"
+
+#: galaxy_linux/library_view.py galaxy_linux/ui/game_page.py galaxy_linux/ui/window.py
+msgid "Tags"
+msgstr "Tags"
+
+#: galaxy_linux/library_view.py
+msgid "Titel"
+msgstr "Title"
+
+#: galaxy_linux/library_view.py
+msgid "Unbekanntes Veröffentlichungsdatum"
+msgstr "Unknown release date"
+
+#: galaxy_linux/library_view.py galaxy_linux/ui/window.py
+msgid "Update verfügbar"
+msgstr "Update available"
+
+#: galaxy_linux/library_view.py
+msgid "Veröffentlichungsdatum"
+msgstr "Release date"
+
+#: galaxy_linux/library_view.py galaxy_linux/ui/game_page.py galaxy_linux/ui/window.py
+msgid "Zuletzt gespielt"
+msgstr "Last played"
+
+#: galaxy_linux/power_search.py galaxy_linux/ui/game_page.py
+msgid "Entwickler"
+msgstr "Developer"
+
+#: galaxy_linux/power_search.py
+msgid "Im Store kaufen"
+msgstr "Buy in store"
+
+#: galaxy_linux/power_search.py galaxy_linux/ui/dialogs.py galaxy_linux/ui/power_search_dialog.py
+msgid "Lesezeichen"
+msgstr "Bookmarks"
+
+#: galaxy_linux/power_search.py
+msgid "Lesezeichen anzeigen"
+msgstr "Show bookmark"
+
+#: galaxy_linux/power_search.py
+msgid "Spiel"
+msgstr "Game"
+
+#: galaxy_linux/power_search.py
+msgid "Spiel anzeigen"
+msgstr "Show game"
+
+#: galaxy_linux/power_search.py
+msgid "Spiel im Besitz"
+msgstr "Owned game"
+
+#: galaxy_linux/power_search.py galaxy_linux/ui/game_menu.py
+msgid "Spielen"
+msgstr "Play"
+
+#: galaxy_linux/power_search.py
+msgid "Tag"
+msgstr "Tag"
+
 #: galaxy_linux/settings.py
 msgid "Erwartet wird JSON vom Typ {0}"
 msgstr "Expected JSON of type {0}"
@@ -2012,6 +2284,226 @@ msgstr "Unofficial community project"
 #: galaxy_linux/ui/app.py
 msgid "Nativer GOG-Client für CachyOS/Arch Linux. Nutzt dieselben GOG-Dienste wie der offizielle Galaxy-Client (Login, Bibliothek, Content-System v2, GamesDB, Spielzeit, Erfolge) und startet Windows-Spiele über ein frei wählbares Proton (umu-launcher), Wine oder nativ.\n\nGOG und GOG Galaxy sind Marken von GOG sp. z o.o. Dieses Projekt steht in keiner Verbindung zu GOG."
 msgstr "Native GOG client for CachyOS/Arch Linux. Uses the same GOG services as the official Galaxy client (login, library, content system v2, GamesDB, playtime, achievements) and launches Windows games through a Proton of your choice (umu-launcher), Wine, or natively.\n\nGOG and GOG Galaxy are trademarks of GOG sp. z o.o. This project is not affiliated with GOG."
+
+#: galaxy_linux/ui/configure.py
+msgid " (installiert)"
+msgstr " (installed)"
+
+#: galaxy_linux/ui/configure.py galaxy_linux/ui/dialogs.py
+msgid "Alle auswählen"
+msgstr "Select all"
+
+#: galaxy_linux/ui/configure.py
+msgid "Argumente"
+msgstr "Arguments"
+
+#: galaxy_linux/ui/configure.py
+msgid "Ausgeschaltet"
+msgstr "Disabled"
+
+#: galaxy_linux/ui/configure.py
+msgid "Automatisch auf die neuste Version aktualisieren"
+msgstr "Automatically update to newest version"
+
+#: galaxy_linux/ui/configure.py
+msgid "Automatische Updates"
+msgstr "Auto-updates"
+
+#: galaxy_linux/ui/configure.py galaxy_linux/ui/dialogs.py
+msgid "Automatische Updates sind in den Einstellungen deaktiviert – wir benachrichtigen dich, wenn ein Update verfügbar ist."
+msgstr "Auto-updates are disabled in the settings. You will be notified whenever a new update is available."
+
+#: galaxy_linux/ui/configure.py
+msgid "Benutzerdefinierte Dateiverknüpfungen / Argumente"
+msgstr "Custom executables / arguments"
+
+#: galaxy_linux/ui/configure.py
+msgid "Beta-Kanäle"
+msgstr "Beta channels"
+
+#: galaxy_linux/ui/configure.py
+msgid "Cloud-Speicherstände"
+msgstr "Cloud saves"
+
+#: galaxy_linux/ui/configure.py
+msgid "Cloud-Speicherstände sind in den Einstellungen deaktiviert."
+msgstr "Cloud saves are disabled in the settings."
+
+#: galaxy_linux/ui/configure.py
+msgid "DLC"
+msgstr "DLC"
+
+#: galaxy_linux/ui/configure.py
+msgid "DLC-Auswahl wird übernommen – siehe Downloads."
+msgstr "Applying the DLC selection – see Downloads."
+
+#: galaxy_linux/ui/configure.py
+msgid "Datei"
+msgstr "File"
+
+#: galaxy_linux/ui/configure.py
+msgid "Dateiverknüpfung"
+msgstr "Executable"
+
+#: galaxy_linux/ui/configure.py
+msgid "Dateiverknüpfung auswählen"
+msgstr "Select executable"
+
+#: galaxy_linux/ui/configure.py
+msgid "Dateiverknüpfung entfernen"
+msgstr "Remove executable"
+
+#: galaxy_linux/ui/configure.py
+msgid "Eigene DLCs"
+msgstr "Owned DLCs"
+
+#: galaxy_linux/ui/configure.py
+msgid "Einblendungen"
+msgstr "Overlay"
+
+#: galaxy_linux/ui/configure.py galaxy_linux/ui/dialogs.py
+msgid "Funktionen"
+msgstr "Features"
+
+#: galaxy_linux/ui/configure.py
+msgid "Für dieses Spiel gibt es keine öffentlichen Beta-Kanäle."
+msgstr "There are no public beta channels for this game."
+
+#: galaxy_linux/ui/configure.py
+msgid "GOG Galaxy-Funktionen im Spiel nutzen"
+msgstr "Access GOG Galaxy features in-game"
+
+#: galaxy_linux/ui/configure.py
+msgid "Galaxy-Dienste im Spiel sind in den Einstellungen deaktiviert."
+msgstr "Galaxy services in game are disabled in the settings."
+
+#: galaxy_linux/ui/configure.py
+msgid "Häkchen setzen oder entfernen installiert bzw. entfernt den DLC sofort."
+msgstr "Ticking or unticking a DLC installs or removes it right away."
+
+#: galaxy_linux/ui/configure.py galaxy_linux/ui/dialogs.py
+msgid "Installation"
+msgstr "Installation"
+
+#: galaxy_linux/ui/configure.py
+msgid "Kanal"
+msgstr "Channel"
+
+#: galaxy_linux/ui/configure.py
+msgid "Kanal „{0}“ wird installiert – siehe Downloads."
+msgstr "Installing channel \"{0}\" – see Downloads."
+
+#: galaxy_linux/ui/configure.py galaxy_linux/ui/dialogs.py
+msgid "Keine DLCs im Besitz"
+msgstr "No owned DLCs"
+
+#: galaxy_linux/ui/configure.py
+msgid "Keine eigenen Einträge"
+msgstr "No custom entries"
+
+#: galaxy_linux/ui/configure.py
+msgid "Konfiguration von „{0}“"
+msgstr "Configuring \"{0}\""
+
+#: galaxy_linux/ui/configure.py
+msgid "Kopieren"
+msgstr "Duplicate"
+
+#: galaxy_linux/ui/configure.py
+msgid "Lokale Speicherstände mit der GOG Galaxy-Cloud synchronisieren"
+msgstr "Sync local saves with GOG Galaxy Cloud"
+
+#: galaxy_linux/ui/configure.py
+msgid "Mehr Versionen anzeigen"
+msgstr "Show more versions"
+
+#: galaxy_linux/ui/configure.py
+msgid "Meine Bezeichnung"
+msgstr "My label"
+
+#: galaxy_linux/ui/configure.py
+msgid "Nur eine Sprache verfügbar"
+msgstr "Only one language available"
+
+#: galaxy_linux/ui/configure.py galaxy_linux/ui/dialogs.py
+msgid "Nur für die Windows-Version des Spiels."
+msgstr "Only for the Windows version of the game."
+
+#: galaxy_linux/ui/configure.py
+msgid "Passwort für privaten Kanal ändern"
+msgstr "Change private channel password"
+
+#: galaxy_linux/ui/configure.py
+msgid "Pfad relativ zum Spielordner oder absolut; Argumente wie in der Windows-Verknüpfung."
+msgstr "Path relative to the game folder or absolute; arguments as in a Windows shortcut."
+
+#: galaxy_linux/ui/configure.py
+msgid "Private Kanäle hinzufügen"
+msgstr "Add private channel"
+
+#: galaxy_linux/ui/configure.py
+msgid "Privater Kanal hinzugefügt: {0}"
+msgstr "Private channel added: {0}"
+
+#: galaxy_linux/ui/configure.py galaxy_linux/ui/dialogs.py galaxy_linux/ui/game_page.py
+msgid "Sprache"
+msgstr "Language"
+
+#: galaxy_linux/ui/configure.py
+msgid "Sprache im Spiel wählbar"
+msgstr "Language to choose in-game"
+
+#: galaxy_linux/ui/configure.py
+msgid "Sprache wird geändert: {0} – siehe Downloads."
+msgstr "Changing language: {0} – see Downloads."
+
+#: galaxy_linux/ui/configure.py galaxy_linux/ui/dialogs.py
+msgid "Standard (primärer Eintrag)"
+msgstr "Default (primary entry)"
+
+#: galaxy_linux/ui/configure.py
+msgid "Standardmäßige Dateiverknüpfung"
+msgstr "Default executable"
+
+#: galaxy_linux/ui/configure.py
+msgid "Start-Parameter"
+msgstr "Launch parameters"
+
+#: galaxy_linux/ui/configure.py galaxy_linux/ui/dialogs.py galaxy_linux/ui/game_page.py
+msgid "Version"
+msgstr "Version"
+
+#: galaxy_linux/ui/configure.py
+msgid "Version {0} wird installiert – siehe Downloads."
+msgstr "Installing version {0} – see Downloads."
+
+#: galaxy_linux/ui/configure.py
+msgid "Wechsel lädt die Sprachdateien herunter"
+msgstr "Changing it downloads the language files"
+
+#: galaxy_linux/ui/configure.py
+msgid "Weitere Dateiverknüpfungen / Argumente hinzufügen"
+msgstr "Add another executable / arguments"
+
+#: galaxy_linux/ui/configure.py
+msgid "Weniger Versionen anzeigen"
+msgstr "Show fewer versions"
+
+#: galaxy_linux/ui/configure.py galaxy_linux/ui/dialogs.py
+msgid "nicht ermittelbar: {0}"
+msgstr "could not be determined: {0}"
+
+#: galaxy_linux/ui/configure.py galaxy_linux/ui/dialogs.py
+msgid "wird ermittelt …"
+msgstr "calculating…"
+
+#: galaxy_linux/ui/configure.py
+msgid "{0} Kanäle verfügbar"
+msgstr "{0} channels available"
+
+#: galaxy_linux/ui/configure.py
+msgid "Ältere Version wählen, um zu ihr zurückzukehren."
+msgstr "Choose an older version to roll back to it."
 
 #: galaxy_linux/ui/dialogs.py
 msgid " (Download {0})"
@@ -2058,6 +2550,14 @@ msgid "Abweichend von „Einstellungen → Spielfunktionen“ nur für dieses Sp
 msgstr "Overrides \"Settings → Game features\" for this game only."
 
 #: galaxy_linux/ui/dialogs.py
+msgid "Aktuelle Übersicht"
+msgstr "Recent"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Alle enthaltenen Extras herunterladen"
+msgstr "Download all bundled bonus goodies"
+
+#: galaxy_linux/ui/dialogs.py
 msgid "Allgemein"
 msgstr "General"
 
@@ -2084,6 +2584,14 @@ msgstr "Create"
 #: galaxy_linux/ui/dialogs.py
 msgid "Anmelden"
 msgstr "Sign in"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Anpassungen"
+msgstr "Customizations"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Anzeige der Download-Geschwindigkeit"
+msgstr "Download speed display"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Art"
@@ -2114,12 +2622,40 @@ msgid "Automatisch ({0})"
 msgstr "Automatic ({0})"
 
 #: galaxy_linux/ui/dialogs.py
+msgid "Automatisch einloggen – aus: beim Beenden abmelden"
+msgstr "Auto login – off: sign out when quitting"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Automatischer Start"
+msgstr "Auto start"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Bandbreite"
+msgstr "Bandwidth"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Bandbreite begrenzen"
+msgstr "Limit bandwidth"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Bandbreitenbegrenzung"
+msgstr "Bandwidth limit"
+
+#: galaxy_linux/ui/dialogs.py
 msgid "Befehl nach dem Beenden (sh -c)"
 msgstr "Command after exit (sh -c)"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Befehl vor dem Start (sh -c)"
 msgstr "Command before launch (sh -c)"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Begrenzung gilt nur im Zeitraum"
+msgstr "The limit only applies within this time window"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Begrenzung planen"
+msgstr "Schedule limit"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Behebt Vollbild-Probleme wie weiße Ränder unter XWayland"
@@ -2130,11 +2666,23 @@ msgid "Bei GOG anmelden"
 msgstr "Sign in to GOG"
 
 #: galaxy_linux/ui/dialogs.py
+msgid "Bei Minimierung des Fensters"
+msgstr "When minimizing the window"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Bei Schließung des Fensters"
+msgstr "When closing the window"
+
+#: galaxy_linux/ui/dialogs.py
 msgid "Beim Start nach Spiel-Updates suchen"
 msgstr "Check for game updates on startup"
 
 #: galaxy_linux/ui/dialogs.py
-msgid "Bevorzugte Spielsprache"
+msgid "Benachrichtigungen"
+msgstr "Notifications"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Bevorzugte Sprache"
 msgstr "Preferred game language"
 
 #: galaxy_linux/ui/dialogs.py galaxy_linux/ui/window.py
@@ -2169,7 +2717,11 @@ msgstr "Cloud saves downloads your saves when installing a supported GOG game, a
 msgid "DPI für neue Prefixe"
 msgstr "DPI for new prefixes"
 
-#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/game_page.py
+#: galaxy_linux/ui/dialogs.py
+msgid "Deaktivieren, um auszuwählen, welche DLCs installiert werden sollen"
+msgstr "Uncheck to select which DLCs to install"
+
+#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/game_menu.py
 msgid "Deinstallieren"
 msgstr "Uninstall"
 
@@ -2180,6 +2732,14 @@ msgstr "The prefix will be deleted and created from scratch. Saved games stored 
 #: galaxy_linux/ui/dialogs.py
 msgid "Der Prefix-Ordner wird gelöscht – inklusive Spielständen darin. Beim nächsten Start bzw. über „Prefix jetzt anlegen“ entsteht ein neuer."
 msgstr "The prefix folder will be deleted – including any saved games inside it. A new one is created on the next launch or via “Create prefix now”."
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Desktop-Benachrichtigungen, solange das Fenster nicht im Vordergrund ist; im Fenster erscheinen die Meldungen unten."
+msgstr "Desktop notifications while the window is not in front; inside the window, messages appear at the bottom."
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Desktopverknüpfung erstellen"
+msgstr "Create desktop shortcut"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Details"
@@ -2198,12 +2758,20 @@ msgid "Diese Prefix-Ordner gehören zu keinem Spiel der Bibliothek. Ausgewählte
 msgstr "These prefix folders don’t belong to any game in the library. Selected ones will be deleted – including any saved games inside them."
 
 #: galaxy_linux/ui/dialogs.py
-msgid "Downloads und Bibliothek"
-msgstr "Downloads and library"
+msgid "Download-Geschwindigkeit in Bit pro Sekunde anzeigen"
+msgstr "Display download speed in bits per second"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Downloads während des Spiels pausieren"
+msgstr "Pause downloads when playing"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Eigene Bibliotheken"
 msgstr "Custom libraries"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Eigene DLCs installieren"
+msgstr "Install owned DLCs"
 
 #: galaxy_linux/ui/dialogs.py galaxy_linux/ui/game_page.py
 msgid "Eigenschaften"
@@ -2213,11 +2781,15 @@ msgstr "Properties"
 msgid "Eigenschaften – {0}"
 msgstr "Properties – {0}"
 
+#: galaxy_linux/ui/dialogs.py
+msgid "Eingeloggt bleiben"
+msgstr "Keep me logged in"
+
 #: galaxy_linux/ui/dialogs.py galaxy_linux/ui/menus.py
 msgid "Einstellungen"
 msgstr "Settings"
 
-#: galaxy_linux/ui/dialogs.py
+#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/downloads_view.py
 msgid "Entfernen"
 msgstr "Remove"
 
@@ -2238,12 +2810,16 @@ msgid "Erfolge, Statistiken und Bestenlisten für Spiele mit GOG Galaxy-SDK – 
 msgstr "Achievements, stats and leaderboards for games using the GOG Galaxy SDK – comet replaces the Galaxy service in the prefix."
 
 #: galaxy_linux/ui/dialogs.py
-msgid "Erscheinen im Installations-Dialog zur Auswahl; Standard ist der Spiele-Ordner oben."
-msgstr "Offered as choices in the install dialog; the default is the games folder above."
+msgid "Erscheinen im Installations-Dialog zur Auswahl; Standard ist der Installationspfad oben."
+msgstr "Offered in the install dialog; the default is the installation folder above."
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Erweitert"
 msgstr "Advanced"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Exportieren …"
+msgstr "Export …"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Externes Spiel (nicht von GOG)"
@@ -2253,17 +2829,13 @@ msgstr "External game (not from GOG)"
 msgid "Falls sich der Browser nicht öffnet: Adresse kopieren und manuell aufrufen"
 msgstr "If the browser doesn’t open: copy the address and open it manually"
 
-#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/window.py
+#: galaxy_linux/ui/dialogs.py
 msgid "Favorit"
 msgstr "Favorite"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Fehlende Wine-Prefixe automatisch anlegen"
 msgstr "Automatically create missing Wine prefixes"
-
-#: galaxy_linux/ui/dialogs.py
-msgid "Funktionen"
-msgstr "Features"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Funktionen im Spiel"
@@ -2334,6 +2906,10 @@ msgid "Größe"
 msgstr "Size"
 
 #: galaxy_linux/ui/dialogs.py
+msgid "Handbücher, Soundtracks und Artworks in den Ordner für andere Downloads"
+msgstr "Manuals, soundtracks and artwork into the other downloads folder"
+
+#: galaxy_linux/ui/dialogs.py
 msgid "Hiermit werden deine GOG-Spiele automatisch im Hintergrund aktualisiert und du musst Updates nicht selber ausführen."
 msgstr "Auto-update keeps all installed GOG games up to date in the background, without need to confirm updates manually."
 
@@ -2354,18 +2930,22 @@ msgid "Im Startmenü"
 msgstr "In the application menu"
 
 #: galaxy_linux/ui/dialogs.py
+msgid "Im System-Tray minimieren"
+msgstr "Minimize to tray"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Importieren …"
+msgstr "Import …"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "In Taskleiste minimieren"
+msgstr "Minimize to taskbar"
+
+#: galaxy_linux/ui/dialogs.py
 msgid "In der Bibliothek verstecken"
 msgstr "Hide in library"
 
-#: galaxy_linux/ui/dialogs.py
-msgid "Inkl. aller DLCs"
-msgstr "Incl. all DLCs"
-
-#: galaxy_linux/ui/dialogs.py
-msgid "Installation"
-msgstr "Installation"
-
-#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/game_page.py
+#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/game_menu.py
 msgid "Installation verschieben …"
 msgstr "Move installation…"
 
@@ -2377,13 +2957,9 @@ msgstr "Move installation?"
 msgid "Installationsordner wählen"
 msgstr "Choose installation folder"
 
-#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/game_page.py
+#: galaxy_linux/ui/dialogs.py
 msgid "Installationsordner öffnen"
 msgstr "Open install folder"
-
-#: galaxy_linux/ui/dialogs.py
-msgid "Installationsort"
-msgstr "Install location"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Installationsort hinzufügen"
@@ -2392,6 +2968,18 @@ msgstr "Add install location"
 #: galaxy_linux/ui/dialogs.py
 msgid "Installationsort hinzufügen …"
 msgstr "Add install location…"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Installationspfad"
+msgstr "Install to"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Installationspfad für Spiele"
+msgstr "Game installation folder"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Installieren/aktualisieren"
+msgstr "Installing, updating"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Jeder Unterordner des Spiele-Ordners wird ein Spiel dieser Bibliothek; kopierte Spiele werden nach dem Kopieren automatisch übernommen. Vorgaben (Proton, Startoptionen, Wayland, DPI) danach in den Einstellungen."
@@ -2410,6 +2998,10 @@ msgid "Kein Prefix vorhanden"
 msgstr "No prefix exists"
 
 #: galaxy_linux/ui/dialogs.py
+msgid "Kein System-Tray gefunden – „Im System-Tray minimieren“ wirkt hier wie „In Taskleiste minimieren“."
+msgstr "No system tray found – \"Minimize to tray\" acts like \"Minimize to taskbar\" here."
+
+#: galaxy_linux/ui/dialogs.py
 msgid "Keine"
 msgstr "None"
 
@@ -2418,8 +3010,16 @@ msgid "Keine Variablen gesetzt"
 msgstr "No variables set"
 
 #: galaxy_linux/ui/dialogs.py
+msgid "Keine Veränderung"
+msgstr "Do nothing"
+
+#: galaxy_linux/ui/dialogs.py
 msgid "Keine weiteren Orte"
 msgstr "No additional locations"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Komfort"
+msgstr "Convenience"
 
 #: galaxy_linux/ui/dialogs.py galaxy_linux/ui/game_page.py
 msgid "Kompatibilität"
@@ -2432,6 +3032,26 @@ msgstr "Compatibility tool"
 #: galaxy_linux/ui/dialogs.py
 msgid "Kopierte Spiele in den Spiele-Ordnern erkennen"
 msgstr "Detect copied games in the games folders"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Lesezeichen der Seitenleiste sichern oder übernehmen"
+msgstr "Back up or restore the sidebar bookmarks"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Lesezeichen exportieren"
+msgstr "Export bookmarks"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Lesezeichen importieren"
+msgstr "Import bookmarks"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Lesezeichen konnten nicht importiert werden. Stelle sicher, dass die Datei gültig ist."
+msgstr "Could not import bookmarks. Make sure the file is valid."
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Lesezeichen wurden erfolgreich importiert."
+msgstr "Bookmarks imported successfully."
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Linux-Version (nativ)"
@@ -2449,7 +3069,7 @@ msgstr "Reload sign-in page"
 msgid "Lokale Spielstände mit der GOG Galaxy-Cloud synchronisieren"
 msgstr "Sync local saves with GOG Galaxy Cloud"
 
-#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/game_page.py
+#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/game_page.py galaxy_linux/ui/tags.py
 msgid "Löschen"
 msgstr "Delete"
 
@@ -2468,14 +3088,6 @@ msgstr "Sign in to GOG – the client picks up the login automatically."
 #: galaxy_linux/ui/dialogs.py
 msgid "Micro-Compositor"
 msgstr "Micro-compositor"
-
-#: galaxy_linux/ui/dialogs.py
-msgid "Nach der Installation Verknüpfung auf dem Schreibtisch anlegen"
-msgstr "Create desktop shortcut after installing"
-
-#: galaxy_linux/ui/dialogs.py
-msgid "Nach der Installation Verknüpfung im Startmenü anlegen"
-msgstr "Create application menu shortcut after installing"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Name"
@@ -2502,8 +3114,12 @@ msgid "Neuer Basisordner für die Installation"
 msgstr "New base folder for the installation"
 
 #: galaxy_linux/ui/dialogs.py
-msgid "Nur für die Windows-Version des Spiels."
-msgstr "Only for the Windows version of the game."
+msgid "Nicht genügend freier Speicherplatz auf „{0}“. Wähle bitte ein anderes Laufwerk, um dieses Spiel zu installieren."
+msgstr "Not enough free space on disk \"{0}\". To install this game, select another disk or free up space."
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Nur Desktop"
+msgstr "Desktop only"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Oberfläche"
@@ -2514,8 +3130,24 @@ msgid "Offline-Installer + innoextract (kein Galaxy-Build)"
 msgstr "Offline installer + innoextract (no Galaxy build)"
 
 #: galaxy_linux/ui/dialogs.py
+msgid "Offline-Installer, Extras und Sicherungskopien der Cloud-Speicherstände"
+msgstr "Offline installers, goodies and cloud saves backups"
+
+#: galaxy_linux/ui/dialogs.py
 msgid "Ohne Häkchen bleiben alle Dateien liegen; der Ordner wird dann bei der Ordnersuche nicht wieder aufgenommen (rückgängig in den Einstellungen)."
 msgstr "If nothing is checked, all files stay in place; the folder will then be skipped by future folder scans (can be undone in Settings)."
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Optionen"
+msgstr "Options"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Ordner für andere Downloads"
+msgstr "Other downloads folder"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Ordner für andere Downloads (leer = {0})"
+msgstr "Other downloads folder (empty = {0})"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Ordner gespeichert"
@@ -2536,10 +3168,6 @@ msgstr "Overlays & performance (toggles)"
 #: galaxy_linux/ui/dialogs.py
 msgid "Parallele Verbindungen"
 msgstr "Parallel connections"
-
-#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/game_page.py
-msgid "Plattform"
-msgstr "Platform"
 
 #: galaxy_linux/ui/dialogs.py galaxy_linux/ui/game_page.py
 msgid "Prefix gelöscht"
@@ -2617,7 +3245,7 @@ msgstr "Library prefix folder"
 msgid "Prefix-Ordner öffnen"
 msgstr "Open prefix folder"
 
-#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/game_page.py
+#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/game_menu.py
 msgid "Protokoll öffnen"
 msgstr "Open log"
 
@@ -2650,12 +3278,24 @@ msgid "Resultierender Startbefehl"
 msgstr "Resulting launch command"
 
 #: galaxy_linux/ui/dialogs.py
+msgid "Spiel automatisch aktualisieren"
+msgstr "Keep this game up to date automatically"
+
+#: galaxy_linux/ui/dialogs.py
 msgid "Spiel hinzufügen"
 msgstr "Add game"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Spiele automatisch aktualisieren"
 msgstr "Auto-update games"
+
+#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/window.py
+msgid "Spiele im Besitz"
+msgstr "Owned games"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Spiele installieren"
+msgstr "Installing games"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Spiele laufen direkt unter Wayland statt XWayland (PROTON_ENABLE_WAYLAND=1); pro Spiel unter „Eigenschaften → Kompatibilität“ abschaltbar"
@@ -2681,21 +3321,9 @@ msgstr "Also delete game folder"
 msgid "Spielzeit nach jeder Sitzung an GOG übertragen – erscheint im GOG-Profil und in GOG Galaxy."
 msgstr "Upload the game time to GOG after every session – it shows up in the GOG profile and in GOG Galaxy."
 
-#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/game_page.py
-msgid "Sprache"
-msgstr "Language"
-
-#: galaxy_linux/ui/dialogs.py
-msgid "Sprache der Oberfläche"
-msgstr "Interface language"
-
 #: galaxy_linux/ui/dialogs.py
 msgid "Sprache wird nach einem Neustart des Clients übernommen"
 msgstr "Language will change after restarting the client"
-
-#: galaxy_linux/ui/dialogs.py
-msgid "Standard (primärer Eintrag)"
-msgstr "Default (primary entry)"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Standard – globaler Spiele-Ordner ({0})"
@@ -2741,6 +3369,10 @@ msgstr "Launch options (empty = library default: {0})"
 msgid "Startoptionen gespeichert"
 msgstr "Launch options saved"
 
+#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/store.py
+msgid "Startseite"
+msgstr "Home"
+
 #: galaxy_linux/ui/dialogs.py
 msgid "Startweg"
 msgstr "Launch method"
@@ -2748,6 +3380,18 @@ msgstr "Launch method"
 #: galaxy_linux/ui/dialogs.py
 msgid "Stattdessen den System-Browser nutzen und die Adresse einfügen"
 msgstr "Use the system browser instead and paste the address"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Statusmeldung Installation/Update"
+msgstr "Installing / updating status"
+
+#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/power_search_dialog.py
+msgid "Store"
+msgstr "Store"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Uhrzeit als HH:MM angeben, z. B. 08:00"
+msgstr "Enter the time as HH:MM, e.g. 08:00"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Umbenannt"
@@ -2774,28 +3418,28 @@ msgid "Verfügbare Sprachen"
 msgstr "Available languages"
 
 #: galaxy_linux/ui/dialogs.py
+msgid "Verhalten des Hauptfensters"
+msgstr "Main window behaviour"
+
+#: galaxy_linux/ui/dialogs.py
 msgid "Verknüpfung angelegt"
 msgstr "Shortcut created"
 
-#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/game_page.py
-msgid "Verknüpfung auf dem Schreibtisch anlegen"
-msgstr "Create desktop shortcut"
+#: galaxy_linux/ui/dialogs.py
+msgid "Verknüpfung auf Desktop erstellen"
+msgstr "Create shortcut on desktop"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Verknüpfung entfernt"
 msgstr "Shortcut removed"
 
-#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/game_page.py
+#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/game_menu.py
 msgid "Verknüpfung im Startmenü anlegen"
 msgstr "Create application menu shortcut"
 
-#: galaxy_linux/ui/dialogs.py
+#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/game_menu.py
 msgid "Verknüpfungen"
 msgstr "Shortcuts"
-
-#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/game_page.py
-msgid "Version"
-msgstr "Version"
 
 #: galaxy_linux/ui/dialogs.py galaxy_linux/ui/window.py
 msgid "Versteckte Spiele anzeigen"
@@ -2818,6 +3462,10 @@ msgid "Vorgabe für die Spiele dieser Bibliothek"
 msgstr "Default for the games in this library"
 
 #: galaxy_linux/ui/dialogs.py
+msgid "Vorherige Sitzung fortsetzen"
+msgstr "Continue previous session"
+
+#: galaxy_linux/ui/dialogs.py
 msgid "Vorlage"
 msgstr "Template"
 
@@ -2836,6 +3484,10 @@ msgstr "Use Proton Wayland driver by default"
 #: galaxy_linux/ui/dialogs.py
 msgid "Weitere Installationsorte"
 msgstr "Additional install locations"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Wenn ein Spiel gestartet wird"
+msgstr "When launching a game"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Werden zusätzlich zu den Startoptionen angewendet."
@@ -2865,7 +3517,7 @@ msgstr "Windows version (via Proton/Wine)"
 msgid "Wine"
 msgstr "Wine"
 
-#: galaxy_linux/ui/dialogs.py
+#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/game_menu.py
 msgid "Wine-Prefix"
 msgstr "Wine prefix"
 
@@ -2890,6 +3542,10 @@ msgid "Wird installiert nach"
 msgstr "Will be installed to"
 
 #: galaxy_linux/ui/dialogs.py
+msgid "Während des Spiels"
+msgstr "While playing"
+
+#: galaxy_linux/ui/dialogs.py
 msgid "Zugangsdaten im System-Schlüsselbund speichern"
 msgstr "Store credentials in the system keyring"
 
@@ -2900,6 +3556,10 @@ msgstr "Status"
 #: galaxy_linux/ui/dialogs.py
 msgid "Zusätzlich zu VAR=wert in den Startoptionen; z. B. DXVK_ASYNC=1, PROTON_USE_WINED3D=1."
 msgstr "In addition to VAR=value in the launch options; e.g. DXVK_ASYNC=1, PROTON_USE_WINED3D=1."
+
+#: galaxy_linux/ui/dialogs.py
+msgid "auf (MB/s)"
+msgstr "to (MB/s)"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "aus goggame-*.info (playTasks)"
@@ -2914,12 +3574,24 @@ msgid "automatisch, derzeit {0}"
 msgstr "automatic, currently {0}"
 
 #: galaxy_linux/ui/dialogs.py
+msgid "bis"
+msgstr "to"
+
+#: galaxy_linux/ui/dialogs.py
 msgid "ein Prefix je Spiel, benannt wie der Spielordner – vorhandene Prefixe werden nicht verschoben"
 msgstr "one prefix per game, named after the game folder – existing prefixes are not moved"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "erkannte .exe-Dateien im Spielordner"
 msgstr "detected .exe files in the game folder"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "galaxy-linux beim Systemstart öffnen"
+msgstr "Launch galaxy-linux at system startup"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "galaxy-linux schließen"
+msgstr "Exit galaxy-linux"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "gefunden"
@@ -2962,10 +3634,6 @@ msgid "neue Spielordner im GOG-Spiele-Ordner und in den Bibliotheken automatisch
 msgstr "automatically add new game folders in the GOG games folder and in the libraries"
 
 #: galaxy_linux/ui/dialogs.py
-msgid "nicht ermittelbar: {0}"
-msgstr "could not be determined: {0}"
-
-#: galaxy_linux/ui/dialogs.py
 msgid "nichts gefunden"
 msgstr "nothing found"
 
@@ -3002,6 +3670,10 @@ msgid "vom GOverlay-Profil „{0}“ bestimmt"
 msgstr "set by the GOverlay profile \"{0}\""
 
 #: galaxy_linux/ui/dialogs.py
+msgid "von"
+msgstr "from"
+
+#: galaxy_linux/ui/dialogs.py
 msgid "vorhanden · "
 msgstr "exists · "
 
@@ -3014,10 +3686,6 @@ msgid "wird bearbeitet … · {0}"
 msgstr "in progress… · {0}"
 
 #: galaxy_linux/ui/dialogs.py
-msgid "wird ermittelt …"
-msgstr "calculating…"
-
-#: galaxy_linux/ui/dialogs.py
 msgid "wirkt nach einem Neustart des Clients"
 msgstr "takes effect after restarting the client"
 
@@ -3026,10 +3694,18 @@ msgid "{0}\n\nvon: {1}\nnach: {2}\n\nAuf demselben Laufwerk geht das sofort, son
 msgstr "{0}\n\nfrom: {1}\nto: {2}\n\nOn the same drive this is instant; otherwise the files are copied."
 
 #: galaxy_linux/ui/dialogs.py
+msgid "{0} (HH:MM)"
+msgstr "{0} (HH:MM)"
+
+#: galaxy_linux/ui/dialogs.py
 msgid "{0} (nicht gefunden)"
 msgstr "{0} (not found)"
 
 #: galaxy_linux/ui/dialogs.py
+msgid "{0} Lesezeichen exportiert"
+msgstr "{0} bookmarks exported"
+
+#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/tags.py
 msgid "{0} Spiel"
 msgstr "{0} game"
 
@@ -3037,7 +3713,7 @@ msgstr "{0} game"
 msgid "{0} Spiel verschwindet aus dem Client."
 msgstr "{0} game will disappear from the client."
 
-#: galaxy_linux/ui/dialogs.py
+#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/tags.py
 msgid "{0} Spiele"
 msgstr "{0} games"
 
@@ -3068,6 +3744,150 @@ msgstr "Remove “{0}” from the library?"
 #: galaxy_linux/ui/dialogs.py
 msgid "„{0}“ gelöscht – {1} Spiel(e) ausgetragen, Dateien bleiben"
 msgstr "“{0}” deleted – {1} game(s) removed from the library, files kept"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Abgeschlossen"
+msgstr "Completed"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Abgeschlossene und fehlgeschlagene Einträge entfernen"
+msgstr "Remove completed and failed entries"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Aktuell"
+msgstr "Current"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Alles abbrechen"
+msgstr "Cancel all"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Alles fortsetzen"
+msgstr "Resume all"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Alles pausieren"
+msgstr "Pause all"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Bandbreitenbegrenzung ist aktiv"
+msgstr "Bandwidth limit is active"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "DOWNLOADS"
+msgstr "DOWNLOADS"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Dadurch werden alle Elemente in der Warteschlange gestoppt, einschließlich aktiver Downloads und Installationen."
+msgstr "This will stop all items in the queue, including active downloads and installations."
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Deine Warteschlange ist leer"
+msgstr "Your job queue is empty"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Die Einstellung „Downloads während des Spiels pausieren“ ist aktiviert."
+msgstr "The \"Pause downloads when playing\" setting is enabled."
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Download-Einstellungen öffnen"
+msgstr "Open download settings"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Download-Geschwindigkeit begrenzt auf:"
+msgstr "Download speed limited to:"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Downloads im Spiel pausiert"
+msgstr "Downloads are paused while playing"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Downloads pausiert"
+msgstr "Downloads paused"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Durchschnitt"
+msgstr "Average"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Erhältliche Updates"
+msgstr "Available updates"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Erneut versuchen"
+msgstr "Retry"
+
+#: galaxy_linux/ui/downloads_view.py galaxy_linux/ui/game_menu.py galaxy_linux/ui/game_page.py
+msgid "Fortsetzen"
+msgstr "Resume"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Gesamt"
+msgstr "Total"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Heruntergeladen"
+msgstr "Downloaded"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Hier siehst du alle deine abgeschlossenen und aktiven Spiele-Installationen & -Updates."
+msgstr "Here you will see all of your completed and active game installations/updates."
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Ja, alles abbrechen"
+msgstr "Yes, cancel all"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Leeren"
+msgstr "Clear"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Nach oben verschieben"
+msgstr "Move to front"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Nein, beibehalten"
+msgstr "No, keep"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Neusortieren durch ziehen und ablegen"
+msgstr "Drag and drop to reorder"
+
+#: galaxy_linux/ui/downloads_view.py galaxy_linux/ui/game_page.py
+msgid "Pausieren"
+msgstr "Pause"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Spitze"
+msgstr "Peak"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Update"
+msgstr "Update"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Verbleibend"
+msgstr "Remaining"
+
+#: galaxy_linux/ui/downloads_view.py galaxy_linux/ui/game_page.py
+msgid "Version {0}"
+msgstr "Version {0}"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Warteschlange"
+msgstr "Queue"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Wird gerade heruntergeladen"
+msgstr "Currently downloading"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "Zum Spiel"
+msgstr "Go to game"
+
+#: galaxy_linux/ui/downloads_view.py
+msgid "{0} · {1} · {2} / {3} · {4} · ETA {5} · {6}/{7} Dateien"
+msgstr "{0} · {1} · {2} / {3} · {4} · ETA {5} · {6}/{7} files"
 
 #: galaxy_linux/ui/ext_cloudsaves.py
 msgid "Cloud-Spielstände sind in den Einstellungen (Spielfunktionen) deaktiviert."
@@ -3229,9 +4049,101 @@ msgstr "none according to manifest"
 msgid "noch nichts geladen"
 msgstr "nothing downloaded yet"
 
-#: galaxy_linux/ui/game_page.py
-msgid "\nFreigeschaltet: {0}"
-msgstr "\nUnlocked: {0}"
+#: galaxy_linux/ui/game_menu.py
+msgid "Aus Bibliothek entfernen …"
+msgstr "Remove from library…"
+
+#: galaxy_linux/ui/game_menu.py
+msgid "Bewerten"
+msgstr "Rate"
+
+#: galaxy_linux/ui/game_menu.py galaxy_linux/ui/game_page.py
+msgid "Eigenschaften …"
+msgstr "Properties…"
+
+#: galaxy_linux/ui/game_menu.py galaxy_linux/ui/menus.py
+msgid "Hilfe erhalten"
+msgstr "Get support"
+
+#: galaxy_linux/ui/game_menu.py
+msgid "Installation verwalten"
+msgstr "Manage installation"
+
+#: galaxy_linux/ui/game_menu.py
+msgid "Konfigurieren …"
+msgstr "Configure …"
+
+#: galaxy_linux/ui/game_menu.py galaxy_linux/ui/menus.py
+msgid "Nach Updates suchen"
+msgstr "Check for updates"
+
+#: galaxy_linux/ui/game_menu.py
+msgid "Ordner anzeigen"
+msgstr "Show folder"
+
+#: galaxy_linux/ui/game_menu.py galaxy_linux/ui/game_page.py
+msgid "Ordner importieren"
+msgstr "Import folder"
+
+#: galaxy_linux/ui/game_menu.py
+msgid "Patch-Notizen anzeigen"
+msgstr "View patch notes"
+
+#: galaxy_linux/ui/game_menu.py
+msgid "Prefix löschen …"
+msgstr "Delete prefix…"
+
+#: galaxy_linux/ui/game_menu.py
+msgid "Prefix neu anlegen …"
+msgstr "Recreate prefix…"
+
+#: galaxy_linux/ui/game_menu.py
+msgid "Produktseite ansehen"
+msgstr "View in store"
+
+#: galaxy_linux/ui/game_menu.py
+msgid "Schreibtisch-Verknüpfung entfernen"
+msgstr "Remove desktop shortcut"
+
+#: galaxy_linux/ui/game_menu.py
+msgid "Spiel ausblenden"
+msgstr "Hide game"
+
+#: galaxy_linux/ui/game_menu.py
+msgid "Spiel wieder einblenden"
+msgstr "Unhide game"
+
+#: galaxy_linux/ui/game_menu.py
+msgid "Spielforum ansehen"
+msgstr "View game forum"
+
+#: galaxy_linux/ui/game_menu.py
+msgid "Startmenü-Verknüpfung entfernen"
+msgstr "Remove application menu shortcut"
+
+#: galaxy_linux/ui/game_menu.py
+msgid "Tags verwalten …"
+msgstr "Manage tags …"
+
+#: galaxy_linux/ui/game_menu.py
+msgid "Verknüpfung auf dem Schreibtisch anlegen"
+msgstr "Create desktop shortcut"
+
+#: galaxy_linux/ui/game_menu.py
+msgid "Wine-Prefix öffnen"
+msgstr "Open Wine prefix"
+
+#: galaxy_linux/ui/game_menu.py
+msgid "Winetricks"
+msgstr "Winetricks"
+
+#: galaxy_linux/ui/game_menu.py
+msgid "Zusätzliche Dateiverknüpfungen"
+msgstr "Additional executables"
+
+#: galaxy_linux/ui/game_menu.py
+msgid "Überprüfen / Reparieren"
+msgstr "Verify / Repair"
 
 #: galaxy_linux/ui/game_page.py
 msgid "  (Build {0})"
@@ -3250,12 +4162,32 @@ msgid "AKTUALISIEREN"
 msgstr "UPDATE"
 
 #: galaxy_linux/ui/game_page.py
-msgid "Aus Bibliothek entfernen …"
-msgstr "Remove from library…"
+msgid "Alle"
+msgstr "All"
+
+#: galaxy_linux/ui/game_page.py
+msgid "Alle Spielstände aus der GOG Galaxy-Cloud als Archiv in den Ordner für andere Downloads laden."
+msgstr "Download all saves from the GOG Galaxy Cloud as an archive into the other downloads folder."
+
+#: galaxy_linux/ui/game_page.py
+msgid "Alle herunterladen"
+msgstr "Download all"
+
+#: galaxy_linux/ui/game_page.py
+msgid "Anpassen"
+msgstr "Customize"
 
 #: galaxy_linux/ui/game_page.py
 msgid "BEENDEN"
 msgstr "STOP"
+
+#: galaxy_linux/ui/game_page.py
+msgid "Betriebssystem:"
+msgstr "OS:"
+
+#: galaxy_linux/ui/game_page.py
+msgid "Bisher keine Erfolge freigeschaltet."
+msgstr "No achievements unlocked yet."
 
 #: galaxy_linux/ui/game_page.py
 msgid "Bitte zuerst bei GOG anmelden."
@@ -3266,16 +4198,24 @@ msgid "DLCs im Besitz: {0} von {1}"
 msgstr "DLCs owned: {0} of {1}"
 
 #: galaxy_linux/ui/game_page.py
-msgid "Dateien prüfen / reparieren"
-msgstr "Verify / repair files"
-
-#: galaxy_linux/ui/game_page.py
 msgid "Der Prefix wird gelöscht und frisch angelegt. Spielstände, die im Prefix liegen, gehen dabei verloren."
 msgstr "The prefix will be deleted and recreated. Saved games stored in the prefix will be lost."
 
 #: galaxy_linux/ui/game_page.py
 msgid "Der Prefix-Ordner wird gelöscht – inklusive Spielständen darin."
 msgstr "The prefix folder will be deleted – including any saved games in it."
+
+#: galaxy_linux/ui/game_page.py
+msgid "Dieses Spiel bietet scheinbar keine zusätzlichen Inhalte zum Download."
+msgstr "It seems that this game does not have any extra content available for download."
+
+#: galaxy_linux/ui/game_page.py
+msgid "Download-Ordner öffnen"
+msgstr "Open downloads folder"
+
+#: galaxy_linux/ui/game_page.py
+msgid "Downloads verwalten"
+msgstr "Manage downloads"
 
 #: galaxy_linux/ui/game_page.py
 msgid "ERFOLGE"
@@ -3286,32 +4226,56 @@ msgid "ERFOLGE · {0} VON {1} FREIGESCHALTET"
 msgstr "ACHIEVEMENTS · {0} OF {1} UNLOCKED"
 
 #: galaxy_linux/ui/game_page.py
-msgid "Eigenschaften …"
-msgstr "Properties…"
+msgid "Episch"
+msgstr "Epic"
 
 #: galaxy_linux/ui/game_page.py
-msgid "Entwickler"
-msgstr "Developer"
+msgid "Erfolge erscheinen, sobald das Spiel installiert ist."
+msgstr "Achievements appear once the game is installed."
+
+#: galaxy_linux/ui/game_page.py
+msgid "Erfolge nicht abrufbar: {0}"
+msgstr "Achievements not available: {0}"
+
+#: galaxy_linux/ui/game_page.py
+msgid "Erfolge sind in den Einstellungen ausgeschaltet."
+msgstr "Achievements are switched off in the settings."
 
 #: galaxy_linux/ui/game_page.py
 msgid "Extern · Bibliothek „{0}“"
 msgstr "External · library “{0}”"
 
 #: galaxy_linux/ui/game_page.py
-msgid "Genre"
-msgstr "Genre"
+msgid "FORTSETZEN"
+msgstr "RESUME"
+
+#: galaxy_linux/ui/game_page.py
+msgid "Für dieses Spiel gibt es keine Erfolge"
+msgstr "This game does not have achievements support"
+
+#: galaxy_linux/ui/game_page.py
+msgid "Für dieses Spiel gibt es keine Patch-Notizen."
+msgstr "There are no patch notes for this game."
+
+#: galaxy_linux/ui/game_page.py
+msgid "Geheime Erfolge"
+msgstr "Secret achievement"
+
+#: galaxy_linux/ui/game_page.py
+msgid "Gewöhnlich"
+msgstr "Common"
 
 #: galaxy_linux/ui/game_page.py
 msgid "INSTALLIEREN"
 msgstr "INSTALL"
 
 #: galaxy_linux/ui/game_page.py
-msgid "Im Store anzeigen"
-msgstr "View in store"
-
-#: galaxy_linux/ui/game_page.py
 msgid "In GOverlay das Spiel anklicken, um sein Profil (MangoHud, vkBasalt …) einzurichten"
 msgstr "Click the game in GOverlay to set up its profile (MangoHud, vkBasalt …)"
+
+#: galaxy_linux/ui/game_page.py
+msgid "In diesem Ordner liegt keine Installation von {0}."
+msgstr "This folder does not contain an installation of {0}."
 
 #: galaxy_linux/ui/game_page.py
 msgid "Installiert · Galaxy Content-System"
@@ -3342,8 +4306,28 @@ msgid "KOMPATIBILITÄT · {0}"
 msgstr "COMPATIBILITY · {0}"
 
 #: galaxy_linux/ui/game_page.py
+msgid "Kein Link verfügbar"
+msgstr "No link available"
+
+#: galaxy_linux/ui/game_page.py
 msgid "Keine Beschreibung verfügbar."
 msgstr "No description available."
+
+#: galaxy_linux/ui/game_page.py
+msgid "Keine Dateien mit aktuellen Filtern gefunden."
+msgstr "No files found with current filters."
+
+#: galaxy_linux/ui/game_page.py
+msgid "Keine Extras"
+msgstr "No extras"
+
+#: galaxy_linux/ui/game_page.py
+msgid "Keine Updates für {0} verfügbar"
+msgstr "No updates available for {0}"
+
+#: galaxy_linux/ui/game_page.py
+msgid "Legendär"
+msgstr "Legendary"
 
 #: galaxy_linux/ui/game_page.py
 msgid "Linux (GOG.com)"
@@ -3354,20 +4338,32 @@ msgid "Läuft · {0}"
 msgstr "Running · {0}"
 
 #: galaxy_linux/ui/game_page.py
+msgid "MEDIEN"
+msgstr "MEDIA"
+
+#: galaxy_linux/ui/game_page.py
+msgid "Mein Fortschritt"
+msgstr "My progress"
+
+#: galaxy_linux/ui/game_page.py
+msgid "Meine Bewertung"
+msgstr "My rating"
+
+#: galaxy_linux/ui/game_page.py
 msgid "Nativ (Linux)"
 msgstr "Native (Linux)"
 
-#: galaxy_linux/ui/game_page.py galaxy_linux/ui/window.py
-msgid "Nicht installiert"
-msgstr "Not installed"
+#: galaxy_linux/ui/game_page.py
+msgid "Nicht erreicht"
+msgstr "Locked"
 
 #: galaxy_linux/ui/game_page.py
-msgid "Prefix löschen …"
-msgstr "Delete prefix…"
+msgid "PAUSIERT"
+msgstr "PAUSED"
 
 #: galaxy_linux/ui/game_page.py
-msgid "Prefix neu anlegen …"
-msgstr "Recreate prefix…"
+msgid "Patch-Notizen"
+msgstr "Patch notes"
 
 #: galaxy_linux/ui/game_page.py
 msgid "Proton / Wine"
@@ -3382,6 +4378,10 @@ msgid "Publisher"
 msgstr "Publisher"
 
 #: galaxy_linux/ui/game_page.py
+msgid "SICHERUNGSKOPIE DEINER CLOUD-SPEICHERSTÄNDE"
+msgstr "CLOUD SAVES BACKUP"
+
+#: galaxy_linux/ui/game_page.py
 msgid "SPIELDETAILS"
 msgstr "GAME DETAILS"
 
@@ -3390,20 +4390,20 @@ msgid "Schreibtisch"
 msgstr "desktop"
 
 #: galaxy_linux/ui/game_page.py
-msgid "Schreibtisch-Verknüpfung entfernen"
-msgstr "Remove desktop shortcut"
+msgid "Selten"
+msgstr "Rare"
+
+#: galaxy_linux/ui/game_page.py
+msgid "Serververbindung fehlgeschlagen."
+msgstr "Server connection failed."
 
 #: galaxy_linux/ui/game_page.py
 msgid "Spiel beenden"
 msgstr "Stop game"
 
 #: galaxy_linux/ui/game_page.py
-msgid "Spiel versteckt (Filter → Versteckte anzeigen)"
-msgstr "Game hidden (Filter → Show hidden games)"
-
-#: galaxy_linux/ui/game_page.py galaxy_linux/ui/window.py
-msgid "Spielzeit"
-msgstr "Playtime"
+msgid "Sprache:"
+msgstr "Language:"
 
 #: galaxy_linux/ui/game_page.py
 msgid "Start abbrechen"
@@ -3418,20 +4418,20 @@ msgid "Startmenü"
 msgstr "application menu"
 
 #: galaxy_linux/ui/game_page.py
-msgid "Startmenü-Verknüpfung entfernen"
-msgstr "Remove application menu shortcut"
+msgid "Suche nach Updates für {0} …"
+msgstr "Checking updates for {0} …"
 
-#: galaxy_linux/ui/game_page.py galaxy_linux/ui/window.py
-msgid "Status"
-msgstr "Status"
+#: galaxy_linux/ui/game_page.py
+msgid "Ungewöhnlich"
+msgstr "Uncommon"
+
+#: galaxy_linux/ui/game_page.py
+msgid "Update verfügbar für {0}: {1}"
+msgstr "Update available for {0}: {1}"
 
 #: galaxy_linux/ui/game_page.py
 msgid "Verknüpfung ({0}) {1}"
 msgstr "Shortcut ({0}) {1}"
-
-#: galaxy_linux/ui/game_page.py
-msgid "Verstecken"
-msgstr "Hide"
 
 #: galaxy_linux/ui/game_page.py
 msgid "Veröffentlicht"
@@ -3441,9 +4441,9 @@ msgstr "Released"
 msgid "WIRD ABGEBROCHEN …"
 msgstr "CANCELING…"
 
-#: galaxy_linux/ui/game_page.py galaxy_linux/ui/window.py
-msgid "Weitere Aktionen"
-msgstr "More actions"
+#: galaxy_linux/ui/game_page.py
+msgid "Weiterspielen um diesen Erfolg freizuschalten"
+msgstr "Continue playing to unlock this achievement"
 
 #: galaxy_linux/ui/game_page.py
 msgid "Windows (GOG.com)"
@@ -3454,16 +4454,8 @@ msgid "Windows (extern, nicht von GOG)"
 msgstr "Windows (external, not from GOG)"
 
 #: galaxy_linux/ui/game_page.py
-msgid "Wine-Prefix öffnen"
-msgstr "Open Wine prefix"
-
-#: galaxy_linux/ui/game_page.py
-msgid "Winetricks"
-msgstr "Winetricks"
-
-#: galaxy_linux/ui/game_page.py galaxy_linux/ui/window.py
-msgid "Zuletzt gespielt"
-msgstr "Last played"
+msgid "Zu den Downloads hinzugefügt"
+msgstr "Added to downloads"
 
 #: galaxy_linux/ui/game_page.py
 msgid "angelegt"
@@ -3518,8 +4510,16 @@ msgid "Übernehmen"
 msgstr "Apply"
 
 #: galaxy_linux/ui/game_page.py
+msgid "Übersicht"
+msgstr "Overview"
+
+#: galaxy_linux/ui/game_page.py
 msgid "„{0}“ entfernt"
 msgstr "“{0}” removed"
+
+#: galaxy_linux/ui/game_page.py
+msgid "„{0}“ übernommen"
+msgstr "\"{0}\" imported"
 
 #: galaxy_linux/ui/game_page.py
 msgid "▶   SPIELEN"
@@ -3561,7 +4561,7 @@ msgstr "Show"
 msgid "Ausloggen"
 msgstr "Sign out"
 
-#: galaxy_linux/ui/menus.py
+#: galaxy_linux/ui/menus.py galaxy_linux/ui/window.py
 msgid "Beenden"
 msgstr "Exit"
 
@@ -3602,10 +4602,6 @@ msgid "Haftungsausschluss: inoffizielles Projekt, Nutzung auf eigenes Risiko. Di
 msgstr "Disclaimer: unofficial project, use at your own risk. The GOG user agreement prohibits unapproved third-party programs; GOG has tolerated open-source clients such as Heroic, Minigalaxy or Lutris for years, but there is no entitlement to that. The repository contains no code and no graphics from GOG."
 
 #: galaxy_linux/ui/menus.py
-msgid "Hilfe erhalten"
-msgstr "Get support"
-
-#: galaxy_linux/ui/menus.py
 msgid "Kein Änderungsprotokoll gefunden."
 msgstr "No changelog found."
 
@@ -3630,10 +4626,6 @@ msgid "Nach GOG-Spielen durchsuchen"
 msgstr "Scan folders for GOG Games"
 
 #: galaxy_linux/ui/menus.py
-msgid "Nach Updates suchen"
-msgstr "Check for updates"
-
-#: galaxy_linux/ui/menus.py
 msgid "Neu bei uns"
 msgstr "What's new"
 
@@ -3644,6 +4636,10 @@ msgstr "New update {0} available"
 #: galaxy_linux/ui/menus.py
 msgid "Noch keine Veröffentlichung"
 msgstr "No release published yet"
+
+#: galaxy_linux/ui/menus.py
+msgid "Online"
+msgstr "Online"
 
 #: galaxy_linux/ui/menus.py galaxy_linux/ui/prefs_galaxy_services.py
 msgid "Projektseite öffnen"
@@ -3670,12 +4666,36 @@ msgid "Suche nach Updates …"
 msgstr "Checking for updates …"
 
 #: galaxy_linux/ui/menus.py
+msgid "Unsichtbar"
+msgstr "Invisible"
+
+#: galaxy_linux/ui/menus.py
 msgid "Update-Suche fehlgeschlagen: {0}"
 msgstr "Update check failed: {0}"
 
 #: galaxy_linux/ui/menus.py
 msgid "galaxy-linux {0} – inoffizieller, nativer Client für GOG.com."
 msgstr "galaxy-linux {0} – unofficial native client for GOG.com."
+
+#: galaxy_linux/ui/power_search_dialog.py
+msgid "Durchsuche Tags, Genres, Bewertungen & mehr..."
+msgstr "Search in tags, genres, ratings & more..."
+
+#: galaxy_linux/ui/power_search_dialog.py
+msgid "Finde „{0}“ im Store"
+msgstr "Find \"{0}\" in Store"
+
+#: galaxy_linux/ui/power_search_dialog.py
+msgid "Spiele"
+msgstr "Games"
+
+#: galaxy_linux/ui/power_search_dialog.py
+msgid "Spiele, Tags, Genres, Entwickler, Lesezeichen, Store …"
+msgstr "Games, tags, genres, developers, bookmarks, store …"
+
+#: galaxy_linux/ui/power_search_dialog.py
+msgid "Suche"
+msgstr "Search"
 
 #: galaxy_linux/ui/prefs_galaxy_services.py
 msgid "Datei wählen"
@@ -3810,7 +4830,7 @@ msgid "GOG Store"
 msgstr "GOG Store"
 
 #: galaxy_linux/ui/store.py
-msgid "GOG.COM"
+msgid "GOG.COM-Store"
 msgstr "GOG.COM store"
 
 #: galaxy_linux/ui/store.py
@@ -3818,7 +4838,7 @@ msgid "Im Store anmelden"
 msgstr "Sign in to the store"
 
 #: galaxy_linux/ui/store.py
-msgid "In der Seitenleiste ausblenden"
+msgid "In Seitenleiste ausblenden"
 msgstr "Hide from sidebar"
 
 #: galaxy_linux/ui/store.py
@@ -3836,10 +4856,6 @@ msgstr "Reload"
 #: galaxy_linux/ui/store.py
 msgid "Prüfe die Internetverbindung und versuche es erneut."
 msgstr "Check your internet connection and try again."
-
-#: galaxy_linux/ui/store.py
-msgid "Startseite"
-msgstr "Home"
 
 #: galaxy_linux/ui/store.py
 msgid "Store-Startseite"
@@ -3860,6 +4876,50 @@ msgstr "Wishlist"
 #: galaxy_linux/ui/store.py galaxy_linux/ui/window.py
 msgid "Zurück"
 msgstr "Back"
+
+#: galaxy_linux/ui/tags.py
+msgid "Alle Spiele, denen diese Tags zugewiesen sind."
+msgstr "All games assigned with these tags."
+
+#: galaxy_linux/ui/tags.py
+msgid "Alle Tags verwalten"
+msgstr "Manage all tags"
+
+#: galaxy_linux/ui/tags.py
+msgid "Der Tag wird von {0} Spiel entfernt."
+msgstr "The tag will be removed from {0} game."
+
+#: galaxy_linux/ui/tags.py
+msgid "Der Tag wird von {0} Spielen entfernt."
+msgstr "The tag will be removed from {0} games."
+
+#: galaxy_linux/ui/tags.py
+msgid "Neu erstellen …"
+msgstr "Create new …"
+
+#: galaxy_linux/ui/tags.py
+msgid "Noch keine Tags – unten einen neuen erstellen."
+msgstr "No tags yet – create a new one below."
+
+#: galaxy_linux/ui/tags.py
+msgid "Tag umbenannt: {0}"
+msgstr "Tag renamed: {0}"
+
+#: galaxy_linux/ui/tags.py
+msgid "Tag „{0}“ löschen?"
+msgstr "Delete tag \"{0}\"?"
+
+#: galaxy_linux/ui/tags.py
+msgid "Tags verwalten"
+msgstr "Manage tags"
+
+#: galaxy_linux/ui/tags.py
+msgid "Tags zuweisen"
+msgstr "Assign tags"
+
+#: galaxy_linux/ui/tags.py
+msgid "Umbenennen und Löschen gilt für alle Spiele, denen der Tag zugewiesen ist."
+msgstr "Renaming and deleting applies to all games the tag is assigned to."
 
 #: galaxy_linux/ui/util.py
 msgid "Deutsch"
@@ -3938,6 +4998,10 @@ msgid "Abschnitte (Als Nächstes spielen …)"
 msgstr "Sections (Play next…)"
 
 #: galaxy_linux/ui/window.py
+msgid "Absteigend"
+msgstr "Descending"
+
+#: galaxy_linux/ui/window.py
 msgid "Aktivität"
 msgstr "Activity"
 
@@ -3948,10 +5012,6 @@ msgstr "All games already have a prefix"
 #: galaxy_linux/ui/window.py
 msgid "Alle installierten Spiele sind aktuell"
 msgstr "All installed games are up to date"
-
-#: galaxy_linux/ui/window.py
-msgid "Als Favorit markiert"
-msgstr "Marked as favorite"
 
 #: galaxy_linux/ui/window.py
 msgid "Als Nächstes spielen"
@@ -3966,12 +5026,28 @@ msgid "Ansicht"
 msgstr "View"
 
 #: galaxy_linux/ui/window.py
+msgid "Aufsteigend"
+msgstr "Ascending"
+
+#: galaxy_linux/ui/window.py
+msgid "Ausgeblendet"
+msgstr "Hidden"
+
+#: galaxy_linux/ui/window.py
+msgid "Ausgeblendete wie eingestellt"
+msgstr "Hidden games as set"
+
+#: galaxy_linux/ui/window.py
 msgid "BEI GOG ANMELDEN"
 msgstr "SIGN IN TO GOG"
 
 #: galaxy_linux/ui/window.py
 msgid "BIBLIOTHEKEN"
 msgstr "LIBRARIES"
+
+#: galaxy_linux/ui/window.py
+msgid "Betriebssystem & Konsolen"
+msgstr "OS & consoles"
 
 #: galaxy_linux/ui/window.py
 msgid "Bibliothek bearbeiten …"
@@ -3994,8 +5070,8 @@ msgid "DARSTELLUNG"
 msgstr "LAYOUT"
 
 #: galaxy_linux/ui/window.py
-msgid "DOWNLOADS"
-msgstr "DOWNLOADS"
+msgid "Das Spiel wurde ausgeblendet."
+msgstr "The game was hidden."
 
 #: galaxy_linux/ui/window.py
 msgid "Downloads"
@@ -4004,10 +5080,6 @@ msgstr "Downloads"
 #: galaxy_linux/ui/window.py
 msgid "Durchsuchen fehlgeschlagen: {0}"
 msgstr "Scan failed: {0}"
-
-#: galaxy_linux/ui/window.py
-msgid "Erscheinungsdatum"
-msgstr "Release date"
 
 #: galaxy_linux/ui/window.py
 msgid "Extern"
@@ -4020,10 +5092,6 @@ msgstr "FILTER"
 #: galaxy_linux/ui/window.py
 msgid "FREUNDE"
 msgstr "FRIENDS"
-
-#: galaxy_linux/ui/window.py
-msgid "Favorit entfernt"
-msgstr "Removed from favorites"
 
 #: galaxy_linux/ui/window.py
 msgid "Favoriten"
@@ -4050,6 +5118,10 @@ msgid "GOG-Spiel(e) im Spiele-Ordner"
 msgstr "GOG game(s) in the games folder"
 
 #: galaxy_linux/ui/window.py
+msgid "GRUPPIEREN NACH"
+msgstr "GROUP BY"
+
+#: galaxy_linux/ui/window.py
 msgid "Gilt für Alle Spiele, Installiert und Zuletzt gespielt"
 msgstr "Applies to All games, Installed and Last played"
 
@@ -4062,16 +5134,16 @@ msgid "Groß"
 msgstr "Large"
 
 #: galaxy_linux/ui/window.py
+msgid "Hoch verschieben"
+msgstr "Move up"
+
+#: galaxy_linux/ui/window.py
 msgid "In diesem Port nicht verfügbar"
 msgstr "Not available in this port"
 
 #: galaxy_linux/ui/window.py
 msgid "Keine Spiele in der Bibliothek. Über das Zahnrad → „Bibliothek aktualisieren“ (F5) die Bibliothek von GOG laden."
 msgstr "No games in the library. Load the library from GOG via the gear → \"Refresh library\" (F5)."
-
-#: galaxy_linux/ui/window.py
-msgid "Keine aktiven Downloads."
-msgstr "No active downloads."
 
 #: galaxy_linux/ui/window.py
 msgid "Keine neuen Spiele gefunden"
@@ -4098,8 +5170,24 @@ msgid "Kürzlich installiert"
 msgstr "Recently installed"
 
 #: galaxy_linux/ui/window.py
-msgid "Linux-nativ"
-msgstr "Linux native"
+msgid "LESEZEICHEN"
+msgstr "BOOKMARKS"
+
+#: galaxy_linux/ui/window.py
+msgid "Lesezeichen angelegt: {0}"
+msgstr "Bookmark added: {0}"
+
+#: galaxy_linux/ui/window.py
+msgid "Lesezeichen gelöscht"
+msgstr "Bookmark deleted"
+
+#: galaxy_linux/ui/window.py
+msgid "Lesezeichen löschen"
+msgstr "Delete bookmark"
+
+#: galaxy_linux/ui/window.py
+msgid "Lesezeichen umbenennen"
+msgstr "Rename bookmark"
 
 #: galaxy_linux/ui/window.py
 msgid "Liste"
@@ -4130,6 +5218,10 @@ msgid "Menü"
 msgstr "Menu"
 
 #: galaxy_linux/ui/window.py
+msgid "Minimieren"
+msgstr "Minimize"
+
+#: galaxy_linux/ui/window.py
 msgid "Mittel"
 msgstr "Medium"
 
@@ -4148,6 +5240,14 @@ msgstr "No games in “{0}” yet. Copy game folders to {1} – they are added a
 #: galaxy_linux/ui/window.py
 msgid "Noch nichts gespielt – installiere ein Spiel aus „Spiele im Besitz“."
 msgstr "Nothing played yet – install a game from “Owned games”."
+
+#: galaxy_linux/ui/window.py
+msgid "Nur ausgeblendete Spiele anzeigen."
+msgstr "Only show hidden games."
+
+#: galaxy_linux/ui/window.py
+msgid "Nur sichtbare Spiele anzeigen."
+msgstr "Only show visible games."
 
 #: galaxy_linux/ui/window.py
 msgid "Ordner durchsuchen"
@@ -4178,7 +5278,15 @@ msgid "Raster"
 msgstr "Grid"
 
 #: galaxy_linux/ui/window.py
-msgid "SORTIEREN"
+msgid "Runter verschieben"
+msgstr "Move down"
+
+#: galaxy_linux/ui/window.py
+msgid "Rückgängig"
+msgstr "Undo"
+
+#: galaxy_linux/ui/window.py
+msgid "SORTIEREN NACH"
 msgstr "SORT BY"
 
 #: galaxy_linux/ui/window.py
@@ -4200,14 +5308,6 @@ msgstr "Add game…"
 #: galaxy_linux/ui/window.py
 msgid "Spiel(e) in „{0}“"
 msgstr "game(s) in “{0}”"
-
-#: galaxy_linux/ui/window.py
-msgid "Spiele im Besitz"
-msgstr "Owned games"
-
-#: galaxy_linux/ui/window.py
-msgid "Spiele suchen"
-msgstr "Search games"
 
 #: galaxy_linux/ui/window.py
 msgid "Spiele-Ordner nach Spielen durchsuchen"
@@ -4234,16 +5334,16 @@ msgid "Spielordner wählen"
 msgstr "Choose game folder"
 
 #: galaxy_linux/ui/window.py
-msgid "Suchen"
-msgstr "Search"
+msgid "Suche (Strg+F)"
+msgstr "Search (Ctrl+F)"
+
+#: galaxy_linux/ui/window.py
+msgid "Suche Spiele"
+msgstr "Search games"
 
 #: galaxy_linux/ui/window.py
 msgid "TITEL"
 msgstr "TITLE"
-
-#: galaxy_linux/ui/window.py
-msgid "Titel (A–Z)"
-msgstr "Title (A–Z)"
 
 #: galaxy_linux/ui/window.py
 msgid "Titel unter den Covern"
@@ -4254,8 +5354,8 @@ msgid "UPDATE"
 msgstr "UPDATE"
 
 #: galaxy_linux/ui/window.py
-msgid "Update verfügbar"
-msgstr "Update available"
+msgid "Umbenennen"
+msgstr "Rename"
 
 #: galaxy_linux/ui/window.py
 msgid "Updates verfügbar für {0} Spiel(e)"
@@ -4264,10 +5364,6 @@ msgstr "Updates available for {0} game(s)"
 #: galaxy_linux/ui/window.py
 msgid "Updates werden installiert: {0} Spiel(e)"
 msgstr "Installing updates: {0} game(s)"
-
-#: galaxy_linux/ui/window.py
-msgid "VERLAUF"
-msgstr "HISTORY"
 
 #: galaxy_linux/ui/window.py
 msgid "VERSCHIEBT"
@@ -4282,8 +5378,8 @@ msgid "Verwaiste Prefixe entfernen …"
 msgstr "Remove orphaned prefixes…"
 
 #: galaxy_linux/ui/window.py
-msgid "Windows"
-msgstr "Windows"
+msgid "Weitere Aktionen"
+msgstr "More actions"
 
 #: galaxy_linux/ui/window.py
 msgid "Wird bearbeitet …"
@@ -4316,6 +5412,10 @@ msgstr "galaxy-linux v{0} · {1}"
 #: galaxy_linux/ui/window.py
 msgid "{0}\nPrefixe: {1}"
 msgstr "{0}\nPrefixes: {1}"
+
+#: galaxy_linux/ui/window.py
+msgid "{0} Filter"
+msgstr "{0} filters"
 
 #: galaxy_linux/ui/window.py
 msgid "{0} Ordner ohne GOG-Spieldaten übersprungen"
@@ -4360,10 +5460,6 @@ msgstr "{0} failed: {1}"
 #: galaxy_linux/ui/window.py
 msgid "{0} {1} erkannt: {2}"
 msgstr "Found {0} {1}: {2}"
-
-#: galaxy_linux/ui/window.py
-msgid "{0} · {1} · {2} / {3} · {4} · ETA {5} · {6}/{7} Dateien"
-msgstr "{0} · {1} · {2} / {3} · {4} · ETA {5} · {6}/{7} files"
 
 #: galaxy_linux/ui/window.py
 msgid "Öffnen"

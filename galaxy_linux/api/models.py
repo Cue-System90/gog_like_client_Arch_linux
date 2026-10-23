@@ -178,8 +178,7 @@ class GameMeta:
             frd = gamesdb.get("first_release_date") or g.get("first_release_date")
             if frd and not m.release_date:
                 m.release_date = str(frd)[:10]
-            if gamesdb.get("dlcs_ids"):
-                m.dlc_ids = [str(x) for x in gamesdb["dlcs_ids"]]
+            # „dlcs_ids“ der GamesDB sind deren eigene IDs, keine GOG-Produkt-IDs – die DLCs kommen aus api.gog.com
             oss = [o.get("slug", "") for o in gamesdb.get("supported_operating_systems") or []]
             if oss:
                 m.os_list = oss

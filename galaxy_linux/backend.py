@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from . import paths
+from .jsonstore import read_json, write_json
 from .api.auth import CredentialStore
 from .api.client import ApiError, GogApi, NotLoggedIn
 from .api.models import GameMeta, LibraryEntry
@@ -48,21 +49,27 @@ class JobKind:
     """Eigene Auftragsart für die Download-/Job-Warteschlange (z. B. Cloud-Abgleich, Prefix-Einrichtung).
     ``run(backend, job, on_progress, status)`` läuft im Job-Thread; Rückgabe landet in ``job.result``;
     ``InstallError``/``ApiError``/``OSError``/``ValueError`` gelten als „Fehlgeschlagen“, ``DownloadCancelled`` als
-    „Abgebrochen“ (``job.cancel`` regelmäßig prüfen)."""
+    „Abgebrochen“ (``job.cancel`` regelmäßig prüfen). ``pausable``: Pausieren bricht den Lauf ab und setzt ihn später
+    neu auf (der Auftrag muss Fortsetzen können); ``step``: Phase während des Laufs (content/phases.py)."""
     kind: str
     label: str
     run: Callable[["Backend", "Job", Callable[[Progress], None], Callable[[str], None]], Any]
     network: bool = False         # braucht GOG-Zugang → „Ausloggen“ bricht ihn ab
+    pausable: bool = False
+    step: str = ""
 
 
 JOB_KINDS: dict[str, JobKind] = {}
 NETWORK_JOB_KINDS = {"install", "install-linux", "install-offline", "update", "verify"}
+# Pausieren und Fortsetzen (Downloads sind fortsetzbar); diese Aufträge überstehen auch einen Neustart
+PAUSABLE_JOB_KINDS = {"install", "install-linux", "install-offline", "update", "verify"}
 # nach jedem beendeten Auftrag (fertig, fehlgeschlagen, abgebrochen) im Job-Thread: fn(backend, job)
 _job_finished_hooks: list[Callable[["Backend", "Job"], None]] = []
 
 
-def register_job_kind(kind: str, label: str, run: Callable[..., Any], network: bool = False) -> JobKind:
-    jk = JobKind(kind, label, run, network)
+def register_job_kind(kind: str, label: str, run: Callable[..., Any], network: bool = False, pausable: bool = False,
+                      step: str = "") -> JobKind:
+    jk = JobKind(kind, label, run, network, pausable, step)
     JOB_KINDS[kind] = jk
     return jk
 
@@ -79,6 +86,11 @@ def is_network_job(kind: str) -> bool:
     return kind in NETWORK_JOB_KINDS or bool(jk and jk.network)
 
 
+def is_pausable(kind: str) -> bool:
+    jk = JOB_KINDS.get(kind)
+    return kind in PAUSABLE_JOB_KINDS or bool(jk and jk.pausable)
+
+
 # vor Änderungen an den Spieldateien („verify“, „update“, „move“, „uninstall“): fn(backend, product_id, action, status)
 # – z. B. GOverlay: bgmod-Änderungen im Spielordner zurücknehmen (launch/hook_goverlay.py)
 _files_change_hooks: list[Callable[..., Any]] = []
@@ -88,6 +100,11 @@ def on_before_files_change(fn: Callable[..., Any]) -> Callable[..., Any]:
     if fn not in _files_change_hooks:
         _files_change_hooks.append(fn)
     return fn
+
+
+# Felder, die ein Auftrag über einen Neustart behält (JobQueue.enable_persistence)
+_PERSIST_FIELDS = ("kind", "product_id", "title", "platform", "language", "install_root", "build_id", "include_dlcs",
+                   "dlc_filter", "shortcut_menu", "shortcut_desktop", "id", "data", "created")
 
 
 @dataclass
@@ -102,7 +119,7 @@ class Job:
     include_dlcs: bool = True
     shortcut_menu: bool = False
     shortcut_desktop: bool = False
-    state: str = "queued"         # queued | running | done | failed | cancelled
+    state: str = "queued"         # queued | running | paused | done | failed | cancelled
     status: str = tr('Wartet …')
     progress: Progress = field(default_factory=Progress)
     error: str = ""
@@ -113,10 +130,27 @@ class Job:
     result: Any = None            # InstalledGame bei Installationen, sonst Rückgabe von JobKind.run
     plan: InstallPlan | None = None
     data: dict[str, Any] = field(default_factory=dict)   # Angaben für eigene Auftragsarten
+    dlc_filter: list[str] | None = None   # Konfigurieren → DLC: genau diese DLCs (None = alle im Besitz)
+    step: str = "pending"         # Phase wie in Galaxy (content/phases.py)
+    steps: list[str] = field(default_factory=list)       # bisher durchlaufene Phasen
+    pause_reason: str = ""        # user | game („Downloads während des Spiels pausieren“)
+    pause_requested: threading.Event = field(default_factory=threading.Event)
+    created: float = field(default_factory=time.time)
+    finished_at: float = 0.0
+    ignore_play_hold: bool = False  # während des Spiels von Hand fortgesetzt (Galaxy: „… in Downloads fortsetzen“)
 
     @property
     def active(self) -> bool:
-        return self.state in ("queued", "running")
+        """Noch nicht beendet (wartend, laufend oder pausiert)."""
+        return self.state in ("queued", "running", "paused")
+
+    @property
+    def paused(self) -> bool:
+        return self.state == "paused"
+
+    @property
+    def pausable(self) -> bool:
+        return is_pausable(self.kind)
 
     @property
     def label(self) -> str:
@@ -125,23 +159,74 @@ class Job:
                 "install-linux": tr('Installieren (Linux)'), "install-offline": tr('Installieren (Offline-Installer)')}.get(
                     self.kind, JOB_KINDS[self.kind].label if self.kind in JOB_KINDS else self.kind)
 
+    def set_step(self, step: str) -> None:
+        if step and step != self.step:
+            if self.step and self.step != "pending" and self.step not in self.steps:
+                self.steps.append(self.step)
+            self.step = step
+
+    def to_dict(self) -> dict[str, Any]:
+        d = {k: getattr(self, k) for k in _PERSIST_FIELDS}
+        d["state"] = "paused" if self.state == "paused" and self.pause_reason == "user" else "queued"
+        return d
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> "Job | None":
+        if not isinstance(d, dict) or not d.get("kind") or not d.get("product_id"):
+            return None
+        kw = {k: d[k] for k in _PERSIST_FIELDS if k in d}
+        if not isinstance(kw.get("data", {}), dict) or not (kw.get("dlc_filter") is None or isinstance(kw["dlc_filter"], list)):
+            return None
+        job = cls(**kw)
+        if d.get("state") == "paused":
+            job.state, job.status, job.pause_reason = "paused", tr('Pausiert'), "user"
+        else:
+            job.status = tr('In der Warteschlange')
+        return job
+
+
+def _game_options(backend: Any, product_id: str) -> tuple[str, set[str]]:
+    """Passwort des privaten Beta-Kanals und abgewählte DLCs (Konfigurieren) für Installation und Update."""
+    gs_store = getattr(backend, "game_settings", None)
+    try:
+        gs = gs_store.get(product_id) if gs_store is not None else None
+        pw, excl = (gs.branch_password, gs.dlc_excluded) if gs is not None else ("", [])
+        return (pw if isinstance(pw, str) else ""), {str(x) for x in excl} if isinstance(excl, list) else set()
+    except Exception:  # pragma: no cover
+        return "", set()
+
 
 class JobQueue:
-    """Führt Installationen nacheinander aus (wie Galaxy), parallelisiert innerhalb eines Jobs."""
+    """Führt Installationen nacheinander aus (wie Galaxy), parallelisiert innerhalb eines Jobs.
+
+    Wie Galaxys Download-Ansicht: Aufträge pausieren und fortsetzen (einzeln oder alle), abbrechen, umsortieren
+    („Nach oben verschieben“, Ziehen und Ablegen), während des Spielens pausieren. Pausieren bricht den laufenden
+    Download ab – die Dateien bleiben liegen und werden beim Fortsetzen geprüft statt neu geladen. Mit
+    ``enable_persistence`` (nur die Oberfläche) überstehen offene Aufträge einen Neustart."""
+
+    WATCH_INTERVAL = 2.0
 
     def __init__(self, backend: "Backend") -> None:
         self.backend = backend
         self.jobs: list[Job] = []
         self._lock = threading.Lock()
+        self._save_lock = threading.Lock()
         self._wake = threading.Event()
         self.listeners: list[Callable[[Job], None]] = []
+        self.persist_path: Path | None = None
+        self._play_hold = False
         self._thread = threading.Thread(target=self._run, name="gl-jobs", daemon=True)
         self._thread.start()
+        self._watch = threading.Thread(target=self._watch_loop, name="gl-jobs-watch", daemon=True)
+        self._watch.start()
 
     def add(self, job: Job) -> Job:
+        if job.state == "queued":
+            job.step = "pending"
         with self._lock:
             self.jobs.append(job)
         self._notify(job)
+        self._save()
         self._wake.set()
         return job
 
@@ -165,12 +250,100 @@ class JobQueue:
         with self._lock:
             return [j for j in self.jobs if j.active]
 
+    def queue(self) -> list[Job]:
+        """Offene Aufträge in Reihenfolge der Warteschlange (laufende zuerst)."""
+        with self._lock:
+            act = [j for j in self.jobs if j.active]
+        return [j for j in act if j.state == "running"] + [j for j in act if j.state != "running"]
+
+    def get(self, job_id: str) -> Job | None:
+        with self._lock:
+            return next((j for j in self.jobs if j.id == job_id), None)
+
     def cancel(self, job: Job) -> None:
+        job.pause_requested.clear()
         job.cancel.set()
-        if job.state == "queued":
+        if job.state in ("queued", "paused"):
             job.state = "cancelled"
             job.status = tr('Abgebrochen')
+            job.finished_at = time.time()
             self._notify(job)
+        self._save()
+
+    def cancel_all(self) -> None:
+        for j in self.active():
+            self.cancel(j)
+
+    def pause(self, job: Job, reason: str = "user") -> bool:
+        """Auftrag pausieren. Ein laufender Download hält an (Dateien bleiben liegen)."""
+        if not job.pausable or job.state not in ("queued", "running"):
+            if job.state == "paused" and reason == "user":
+                job.pause_reason = "user"        # während des Spiels pausiert → bleibt nach dem Spiel pausiert
+                self._save()
+                return True
+            return False
+        job.pause_reason = reason
+        if job.state == "queued":
+            job.state, job.status = "paused", tr('Pausiert')
+            self._notify(job)
+        else:
+            job.pause_requested.set()
+            job.cancel.set()
+            job.status = tr('Wird pausiert …')
+            self._notify(job)
+        self._save()
+        return True
+
+    def resume(self, job: Job) -> bool:
+        if job.state == "running" and job.pause_requested.is_set():
+            # noch nicht angehalten: Pausieren zurücknehmen geht nicht mehr (der Download bricht gerade ab) – nach
+            # dem Anhalten gleich wieder einreihen
+            job.pause_reason = "resume"
+            return True
+        if job.state != "paused":
+            return False
+        job.cancel = threading.Event()
+        job.pause_requested.clear()
+        job.pause_reason = ""
+        job.ignore_play_hold = self._play_hold          # während des Spiels von Hand fortgesetzt: läuft trotzdem
+        job.state, job.status, job.step = "queued", tr('In der Warteschlange'), "pending"
+        self._notify(job)
+        self._save()
+        self._wake.set()
+        return True
+
+    def pause_all(self) -> int:
+        return sum(1 for j in self.queue() if j.state in ("queued", "running") and self.pause(j))
+
+    def resume_all(self) -> int:
+        return sum(1 for j in self.queue() if j.state == "paused" and self.resume(j))
+
+    def move(self, job: Job, index: int) -> bool:
+        """Auftrag an Position ``index`` der offenen Aufträge schieben (Ziehen und Ablegen)."""
+        with self._lock:
+            if job not in self.jobs or not job.active:
+                return False
+            act = [j for j in self.jobs if j.active]
+            # Positionen wie in der Anzeige (queue(): laufende zuerst)
+            ordered = [j for j in act if j.state == "running"] + [j for j in act if j.state != "running"]
+            ordered.remove(job)
+            index = max(0, min(index, len(ordered)))
+            ordered.insert(index, job)
+            self.jobs = [j for j in self.jobs if not j.active] + ordered
+        self._notify(job)
+        self._save()
+        self._wake.set()
+        return True
+
+    def move_to_front(self, job: Job) -> bool:
+        """„Nach oben verschieben“: als nächster Auftrag (ein laufender läuft weiter)."""
+        return self.move(job, 0)
+
+    def remove(self, job: Job) -> None:
+        with self._lock:
+            if job.active:
+                return
+            self.jobs = [j for j in self.jobs if j is not job]
 
     def clear_finished(self) -> None:
         with self._lock:
@@ -188,10 +361,43 @@ class JobQueue:
             except Exception:  # pragma: no cover
                 log.exception("on_progress fehlgeschlagen")
 
+    # ------------------------------------------------------------------ Neustart überstehen
+    def enable_persistence(self, path: Path) -> list[Job]:
+        """Offene Aufträge in ``path`` mitschreiben und die beim letzten Beenden offenen wieder einreihen
+        (pausierte bleiben pausiert). Nur ein Prozess (die Oberfläche) darf das tun."""
+        restored: list[Job] = []
+        self.persist_path = Path(path)
+        for d in read_json(self.persist_path, []) if isinstance(read_json(self.persist_path, []), list) else []:
+            job = Job.from_dict(d)
+            if job is None or not job.pausable or self.active_for(job.product_id):
+                continue
+            with self._lock:
+                self.jobs.append(job)
+            restored.append(job)
+            self._notify(job)
+        if restored:
+            log.info("%d offene Aufträge vom letzten Mal wieder eingereiht: %s", len(restored),
+                     ", ".join(f"{j.label} {j.title} ({j.state})" for j in restored))
+        self._save()
+        self._wake.set()
+        return restored
+
+    def _save(self) -> None:
+        if self.persist_path is None:
+            return
+        with self._lock:
+            data = [j.to_dict() for j in self.jobs if j.active and j.pausable]
+        with self._save_lock:
+            try:
+                write_json(self.persist_path, data)
+            except OSError as exc:  # pragma: no cover
+                log.warning("Warteschlange konnte nicht gespeichert werden: %s", exc)
+
+    # ------------------------------------------------------------------ Ablauf
     def _next(self) -> Job | None:
         with self._lock:
             for j in self.jobs:
-                if j.state == "queued":
+                if j.state == "queued" and not (self._play_hold and j.pausable and not j.ignore_play_hold):
                     return j
         return None
 
@@ -204,20 +410,66 @@ class JobQueue:
                 continue
             self._execute(job)
 
+    def _watch_loop(self) -> None:
+        while True:
+            time.sleep(self.WATCH_INTERVAL)
+            try:
+                self.apply_play_pause()
+            except Exception:  # pragma: no cover
+                log.exception("Prüfung „Downloads während des Spiels pausieren“ fehlgeschlagen")
+
+    def apply_play_pause(self) -> None:
+        """„Downloads während des Spiels pausieren“: läuft ein Spiel, halten Downloads an und warten; danach geht es
+        von selbst weiter (vom Nutzer pausierte bleiben pausiert)."""
+        b = self.backend
+        settings, launcher = getattr(b, "settings", None), getattr(b, "launcher", None)
+        if settings is None or launcher is None:
+            return
+        hold = bool(getattr(settings, "pause_downloads_when_playing", False) and launcher.active_ids())
+        if hold == self._play_hold:
+            return
+        self._play_hold = hold
+        if hold:
+            log.info("Spiel läuft – Downloads werden pausiert")
+            for j in self.queue():
+                if j.state == "running" and j.pausable and not j.ignore_play_hold:
+                    self.pause(j, "game")
+        else:
+            log.info("Kein Spiel mehr aktiv – pausierte Downloads werden fortgesetzt")
+            for j in self.queue():
+                j.ignore_play_hold = False
+                if j.state == "paused" and j.pause_reason == "game":
+                    self.resume(j)
+            self._wake.set()
+
+    @property
+    def play_hold(self) -> bool:
+        return self._play_hold
+
     def _execute(self, job: Job) -> None:
         if job.cancel.is_set():
             job.state, job.status = "cancelled", tr('Abgebrochen')
             self._notify(job)
             return
         job.state, job.status = "running", tr('Vorbereiten …')
+        job.steps = []
+        job.step = ""
+        jk = JOB_KINDS.get(job.kind)
+        job.set_step({"install": "install_started", "install-linux": "install_started", "install-offline": "install_started",
+                      "update": "file_list", "verify": "file_list", "move": "moving", "prefix": "setup"}.get(
+                          job.kind, jk.step if jk else ""))
         log.info("Job %s gestartet: %s (%s) platform=%s lang=%s build=%s dlcs=%s", job.id, job.kind, job.title,
-                 job.platform, job.language or "-", job.build_id or "latest", job.include_dlcs)
+                 job.platform, job.language or "-", job.build_id or "latest",
+                 job.include_dlcs if job.dlc_filter is None else ",".join(job.dlc_filter) or "keine")
         self._notify(job)
+        self._save()
         t_start = time.monotonic()
         last = [0.0]
 
         def on_progress(p: Progress) -> None:
             job.progress = p
+            if p.step:
+                job.set_step(p.step)
             now = time.monotonic()
             if now - last[0] >= 0.2 or p.phase == tr('Fertig'):
                 last[0] = now
@@ -226,9 +478,13 @@ class JobQueue:
 
         def status(text: str) -> None:
             job.status = text
+            if job.kind in ("install", "update", "verify") and job.step in ("install_started", ""):
+                job.set_step("file_list")
             self._notify(job)
 
         inst = self.backend.installer
+        password, dlc_exclude = _game_options(self.backend, job.product_id) if job.kind in ("install", "update", "verify") \
+            else ("", set())
         try:
             if job.kind in ("update", "verify", "move"):
                 self.backend.before_files_change(job.product_id, job.kind, status)
@@ -236,10 +492,13 @@ class JobQueue:
                 try:
                     plan = inst.plan(job.product_id, job.title, job.platform, job.language or None,
                                      build_id=job.build_id or None, install_root=job.install_root or None,
-                                     include_dlcs=job.include_dlcs, status=status)
+                                     include_dlcs=job.include_dlcs,
+                                     dlc_filter=set(job.dlc_filter) if job.dlc_filter is not None else None,
+                                     status=status, password=password, dlc_exclude=dlc_exclude)
                 except NoGalaxyBuild:
                     status(tr('Kein Galaxy-Build – nutze Offline-Installer …'))
                     job.kind = "install-offline"
+                    job.set_step("downloading")
                     job.result = inst.install_offline_windows(job.product_id, job.title, job.language or None,
                                                               job.install_root or None, on_progress, job.cancel, status)
                     plan = None
@@ -248,15 +507,20 @@ class JobQueue:
                     status(tr('Herunterladen ({0} Dateien)').format(plan.file_count))
                     job.result = inst.install(plan, on_progress, job.cancel)
             elif job.kind == "install-linux":
+                job.set_step("downloading")
                 job.result = inst.install_linux_native(job.product_id, job.title, job.language or None,
                                                        job.install_root or None, on_progress, job.cancel, status)
             elif job.kind == "install-offline":
+                job.set_step("downloading")
                 job.result = inst.install_offline_windows(job.product_id, job.title, job.language or None,
                                                           job.install_root or None, on_progress, job.cancel, status)
             elif job.kind == "update":
-                job.result = inst.update(job.product_id, on_progress, job.cancel, status, build_id=job.build_id or None)
+                job.result = inst.update(job.product_id, on_progress, job.cancel, status, build_id=job.build_id or None,
+                                         language=job.language or None,
+                                         dlc_filter=set(job.dlc_filter) if job.dlc_filter is not None else None,
+                                         password=password, dlc_exclude=dlc_exclude)
             elif job.kind == "verify":
-                job.result = inst.verify(job.product_id, on_progress, job.cancel, status)
+                job.result = inst.verify(job.product_id, on_progress, job.cancel, status, password=password)
             elif job.kind == "move":
                 job.result = inst.move(job.product_id, job.install_root, on_progress, job.cancel, status)
             elif job.kind == "prefix":
@@ -272,20 +536,35 @@ class JobQueue:
                 except Exception as exc:  # pragma: no cover
                     log.warning("Verknüpfungen konnten nicht angelegt werden: %s", exc)
             job.state, job.status = "done", tr('Fertig')
+            if job.kind.startswith("install") or job.kind in ("update", "verify"):
+                job.set_step("complete")
             self.backend.updates.pop(job.product_id, None)
             p = job.progress
             log.info("Job %s fertig nach %.0f s: %s · %s geschrieben, %s geladen, %d/%d Dateien", job.id,
                      time.monotonic() - t_start, job.title, p.done_bytes, p.downloaded_bytes, p.files_done, p.files_total)
         except DownloadCancelled:
-            job.state, job.status = "cancelled", tr('Abgebrochen')
-            log.info("Job %s abgebrochen nach %.0f s", job.id, time.monotonic() - t_start)
+            if job.pause_requested.is_set():
+                again = job.pause_reason == "resume"
+                job.state, job.status = "paused", tr('Pausiert')
+                job.pause_requested.clear()
+                log.info("Job %s pausiert nach %.0f s (%s)", job.id, time.monotonic() - t_start, job.pause_reason or "user")
+                if again:
+                    self.resume(job)
+            else:
+                job.state, job.status = "cancelled", tr('Abgebrochen')
+                log.info("Job %s abgebrochen nach %.0f s", job.id, time.monotonic() - t_start)
         except (InstallError, ApiError, NotLoggedIn, OSError, ValueError) as exc:
             job.state, job.status, job.error = "failed", tr('Fehlgeschlagen'), str(exc)
             log.warning("Job %s fehlgeschlagen nach %.0f s: %s", job.id, time.monotonic() - t_start, exc, exc_info=True)
         except Exception as exc:  # pragma: no cover
             job.state, job.status, job.error = "failed", tr('Fehlgeschlagen'), f"{type(exc).__name__}: {exc}"
             log.exception("Job %s abgestürzt", job.id)
+        if not job.active:
+            job.finished_at = time.time()
         self._notify(job)
+        self._save()
+        if job.state == "paused":
+            return                       # kein „beendet“ – der Auftrag läuft später weiter
         for fn in list(_job_finished_hooks):
             try:
                 fn(self.backend, job)
@@ -306,13 +585,17 @@ class Backend:
         self.game_settings = GameSettingsStore()
         self.registry = InstalledRegistry()
         self.playtime = PlaytimeStore()
-        self.installer = InstallManager(self.api, self.settings, self.registry)
+        from .content import bandwidth
+        # Bandbreitenbegrenzung (Einstellungen → Installieren/aktualisieren), für alle Downloads dieses Prozesses
+        self.throttle = bandwidth.Throttle(lambda: bandwidth.current_rate(self.settings))
+        self.installer = InstallManager(self.api, self.settings, self.registry, throttle=self.throttle)
         self.launcher = Launcher(self.settings, self.game_settings, self.registry, self.playtime, self.api)
         self.library: list[LibraryEntry] = self.api.cached_library() or []
         self.updates: dict[str, Build] = {}
         self._meta: dict[str, GameMeta] = {}
         self._covers: dict[str, str] = {}
         self._meta_lock = threading.Lock()
+        self._playtime_checked: dict[str, float] = {}
         self.jobs = JobQueue(self)
         self._scan_lock = threading.Lock()
         self._assign_libraries()
@@ -352,11 +635,14 @@ class Backend:
             return LibraryEntry(id=pid, title=inst.title, works_on={inst.platform if inst.platform != "osx" else "mac": True})
         return None
 
-    def visible_library(self) -> list[LibraryEntry]:
+    def visible_library(self, include_hidden: bool | None = None) -> list[LibraryEntry]:
+        """GOG-Bibliothek ohne ausgeblendete Spiele (hier oder bei GOG ausgeblendet), außer „Versteckte Spiele
+        anzeigen“ ist an bzw. ``include_hidden``."""
+        from .library_view import is_hidden
+        show = self.settings.show_hidden if include_hidden is None else include_hidden
         out = []
         for e in self.library:
-            gs = self.game_settings.get(e.id)
-            if (e.is_hidden or gs.hidden) and not self.settings.show_hidden:
+            if not show and is_hidden(e, self.game_settings.get(e.id)):
                 continue
             out.append(e)
         return out
@@ -449,7 +735,8 @@ class Backend:
     def check_updates(self) -> dict[str, Build]:
         found: dict[str, Build] = {}
         for g in self.registry.all():
-            b = self.installer.check_update(g)
+            pw = self.game_settings.get(g.product_id).branch_password
+            b = self.installer.check_update(g, pw) if pw else self.installer.check_update(g)
             if b:
                 found[g.product_id] = b
         self.updates = found
@@ -458,12 +745,12 @@ class Backend:
     # ------------------------------------------------------------------ Aktionen
     def install(self, product_id: str, platform: str = "windows", language: str = "", install_root: str = "",
                 build_id: str = "", include_dlcs: bool = True, shortcut_menu: bool | None = None,
-                shortcut_desktop: bool | None = None, **cbs) -> Job:
+                shortcut_desktop: bool | None = None, dlc_filter: list[str] | None = None, **cbs) -> Job:
         entry = self.entry(product_id)
         title = entry.title if entry else str(product_id)
         kind = "install-linux" if platform == "linux" else "install"
         job = Job(kind=kind, product_id=str(product_id), title=title, platform=platform, language=language,
-                  install_root=install_root, build_id=build_id, include_dlcs=include_dlcs,
+                  install_root=install_root, build_id=build_id, include_dlcs=include_dlcs, dlc_filter=dlc_filter,
                   shortcut_menu=self.settings.shortcut_menu if shortcut_menu is None else shortcut_menu,
                   shortcut_desktop=self.settings.shortcut_desktop if shortcut_desktop is None else shortcut_desktop, **cbs)
         return self.jobs.add(job)
@@ -600,7 +887,7 @@ class Backend:
                 if not isinstance(v, dict):
                     raise InstallError(tr('Ansicht als JSON angeben, z. B. {"layout": "list", "sort": 1}'))
                 try:
-                    v = {kk: (int(vv) if kk == "sort" else bool(vv) if kk in ("titles", "sections") else str(vv))
+                    v = {kk: (int(vv) if kk == "sort" else bool(vv) if kk in ("titles", "sections", "sort_desc") else str(vv))
                          for kk, vv in v.items() if kk in VIEW_KEYS}
                 except (TypeError, ValueError):
                     raise InstallError(tr('Sortierung muss eine Zahl sein (0–3)')) from None
@@ -1063,6 +1350,8 @@ class Backend:
         for pid, build in found.items():
             if self.launcher.is_running(pid) or self.jobs.active_for(pid) or not self.registry.is_installed(pid):
                 continue
+            if not self.game_settings.get(pid).auto_update:    # Konfigurieren: Version selbst wählen (Rollback)
+                continue
             self.update(pid, build_id=getattr(build, "build_id", "") or "")
             queued.append(pid)
         if queued:
@@ -1100,6 +1389,143 @@ class Backend:
                 n += 1
         return n
 
+    # ------------------------------------------------------------------ Konfigurieren (wie Galaxy 2.1)
+    def _configurable(self, product_id: str) -> InstalledGame:
+        g = self.registry.get(str(product_id))
+        if g is None:
+            raise InstallError(tr('Spiel ist nicht installiert.'))
+        if g.method not in ("content-system", "imported") or g.platform == "linux":
+            raise InstallError(tr('Nur für Spiele, die über das GOG-Content-System installiert sind.'))
+        if self.jobs.active_for(g.product_id) or self.launcher.is_running(g.product_id):
+            raise InstallError(tr('Das Spiel läuft oder wird gerade bearbeitet.'))
+        return g
+
+    def change_language(self, product_id: str, language: str) -> Job:
+        """Konfigurieren → Sprache: Sprachdateien des installierten Builds laden, andere entfernen."""
+        g = self._configurable(product_id)
+        return self.jobs.add(Job(kind="update", product_id=g.product_id, title=g.title, language=language,
+                                 build_id=g.build_id, data={"reason": "language"}))
+
+    def owned_dlcs(self, product_id: str) -> list[tuple[str, str, bool]]:
+        """DLCs des Spiels im Besitz: (ID, Titel, installiert) – DLCs aus api.gog.com (``expanded_dlcs``), Besitz aus
+        GOGs Liste der eigenen Produkte (DLCs stehen nicht einzeln in der Bibliothek). Arbeits-Thread (Netz)."""
+        pid = str(product_id)
+        product = self.api.product(pid) or {}
+        dlcs = [(str(d["id"]), str(d.get("title") or d["id"])) for d in product.get("expanded_dlcs") or []
+                if isinstance(d, dict) and d.get("id")]
+        owned = self.installer.owned_ids() if self.api.logged_in else None
+        inst = self.registry.get(pid)
+        have = set(inst.installed_dlcs) if inst else set()
+        return [(d, t, d in have) for d, t in dlcs if d in have or (owned is not None and d in owned)]
+
+    def change_dlcs(self, product_id: str, selected: list[str]) -> Job:
+        """Konfigurieren → DLC: genau diese DLCs installieren; abgewählte bleiben auch bei Updates weg. Wartet schon
+        ein DLC-Auftrag für das Spiel, übernimmt er die neue Auswahl (jedes Häkchen wirkt sofort)."""
+        pid = str(product_id)
+        sel = [str(d) for d in selected]
+        waiting = self.jobs.active_for(pid)
+        if waiting is not None and waiting.state in ("queued", "paused") and waiting.data.get("reason") == "dlc":
+            g = self.registry.get(pid)
+        else:
+            g = self._configurable(pid)
+            waiting = None
+        owned = [d for d, _t, _i in self.owned_dlcs(pid)]
+        self.game_settings.update(pid, dlc_excluded=sorted(d for d in owned if d not in sel))
+        if waiting is not None:
+            waiting.dlc_filter = sel
+            self.jobs._save()
+            return waiting
+        return self.jobs.add(Job(kind="update", product_id=g.product_id, title=g.title, build_id=g.build_id,
+                                 dlc_filter=sel, data={"reason": "dlc"}))
+
+    def available_builds(self, product_id: str) -> list[Build]:
+        """Alle Builds (Generation 2) inkl. der Beta-Kanäle, neueste zuerst; private Kanäle mit gespeichertem Passwort."""
+        g = self.registry.get(str(product_id))
+        platform = g.platform if g else "windows"
+        pw = self.game_settings.get(str(product_id)).branch_password
+        return [b for b in self.installer.builds(str(product_id), platform, pw) if b.is_v2]
+
+    def change_build(self, product_id: str, build_id: str) -> Job:
+        """Konfigurieren → Version (Rollback) oder Beta-Kanal: auf genau diesen Build wechseln."""
+        g = self._configurable(product_id)
+        return self.jobs.add(Job(kind="update", product_id=g.product_id, title=g.title, build_id=str(build_id),
+                                 data={"reason": "build"}))
+
+    def change_branch(self, product_id: str, branch: str | None) -> Job:
+        """Beta-Kanal wechseln (None/"" = öffentliche Version): neuester Build des Kanals."""
+        builds = [b for b in self.available_builds(product_id) if (b.branch or None) == (branch or None)]
+        if not builds:
+            raise InstallError(tr('Kanal nicht verfügbar.'))
+        return self.change_build(product_id, builds[0].build_id)
+
+    def add_private_channel(self, product_id: str, password: str) -> list[str]:
+        """Passwort eines privaten Kanals prüfen und merken; gibt die damit sichtbaren neuen Kanäle zurück."""
+        pid = str(product_id)
+        g = self.registry.get(pid)
+        platform = g.platform if g else "windows"
+        public = {b.branch for b in self.installer.builds(pid, platform) if b.is_v2 and b.branch}
+        found = sorted({b.branch for b in self.installer.builds(pid, platform, password) if b.is_v2 and b.branch} - public)
+        if not found:
+            raise InstallError(tr('Falsches Passwort für diesen Kanal!'))
+        self.game_settings.update(pid, branch_password=password)
+        log.info("Privater Kanal für %s freigeschaltet: %s", pid, ", ".join(found))
+        return found
+
+    def set_auto_update(self, product_id: str, on: bool) -> None:
+        self.game_settings.update(str(product_id), auto_update=bool(on))
+
+    # ------------------------------------------------------------------ Extras
+    def extras(self, product_id: str) -> list:
+        """Spielansicht → Extras: Offline-Installer, Patches, Sprachpakete und Extras des Spiels und seiner DLCs."""
+        from .content import extras
+        pid = str(product_id)
+        product = self.api.product(pid, max_age=3600)
+        owned = self.installer.owned_ids() if self.api.logged_in else None      # mit DLCs (nicht in der Bibliothek)
+        return extras.list_extras(product, owned)
+
+    def download_extras(self, product_id: str, items: list) -> Job:
+        from .content import extras
+        e = self.entry(product_id)
+        return self.jobs.add(extras.new_job(self, str(product_id), e.title if e else str(product_id), list(items)))
+
+    def backup_cloud_saves(self, product_id: str) -> Job:
+        from .content import extras
+        e = self.entry(product_id)
+        return self.jobs.add(extras.new_cloud_backup_job(self, str(product_id), e.title if e else str(product_id)))
+
+    # ------------------------------------------------------------------ Spielzeit von GOG
+    PLAYTIME_MAX_AGE = 6 * 3600
+
+    def pull_playtime(self, product_ids: list[str], max_age: float | None = None, limit: int = 0) -> int:
+        """Spielzeit aller Geräte von GOG übernehmen (``time_sum``, höhere Werte gewinnen), je Spiel höchstens alle
+        ``max_age`` Sekunden. Gibt die Zahl der Spiele mit neuem Wert zurück. Arbeits-Thread."""
+        if not self.api.logged_in or not self.settings.sync_playtime:
+            return 0
+        max_age = self.PLAYTIME_MAX_AGE if max_age is None else max_age
+        now, n, asked = time.time(), 0, 0
+        for pid in product_ids:
+            pid = str(pid)
+            if pid.startswith("ext-") or not pid.isdigit() or now - self._playtime_checked.get(pid, 0) < max_age:
+                continue
+            if limit and asked >= limit:
+                break
+            asked += 1
+            self._playtime_checked[pid] = now
+            try:
+                res = self.api.playtime(pid)
+            except (ApiError, OSError) as exc:
+                log.debug("Spielzeit von %s nicht abrufbar: %s", pid, exc)
+                continue
+            if not res:
+                continue
+            before = self.playtime.get(pid)
+            self.playtime.set_remote(pid, res[0], res[1])
+            if self.playtime.get(pid) != before:
+                n += 1
+        if n:
+            log.info("Spielzeit von GOG übernommen: %d Spiel(e)", n)
+        return n
+
     def logout(self) -> None:
         """Abmelden: Zugangsdaten und Cache weg, dazu comet (läuft mit den Tokens) beenden und dessen Zugangsdatei
         löschen."""
@@ -1113,3 +1539,14 @@ class Backend:
     def save_settings(self) -> None:
         self.settings.save()
         self.api.store = CredentialStore(self.settings.use_keyring)
+
+
+def _register_builtin_kinds() -> None:
+    from .content import extras
+    register_job_kind(extras.JOB_KIND, tr('Extras herunterladen'), extras.run_job, network=True, pausable=True,
+                      step="downloading")
+    register_job_kind(extras.CLOUD_BACKUP_KIND, tr('Sicherungskopie deiner Cloud-Speicherstände'), extras.run_cloud_backup,
+                      network=True, step="cloud")
+
+
+_register_builtin_kinds()

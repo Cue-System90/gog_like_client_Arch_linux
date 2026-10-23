@@ -102,3 +102,17 @@ window.galaxy { background-color: #1b1b20; color: #d9d9de; }
 .st-update { color: #d9a8f0; }
 .st-running { color: #8fe0a8; }
 .st-busy { color: #9ec9ff; }
+
+/* 0.3.0: Tabs der Spielansicht (Übersicht / Mein Fortschritt / Extras) wie Galaxys Reiter */
+.game-tabs button { background: transparent; border-radius: 0; color: #8c8c92; font-weight: 700; letter-spacing: 1px;
+                    padding: 4px 14px; min-height: 30px; box-shadow: none; }
+.game-tabs button:hover { color: #ffffff; }
+.game-tabs button:checked { color: #ffffff; box-shadow: inset 0 -2px 0 #c57be3; }
+/* Download-Ansicht */
+.dl-list { background: transparent; }
+.dl-list > row { border-radius: 6px; background-color: rgba(255,255,255,0.03); margin-bottom: 6px; }
+.dl-list > row:hover { background-color: rgba(255,255,255,0.05); }
+.dl-title { padding: 0 2px; min-height: 0; }
+.speed-graph { color: #c57be3; }
+.hdr-pill.accent { background-color: #6b4a9e; color: #ffffff; }
+.minimize-btn { margin-right: 2px; }

@@ -2,6 +2,52 @@
 
 Neueste Version zuerst. „Neu bei uns“ im Zahnrad-Menü zeigt den Abschnitt der installierten Version.
 
+## 0.3.0 (23.10.2026)
+
+Zweiter Schritt Richtung GOG Galaxy 2.1: Bibliothek, Spielansicht, Downloads und Einstellungen wie im Original.
+
+- **Bibliothek wie Galaxy**: eigene **Tags** (Rechtsklick → Tags verwalten …, „Neu erstellen …“, „Alle Tags
+  verwalten“ zum Umbenennen und Löschen) und **Bewertung** mit 0–5 Sternen; **Sortieren nach** Titel, Bewertung,
+  Spielzeit, Presse-Wertung, Veröffentlichungsdatum, Zuletzt gespielt, Tags, Plattform, Genres, Größe, Datum hinzugefügt
+  (auf- oder absteigend); **Gruppieren nach** Tags, Plattform, Genre, Bewertung, Veröffentlichungsdatum, Status,
+  Presse-Wertung, Datum hinzugefügt; **Filter** nach Status, Betriebssystem, Plattform, Genre, Bewertung, Tags,
+  Favoriten und Ausgeblendet. Die Suche findet auch Tags, Genres und Entwickler; Liste mit Spalte Bewertung.
+- **Lesezeichen**: der Lesezeichen-Knopf legt die aktuelle Ansicht (mit Filter, Suche, Sortierung, Gruppierung) oder
+  ein Spiel in die Seitenleiste unter LESEZEICHEN; umbenennen, verschieben, löschen per Rechtsklick; Import/Export unter
+  Einstellungen → Oberfläche.
+- **Kontextmenü** (Rechtsklick in Raster und Liste) und **Anpassen-Menü** der Spielansicht in Galaxys Reihenfolge:
+  Spielen/Installieren, Zusätzliche Dateiverknüpfungen ▸, Patch-Notizen, Installation verwalten ▸ (Konfigurieren …,
+  Ordner importieren, Ordner anzeigen, Überprüfen / Reparieren, Deinstallieren), Nach Updates suchen, Spielforum,
+  Produktseite, Tags, Bewerten ▸, Spiel ausblenden/wieder einblenden (mit „Rückgängig“); dazu Wine-Prefix ▸ und
+  Verknüpfungen ▸.
+- **Spielansicht mit Tabs** Übersicht / Mein Fortschritt / Extras: Medien und Presse-Wertung in der Übersicht; Erfolge
+  mit Seltenheit, geheimen Erfolgen und Freischaltdatum; **Extras** mit Offline-Installern (Filter nach
+  Betriebssystem und Sprache), Patches, Sprachpaketen, Goodies, „Alle herunterladen“, „Download-Ordner öffnen“ und
+  der Sicherungskopie der Cloud-Speicherstände.
+- **Konfigurieren …** (Installation verwalten): Spielsprache wechseln, „Automatisch auf die neuste Version
+  aktualisieren“ oder eine ältere Version wählen (Rollback), Beta-Kanäle und private Kanäle mit Passwort, Cloud-Speicher
+  und Galaxy-Funktionen pro Spiel, DLCs (de)installieren mit „Alle auswählen“, Standard-Dateiverknüpfung und eigene
+  Dateiverknüpfungen mit Argumenten (Kopieren, Entfernen). Abgewählte DLCs bleiben auch bei Updates weg.
+- **Downloads wie Galaxy**: Warteschlange, Erhältliche Updates, Abgeschlossen, Fehlgeschlagen; Pausieren und Fortsetzen
+  einzeln oder alle, Alles abbrechen (mit Rückfrage), Leeren, Erneut versuchen, „Nach oben verschieben“ und Umsortieren
+  per Ziehen und Ablegen; Phasen wie im Original, Geschwindigkeitsgraph (Aktuell, Durchschnitt, Spitze …). Offene
+  Downloads überstehen einen Neustart, vor dem Download wird der freie Platz geprüft.
+- **Bandbreite**: Begrenzung mit Zeitplan (auch über Mitternacht), „Downloads während des Spiels pausieren“ (geht
+  danach von selbst weiter), Anzeige in Bit pro Sekunde.
+- **Installationsdialog**: „Eigene DLCs installieren“ mit Auswahl, „Spiel automatisch aktualisieren“, „Alle
+  enthaltenen Extras herunterladen“, Desktopverknüpfung, Hinweis bei zu wenig Speicherplatz.
+- **Einstellungen in Galaxys Aufbau**: Allgemein (Sprache, galaxy-linux beim Systemstart öffnen, Eingeloggt bleiben,
+  Startseite inkl. „Vorherige Sitzung fortsetzen“), Oberfläche (Bevorzugter Store, Lesezeichen, Verhalten des
+  Hauptfensters: Minimieren, Schließen und Spielstart – auch in den **System-Tray**), Benachrichtigungen
+  (Desktop-Meldung zu Installation/Update), Installieren/aktualisieren (Sprache, Pfade, Ordner für andere Downloads,
+  Bandbreite), Spielfunktionen; dazu die Linux-Seiten Bibliotheken und Kompatibilität.
+- **Spielzeit von GOG**: die Spielzeit aller Geräte wird übernommen (beim Öffnen eines Spiels und halbstündlich).
+- **Online-Status** bei GOG wie Galaxy (Avatar-Menü: Online / Unsichtbar), mit dem laufenden Spiel.
+- **Power Search** (Strg+F, Lupe über der Seitenleiste): eigene Spiele, Tags, Genres, Entwickler, Lesezeichen und der
+  GOG-Store mit Preisen – Eingabe startet, installiert, zeigt oder kauft.
+- Behoben: DLC-Anzeige nutzte GamesDB-Kennungen statt GOG-Produkt-IDs; Abbrechen eines Offline-Installer-Downloads
+  galt als Fehler.
+
 ## 0.2.0 (23.10.2026)
 
 Erster großer Umbau Richtung GOG Galaxy 2.1 mit allen Linux-Besonderheiten.

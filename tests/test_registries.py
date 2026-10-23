@@ -21,7 +21,7 @@ class PrefsRegistryTest(unittest.TestCase):
         self.p1.stop()
 
     def test_pages(self):
-        self.assertEqual(pr.PAGES, ("general", "libraries", "compat", "features"))
+        self.assertEqual(pr.PAGES, ("general", "interface", "notifications", "downloads", "features", "libraries", "compat"))
         self.assertIn("features", pr.GAME_PAGES)
         with self.assertRaises(ValueError):
             pr.register("unbekannt", lambda d: None)

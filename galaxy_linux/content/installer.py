@@ -51,6 +51,28 @@ class NoGalaxyBuild(InstallError):
     """Für dieses Spiel gibt es keinen Content-System-v2-Build (nur Offline-Installer)."""
 
 
+class NotEnoughSpace(InstallError):
+    """Zu wenig freier Platz im Zielordner (Galaxy: „Nicht genügend Speicherplatz auf …“)."""
+
+
+SPACE_RESERVE = 64 << 20        # so viel muss nach der Installation noch frei bleiben
+
+
+def existing_dir(path: Path) -> Path:
+    """Nächster vorhandener Ordner auf dem Weg zu ``path`` (für den freien Platz eines noch nicht angelegten Ziels)."""
+    p = Path(path)
+    while not p.exists() and p != p.parent:
+        p = p.parent
+    return p
+
+
+def free_space(path: Path) -> int:
+    try:
+        return shutil.disk_usage(existing_dir(path)).free
+    except OSError:
+        return -1
+
+
 def safe_dirname(name: str) -> str:
     name = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "", name).strip().rstrip(".")
     return name or "Spiel"
@@ -93,10 +115,11 @@ class InstallPlan:
 
 
 class InstallManager:
-    def __init__(self, api: GogApi, settings: GlobalSettings, registry: InstalledRegistry) -> None:
+    def __init__(self, api: GogApi, settings: GlobalSettings, registry: InstalledRegistry, throttle=None) -> None:
         self.api = api
         self.settings = settings
         self.registry = registry
+        self.throttle = throttle         # content/bandwidth.Throttle (Bandbreitenbegrenzung) oder None
         self._owned: set[str] | None = None
         self._dep_repo: dict[str, DependencyDepot] | None = None
         self._lock = threading.Lock()
@@ -118,18 +141,21 @@ class InstallManager:
                 self._dep_repo = parse_dependency_repository(self.api.dependency_repository())
             return self._dep_repo
 
-    def builds(self, product_id: str, platform: str = "windows") -> list[Build]:
-        return [Build.from_api(b) for b in self.api.builds(product_id, platform)]
+    def builds(self, product_id: str, platform: str = "windows", password: str = "") -> list[Build]:
+        """Builds des Content-Systems; mit ``password`` auch die privaten Beta-Kanäle."""
+        raw = self.api.builds(product_id, platform, password=password) if password else self.api.builds(product_id, platform)
+        return [Build.from_api(b) for b in raw]
 
-    def latest_build(self, product_id: str, platform: str = "windows", branch: str | None = None) -> Build | None:
-        builds = [b for b in self.builds(product_id, platform) if b.is_v2 and (b.branch or None) == branch]
+    def latest_build(self, product_id: str, platform: str = "windows", branch: str | None = None,
+                     password: str = "") -> Build | None:
+        builds = [b for b in self.builds(product_id, platform, password) if b.is_v2 and (b.branch or None) == branch]
         return builds[0] if builds else None
 
-    def check_update(self, game: InstalledGame) -> Build | None:
+    def check_update(self, game: InstalledGame, password: str = "") -> Build | None:
         if game.method not in ("content-system", "imported") or not game.build_id:
             return None
         try:
-            latest = self.latest_build(game.product_id, game.platform, game.branch or None)
+            latest = self.latest_build(game.product_id, game.platform, game.branch or None, password)
         except ApiError:
             return None
         if latest and latest.build_id != game.build_id:
@@ -146,12 +172,13 @@ class InstallManager:
     def plan(self, product_id: str, title: str, platform: str = "windows", language: str | None = None,
              build_id: str | None = None, install_root: str | Path | None = None, install_dir: Path | None = None,
              include_dlcs: bool = True, dlc_filter: set[str] | None = None, with_dependencies: bool | None = None,
-             status: Callable[[str], None] | None = None) -> InstallPlan:
+             status: Callable[[str], None] | None = None, password: str = "",
+             dlc_exclude: set[str] | None = None) -> InstallPlan:
         product_id = str(product_id)
         language = language or self.settings.language
         if status:
             status(tr('Builds abrufen …'))
-        builds = self.builds(product_id, platform)
+        builds = self.builds(product_id, platform, password)
         v2 = [b for b in builds if b.is_v2]
         log.debug("Builds für %s/%s: %s", product_id, platform, [(b.build_id, b.generation, b.version_name, b.branch) for b in builds[:8]])
         if not v2:
@@ -170,6 +197,8 @@ class InstallManager:
         depots, lang = manifest.select_depots(language, owned, include_dlcs)
         if dlc_filter is not None:
             depots = [d for d in depots if d.product_id in ("", manifest.base_product_id) or d.product_id in dlc_filter]
+        elif dlc_exclude:
+            depots = [d for d in depots if d.product_id in ("", manifest.base_product_id) or d.product_id not in dlc_exclude]
         if install_dir is None:
             install_dir = self.install_root(install_root) / safe_dirname(manifest.install_directory or title)
         plan = InstallPlan(product_id=product_id, title=title, platform=platform, language=lang,
@@ -249,11 +278,34 @@ class InstallManager:
                  ",".join(glob) or "-")
 
     # ------------------------------------------------------------------ Ausführung
+    @staticmethod
+    def space_needed(plan: InstallPlan) -> int:
+        """Bytes, die noch auf die Platte müssen: neue Dateien ganz, vorhandene (Fortsetzen, Update) nur der Zuwachs."""
+        need = 0
+        for j in plan.jobs:
+            try:
+                have = min(j.dest(plan.install_dir).stat().st_size, j.file.size)
+            except OSError:
+                have = 0
+            need += j.file.size - have
+        return need
+
+    def check_disk_space(self, plan: InstallPlan) -> None:
+        need = self.space_needed(plan)
+        free = free_space(plan.install_dir)
+        if free >= 0 and need + SPACE_RESERVE > free:
+            from ..settings import format_bytes
+            raise NotEnoughSpace(tr('Nicht genügend Speicherplatz auf {0}.').format(existing_dir(plan.install_dir))
+                                 + " " + tr('Benötigt: {0}, frei: {1}').format(format_bytes(need), format_bytes(free)))
+
     def install(self, plan: InstallPlan, progress_cb: ProgressCb | None = None,
                 cancel: threading.Event | None = None, verify: bool = True) -> InstalledGame:
         cancel = cancel or threading.Event()
         dl = ChunkDownloader(self.api.new_session, workers=self.settings.max_workers, progress_cb=progress_cb,
-                             cancel=cancel)
+                             cancel=cancel, throttle=self.throttle)
+        if progress_cb:
+            progress_cb(Progress(phase=tr('Speicherplatz wird zugewiesen'), step="allocating"))
+        self.check_disk_space(plan)
         plan.install_dir.mkdir(parents=True, exist_ok=True)
         old = read_json(self.record_path(plan.product_id), {})
         try:
@@ -302,25 +354,40 @@ class InstallManager:
         return game
 
     def update(self, product_id: str, progress_cb: ProgressCb | None = None, cancel: threading.Event | None = None,
-               status: Callable[[str], None] | None = None, build_id: str | None = None) -> InstalledGame:
+               status: Callable[[str], None] | None = None, build_id: str | None = None, language: str | None = None,
+               dlc_filter: set[str] | None = None, password: str = "", dlc_exclude: set[str] | None = None) -> InstalledGame:
+        """Auf einen Build bringen – ohne ``build_id`` den neuesten des eigenen Kanals (Beta-Kanal bleibt Beta-Kanal).
+        Auch für Konfigurieren: andere Sprache (``language``), andere DLC-Auswahl (``dlc_filter``) und Versionswahl
+        (Rollback, ``build_id``). Ohne ``dlc_filter`` kommen alle DLCs im Besitz außer ``dlc_exclude`` (abgewählte) –
+        neu gekaufte DLCs werden so beim nächsten Update mitinstalliert. Dateien, die der neue Stand nicht mehr hat,
+        werden entfernt."""
         game = self.registry.get(product_id)
         if game is None:
             raise InstallError(tr('Spiel ist nicht installiert.'))
         if game.method not in ("content-system", "imported"):
             raise InstallError(tr('Updates sind nur für Galaxy-Installationen möglich (Spiel neu installieren).'))
-        plan = self.plan(product_id, game.title, game.platform, game.language or None, build_id=build_id,
-                         install_dir=Path(game.install_path), status=status)
+        if build_id is None and game.branch:
+            latest = self.latest_build(product_id, game.platform, game.branch, password)
+            if latest is None:
+                raise InstallError(tr('Kanal nicht mehr verfügbar.'))
+            build_id = latest.build_id
+        plan = self.plan(product_id, game.title, game.platform, language or game.language or None, build_id=build_id,
+                         install_dir=Path(game.install_path), status=status, dlc_filter=dlc_filter, password=password,
+                         dlc_exclude=dlc_exclude)
         return self.install(plan, progress_cb, cancel)
 
     def verify(self, product_id: str, progress_cb: ProgressCb | None = None, cancel: threading.Event | None = None,
-               status: Callable[[str], None] | None = None) -> InstalledGame:
+               status: Callable[[str], None] | None = None, password: str = "") -> InstalledGame:
+        """Dateien gegen den installierten Build prüfen und Abweichungen nachladen (Galaxy: „Überprüfen / Reparieren“);
+        die DLC-Auswahl bleibt, wie sie ist."""
         game = self.registry.get(product_id)
         if game is None:
             raise InstallError(tr('Spiel ist nicht installiert.'))
         if game.method not in ("content-system", "imported"):
             raise InstallError(tr('Prüfen ist nur für Galaxy-Installationen möglich.'))
         plan = self.plan(product_id, game.title, game.platform, game.language or None, build_id=game.build_id or None,
-                         install_dir=Path(game.install_path), status=status)
+                         install_dir=Path(game.install_path), status=status,
+                         dlc_filter=set(game.installed_dlcs) if game.installed_dlcs else None, password=password)
         return self.install(plan, progress_cb, cancel, verify=True)
 
     def uninstall(self, product_id: str, remove_prefix: Path | None = None) -> None:
@@ -482,7 +549,7 @@ class InstallManager:
             if dest.exists() and dest.stat().st_size == int(f.get("size", 0) or 0):
                 on_progress(dest.stat().st_size, 0)
             else:
-                self.api.stream_download(url, dest, on_progress, cancel)
+                self.api.stream_download(url, dest, on_progress, cancel, throttle=self.throttle)
             done_before += int(f.get("size", 0) or 0)
             prog.files_done += 1
             out.append(dest)

@@ -1,7 +1,8 @@
 """Erweiterungspunkt für Einstellungsdialoge: Funktionen hängen eigene Gruppen an, ohne die Dialoge zu ändern.
 
-Globale Einstellungen (``PreferencesDialog``), Seiten: ``general`` (Allgemein), ``libraries`` (Bibliotheken),
-``compat`` (Kompatibilität), ``features`` (Spielfunktionen)::
+Globale Einstellungen (``PreferencesDialog``), Seiten: ``general`` (Allgemein), ``interface`` (Oberfläche),
+``notifications`` (Benachrichtigungen), ``downloads`` (Installieren/aktualisieren), ``features`` (Spielfunktionen),
+``libraries`` (Bibliotheken), ``compat`` (Kompatibilität)::
 
     register("features", lambda dlg: meine_gruppe(dlg))        # dlg.backend, dlg.s (GlobalSettings), dlg._save(**k)
 
@@ -27,7 +28,7 @@ from typing import Any, Callable
 
 log = logging.getLogger(__name__)
 
-PAGES = ("general", "libraries", "compat", "features")
+PAGES = ("general", "interface", "notifications", "downloads", "features", "libraries", "compat")
 GAME_PAGES = ("compat", "launch", "features", "env", "advanced")
 
 Builder = Callable[[Any], Any]

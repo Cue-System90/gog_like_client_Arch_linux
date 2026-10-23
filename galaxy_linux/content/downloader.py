@@ -22,6 +22,7 @@ from typing import Callable, Iterable
 
 import requests
 
+from .bandwidth import BLOCK, Throttle
 from .manifest import Chunk, DepotFile, DepotLink
 
 log = logging.getLogger(__name__)
@@ -46,6 +47,7 @@ class Progress:
     files_total: int = 0
     files_done: int = 0
     current: str = ""
+    step: str = ""                # Phase wie in Galaxy (content/phases.py), z. B. "scanning", "downloading"
 
     @property
     def fraction(self) -> float:
@@ -123,8 +125,9 @@ def verify_existing_chunks(path: Path, chunks: list[Chunk]) -> list[int]:
 class ChunkDownloader:
     def __init__(self, session_factory: Callable[[], requests.Session], workers: int = 6,
                  progress_cb: ProgressCallback | None = None, cancel: threading.Event | None = None,
-                 retries: int = 4) -> None:
+                 retries: int = 4, throttle: Throttle | None = None) -> None:
         self.session_factory = session_factory
+        self.throttle = throttle
         self.workers = max(1, workers)
         self.progress_cb = progress_cb
         self.cancel = cancel or threading.Event()
@@ -178,10 +181,12 @@ class ChunkDownloader:
                 self._progress.current = current
             self._emit()
 
-    def set_phase(self, phase: str, current: str = "") -> None:
+    def set_phase(self, phase: str, current: str = "", step: str = "") -> None:
         with self._lock:
             self._progress.phase = phase
             self._progress.current = current
+            if step:
+                self._progress.step = step
             self._emit(force=True)
 
     # ------------------------------------------------------------------ Netz
@@ -191,13 +196,23 @@ class ChunkDownloader:
         for attempt in range(self.retries + 1):
             self._check_cancel()
             try:
-                r = self.session.get(url, timeout=(15, 120))
+                limited = self.throttle is not None and self.throttle.rate() > 0
+                r = self.session.get(url, timeout=(15, 120), stream=limited)
                 if r.status_code in (401, 403):
                     raise DownloadError(tr('Zugriff verweigert (HTTP {0}) – Link abgelaufen?').format(r.status_code))
                 if r.status_code != 200:
                     last = tr('HTTP {0}').format(r.status_code)
                     raise requests.HTTPError(last)
-                raw = r.content
+                if limited:
+                    # Bandbreitenbegrenzung: in kleinen Blöcken lesen und jeden Block über den Token-Eimer freigeben
+                    buf = bytearray()
+                    for block in r.iter_content(BLOCK):
+                        self._check_cancel()
+                        self.throttle.consume(len(block), self.cancel)
+                        buf.extend(block)
+                    raw = bytes(buf)
+                else:
+                    raw = r.content
                 if chunk.compressed_md5 and hashlib.md5(raw).hexdigest() != chunk.compressed_md5:
                     last = tr('MD5 der komprimierten Daten falsch')
                     raise ValueError(last)
@@ -229,7 +244,7 @@ class ChunkDownloader:
 
         with self._lock:
             self._progress = Progress(phase=tr('Dateien prüfen'), total_bytes=sum(j.file.size for j in jobs),
-                                      files_total=len(jobs))
+                                      files_total=len(jobs), step="scanning")
             self._emit(force=True)
 
         for d in directories:
@@ -283,6 +298,7 @@ class ChunkDownloader:
         with self._lock:
             self._progress.done_bytes = verified_bytes
             self._progress.phase = tr('Herunterladen')
+            self._progress.step = "downloading"
             self._emit(force=True)
         log.info("Download-Plan: %d Dateien, %d Chunks zu laden, %d Bytes bereits gültig, %d SFC-Dateien, %d Worker",
                  len(jobs), len(chunk_jobs), verified_bytes, len(sfc_jobs), self.workers)
@@ -340,6 +356,7 @@ class ChunkDownloader:
 
         with self._lock:
             self._progress.phase = tr('Fertig')
+            self._progress.step = "finalizing"
             self._progress.done_bytes = self._progress.total_bytes
             self._emit(force=True)
         dt = max(0.001, time.monotonic() - t_dl)

@@ -24,10 +24,11 @@ def _sweep_comet() -> None:
 
 
 class GalaxyApp(Adw.Application):
-    def __init__(self) -> None:
+    def __init__(self, start_minimized: bool = False) -> None:
         super().__init__(application_id=APP_ID, flags=Gio.ApplicationFlags.HANDLES_OPEN)
         self.backend: Backend | None = None
         self.window = None
+        self.start_minimized = start_minimized      # Autostart („GOG Galaxy beim Systemstart öffnen“)
 
     def do_startup(self) -> None:
         Adw.Application.do_startup(self)
@@ -48,7 +49,37 @@ class GalaxyApp(Adw.Application):
         if self.window is None:
             from .window import MainWindow
             self.window = MainWindow(self, self.backend)
+            if self.start_minimized:
+                # Autostart: ins System-Tray, sonst minimiert in die Taskleiste
+                self.start_minimized = False
+                if self.window.tray.show():
+                    self.window.set_visible(False)
+                    self.hold()
+                    GLib.timeout_add_seconds(1, lambda: (self.release(), False)[1])
+                    return
+                self.window.present()
+                self.window.minimize()
+                return
+        self.window.set_visible(True)
         self.window.present()
+
+    def do_shutdown(self) -> None:
+        """Beenden: Ansicht merken, Online-Status löschen, ohne „Eingeloggt bleiben“ abmelden."""
+        win, backend = self.window, self.backend
+        if win is not None:
+            try:
+                win.remember_view()
+                win.tray.hide()
+                win.presence.stop()
+            except Exception:
+                log.exception("Aufräumen beim Beenden fehlgeschlagen")
+        if backend is not None and not backend.settings.keep_logged_in and backend.api.logged_in:
+            log.info("„Eingeloggt bleiben“ ist aus – Abmeldung beim Beenden")
+            try:
+                backend.logout()
+            except Exception:
+                log.exception("Abmelden beim Beenden fehlgeschlagen")
+        Adw.Application.do_shutdown(self)
 
     def do_open(self, files, n_files: int, hint: str) -> None:
         self.do_activate()
@@ -75,7 +106,7 @@ class GalaxyApp(Adw.Application):
             action, pid = rest[0], rest[1]
             self.window.show_game(pid)
             if action == "launch" and self.backend.registry.is_installed(pid):
-                idle(self.window.page._on_play)
+                idle(self.window.page.play, pid)
 
     def _about(self) -> None:
         dlg = Adw.AboutDialog(application_name=APP_NAME, version=__version__, developer_name=tr('Inoffizielles Community-Projekt'),
@@ -85,7 +116,8 @@ class GalaxyApp(Adw.Application):
 
 
 def run(argv: list[str]) -> int:
+    from ..autostart import MINIMIZED_ARG
     GLib.set_prgname(APP_ID)          # WM_CLASS / StartupWMClass → richtiges Symbol in Taskleiste und Fensterwechsler
     GLib.set_application_name(APP_NAME)
-    app = GalaxyApp()
-    return app.run([sys.argv[0], *[a for a in argv if a not in ("--gui", "gui")]])
+    app = GalaxyApp(start_minimized=MINIMIZED_ARG in argv)
+    return app.run([sys.argv[0], *[a for a in argv if a not in ("--gui", "gui", MINIMIZED_ARG)]])

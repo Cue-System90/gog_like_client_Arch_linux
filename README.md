@@ -10,7 +10,15 @@ per game, prefixes and GOverlay.
 ## Features
 
 - **Library like Galaxy** – owned, installed and last played games, custom libraries for non-GOG games, grid/list
-  views, filters. New purchases show up on their own; ⚙ → *Refresh library* (F5) forces a sync.
+  views, tags, star ratings, sort/group/filter and sidebar bookmarks, right-click menu. New purchases show up on their
+  own; ⚙ → *Refresh library* (F5) forces a sync. Power Search with Ctrl+F (library, bookmarks, store).
+- **Game view with Overview / My progress / Extras** – achievements with rarity, offline installers and goodies,
+  cloud saves backup; *Configure …* for game language, version rollback, beta/private channels, DLCs and custom
+  executables.
+- **Downloads like Galaxy** – pause/resume, reorder, bandwidth limit with schedule, pause while playing, queue kept
+  across restarts, disk space check.
+- **Desktop integration** – system tray (StatusNotifierItem), autostart, minimize/close/launch behaviour, online
+  status, playtime from all devices.
 - **Embedded GOG store** – home, catalogue, deals, wishlist, cart and order history inside the client; buying a
   game refreshes the library.
 - **Installs through GOG's content system** – resumable downloads, updates, verify/repair, DLCs, plus Galaxy's

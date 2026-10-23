@@ -2,7 +2,7 @@
 
 Zahnrad (Reihenfolge wie im Original): Spiele & Freunde hinzufügen ▸ · Bibliothek aktualisieren | Einstellungen ·
 Hilfe erhalten | Neu bei uns | Nach Updates suchen | Rechtliches und Datenschutz · Beenden.
-Avatar: Kopf mit Bild und Name | Kontoverwaltung · Bisherige Bestellungen · Geldbeutel | Ausloggen
+Avatar: Kopf mit Bild und Name | Online · Unsichtbar | Kontoverwaltung · Bisherige Bestellungen · Geldbeutel | Ausloggen
 (abgemeldet nur „Bei GOG anmelden“).
 """
 from __future__ import annotations
@@ -40,6 +40,8 @@ def install_actions(app) -> None:
         ("logout", lambda: w() and confirm_logout(w()), []),
         ("about", lambda: app._about(), []),
         ("quit", lambda: w().request_quit() if w() else app.quit(), ["<primary>q"]),
+        ("power-search", lambda: w() and w().open_power_search(), ["<primary>f"]),
+        ("activate-window", lambda: w() and w().show_from_tray(), []),
     )
     for name, cb, accels in actions:
         a = Gio.SimpleAction.new(name, None)
@@ -47,6 +49,18 @@ def install_actions(app) -> None:
         app.add_action(a)
         if accels:
             app.set_accels_for_action(f"app.{name}", accels)
+    # Avatar-Menü: Online / Unsichtbar (Radio, wirkt sofort)
+    status = app.backend.settings.presence_status if app.backend else "online"
+    pres = Gio.SimpleAction.new_stateful("presence", GLib.VariantType.new("s"), GLib.Variant("s", status))
+
+    def set_presence(action: Gio.SimpleAction, value: GLib.Variant) -> None:
+        action.set_state(value)
+        app.backend.settings.presence_status = value.get_string()
+        app.backend.save_settings()
+        if w() is not None:
+            w().presence.refresh()
+    pres.connect("activate", set_presence)
+    app.add_action(pres)
 
 
 def main_menu_model() -> Gio.Menu:
@@ -91,6 +105,12 @@ def avatar_popover(win) -> Gtk.PopoverMenu:
     item.set_attribute_value("custom", GLib.Variant.new_string("avatar-header"))
     head.append_item(item)
     menu.append_section(None, head)
+    status = Gio.Menu()
+    for value, text in (("online", tr('Online')), ("invisible", tr('Unsichtbar'))):
+        item = Gio.MenuItem.new(text, None)
+        item.set_action_and_target_value("app.presence", GLib.Variant("s", value))
+        status.append_item(item)
+    menu.append_section(None, status)
     acc = Gio.Menu()
     acc.append(tr('Kontoverwaltung'), "app.account")
     acc.append(tr('Bisherige Bestellungen'), "app.orders")

@@ -159,9 +159,9 @@ def build_sidebar_group(win, nav_item_cls) -> Gtk.Widget:
 
 
 def preferred_store_row(dlg) -> Adw.ComboRow:
-    """Einstellungen → Allgemein → Oberfläche: „Bevorzugter Store“ wie im Original."""
+    """Einstellungen → Oberfläche → Anpassungen: „Bevorzugter Store“ wie im Original."""
     row = Adw.ComboRow(title=tr('Bevorzugter Store'),
-                       model=Gtk.StringList.new([tr('GOG.COM'), tr('In der Seitenleiste ausblenden')]))
+                       model=Gtk.StringList.new([tr('GOG.COM-Store'), tr('In Seitenleiste ausblenden')]))
     row.set_selected(0 if dlg.s.store_visible else 1)
 
     def changed(*_a) -> None:

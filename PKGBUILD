@@ -1,7 +1,7 @@
 # Maintainer: lokal (CachyOS)
 # Reines Python-Paket ohne Build-Werkzeuge: Quellen werden direkt nach site-packages installiert.
 pkgname=galaxy-linux
-pkgver=0.2.0
+pkgver=0.3.0
 pkgrel=1
 pkgdesc="Inoffizieller nativer Client für GOG.com mit Proton-Auswahl pro Spiel und Steam-kompatiblen Startoptionen"
 arch=('any')

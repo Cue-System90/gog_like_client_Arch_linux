@@ -12,7 +12,7 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Adw, Gdk, Gio, GLib, Gtk, Pango  # noqa: E402
+from gi.repository import Adw, Gdk, Gio, GLib, GObject, Gtk, Pango  # noqa: E402
 
 from ..settings import format_bytes  # noqa: E402
 
@@ -87,8 +87,19 @@ class ImageLoader:
         run_async(work, done)
 
 
+SPEED_IN_BITS = [False]      # Einstellung „Download-Geschwindigkeit in Bit pro Sekunde anzeigen“
+
+
 def fmt_speed(bps: float) -> str:
-    return f"{format_bytes(bps)}/s" if bps > 0 else "–"
+    if bps <= 0:
+        return "–"
+    if SPEED_IN_BITS[0]:
+        bits = bps * 8
+        for unit in ("bit/s", "kbit/s", "Mbit/s", "Gbit/s"):
+            if bits < 1000 or unit == "Gbit/s":
+                return f"{bits:.0f} {unit}" if unit == "bit/s" else f"{bits:.1f} {unit}"
+            bits /= 1000
+    return f"{format_bytes(bps)}/s"
 
 
 def fmt_eta(seconds: float | None) -> str:
