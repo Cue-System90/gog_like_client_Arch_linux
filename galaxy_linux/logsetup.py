@@ -4,6 +4,7 @@ Zugangsdaten werden nie protokolliert: Login-Codes, Access-/Refresh-Tokens, Clie
 Sitzungs-IDs und signierte CDN-Parameter werden in URLs, Argumenten, Nachrichten und Tracebacks maskiert.
 Die eigentlichen Tokens liegen ausschließlich in ~/.config/galaxy-linux/credentials.json (0600) oder im Schlüsselbund.
 Konsole: INFO, mit GALAXY_LINUX_LOG=debug ebenfalls DEBUG; GALAXY_LINUX_LOG=off schaltet die Datei ab.
+GTK/GLib-Meldungen kommen ab Warnung ins Protokoll, Infos und Debug-Ausgaben nur mit GALAXY_LINUX_LOG=debug.
 """
 from __future__ import annotations
 
@@ -101,9 +102,7 @@ def setup(console_level: int | None = None, log_env: bool = True) -> None:
     if _configured:
         return
     _configured = True
-    mode = (os.environ.get("GALAXY_LINUX_LOG") or "").lower()
-    if os.environ.get("GALAXY_LINUX_DEBUG"):
-        mode = "debug"
+    mode = "debug" if debug_mode() else (os.environ.get("GALAXY_LINUX_LOG") or "").lower()
     root = logging.getLogger()
     root.setLevel(logging.DEBUG)
     fmt = logging.Formatter("%(asctime)s %(levelname)-5s [%(threadName)s] %(name)s: %(message)s")
@@ -195,33 +194,61 @@ def log_gtk_versions() -> None:
         logging.getLogger("galaxy_linux.env").warning("GTK-Versionen nicht ermittelbar: %s", exc)
 
 
+# GLib-Stufen (GLogLevelFlags) → Python-Stufen; FLAG_RECURSION (1) und FLAG_FATAL (2) werden ignoriert
+_GLIB_LEVELS = ((1 << 2, logging.CRITICAL),    # G_LOG_LEVEL_ERROR
+                (1 << 3, logging.ERROR),       # G_LOG_LEVEL_CRITICAL
+                (1 << 4, logging.WARNING),     # G_LOG_LEVEL_WARNING
+                (1 << 5, logging.INFO),        # G_LOG_LEVEL_MESSAGE
+                (1 << 6, logging.INFO),        # G_LOG_LEVEL_INFO („Gdk-INFO: Vulkan: Loader Message …“)
+                (1 << 7, logging.DEBUG))       # G_LOG_LEVEL_DEBUG
+
+
+def debug_mode() -> bool:
+    """GALAXY_LINUX_LOG=debug (oder GALAXY_LINUX_DEBUG): ausführliches Protokoll."""
+    return (os.environ.get("GALAXY_LINUX_LOG") or "").lower() == "debug" or bool(os.environ.get("GALAXY_LINUX_DEBUG"))
+
+
+def glib_bridge_level(flags: int, debug: bool = False) -> int | None:
+    """Python-Stufe, mit der eine GLib-Meldung ins Protokoll kommt – oder None (nicht übernehmen). Standard: nur
+    Warnungen und schlimmer (Gtk-WARNING, Gtk-CRITICAL …); Meldungen, Infos und Debug-Ausgaben von GTK/GDK (z. B.
+    Dutzende „Vulkan: Loader Message“) nur mit GALAXY_LINUX_LOG=debug."""
+    level = logging.WARNING
+    for flag, lvl in _GLIB_LEVELS:
+        if flags & flag:
+            level = lvl
+            break
+    return level if (debug or level >= logging.WARNING) else None
+
+
+def glib_writer(debug: bool, format_fields, passthrough, handled=None, logger: logging.Logger | None = None):
+    """Schreibfunktion für ``GLib.log_set_writer_func``: übernimmt Meldungen gemäß ``glib_bridge_level`` ins
+    Protokoll und reicht jede an ``passthrough`` (GLibs Standard-Ausgabe auf stderr bzw. ins Journal) weiter."""
+    glog = logger or logging.getLogger("glib")
+
+    def writer(log_level, fields, _n_fields=None, _user_data=None):
+        lvl = glib_bridge_level(int(log_level), debug)
+        if lvl is not None:
+            try:
+                glog.log(lvl, str(format_fields(log_level, fields, False)).strip())
+            except Exception:
+                pass
+        try:
+            return passthrough(log_level, fields)
+        except Exception:
+            return handled
+    return writer
+
+
 def install_glib_log_bridge() -> None:
-    """Leitet Gtk-/GLib-Warnungen zusätzlich in die Log-Datei."""
+    """Leitet Gtk-/GLib-Warnungen zusätzlich in die Log-Datei (Infos/Debug nur mit GALAXY_LINUX_LOG=debug). Auf
+    stderr gilt GLibs Standard: Infos und Debug-Ausgaben nur mit G_MESSAGES_DEBUG."""
     try:
         from gi.repository import GLib
     except Exception:
         return
     glog = logging.getLogger("glib")
-    levels = {GLib.LogLevelFlags.LEVEL_ERROR: logging.CRITICAL, GLib.LogLevelFlags.LEVEL_CRITICAL: logging.ERROR,
-              GLib.LogLevelFlags.LEVEL_WARNING: logging.WARNING, GLib.LogLevelFlags.LEVEL_MESSAGE: logging.INFO,
-              GLib.LogLevelFlags.LEVEL_INFO: logging.INFO, GLib.LogLevelFlags.LEVEL_DEBUG: logging.DEBUG}
-
-    def writer(log_level, fields, n_fields, _user_data):
-        try:
-            text = GLib.log_writer_format_fields(log_level, fields, False)
-            py_level = logging.WARNING
-            for flag, lvl in levels.items():
-                if log_level & flag:
-                    py_level = lvl
-                    break
-            if py_level >= logging.INFO:
-                glog.log(py_level, text.strip())
-        except Exception:
-            pass
-        try:
-            return GLib.log_writer_standard_streams(log_level, fields)
-        except Exception:
-            return GLib.LogWriterOutput.HANDLED
+    passthrough = getattr(GLib, "log_writer_default", None) or GLib.log_writer_standard_streams
+    writer = glib_writer(debug_mode(), GLib.log_writer_format_fields, passthrough, GLib.LogWriterOutput.HANDLED, glog)
     try:
         GLib.log_set_writer_func(writer, None)
     except Exception as exc:  # pragma: no cover
