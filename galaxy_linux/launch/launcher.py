@@ -27,7 +27,7 @@ from typing import Callable
 from .. import paths
 from ..settings import (DEFAULT_EXTERNAL_DIR, CustomLibrary, GameSettings, GameSettingsStore, GlobalSettings, InstalledGame,
                         InstalledRegistry, PlaytimeStore)
-from . import compat, hooks as launch_hooks, launch_options
+from . import compat, goverlay_profiles, hooks as launch_hooks, launch_options
 from .compat import CompatTool
 from .hooks import ConsoleBridge, LaunchContext
 
@@ -466,10 +466,12 @@ class Launcher:
             else (game_opts or self.settings.default_launch_options)
         opts = launch_options.parse(opts_text)
         env.update(opts.env)
+        # GOverlays Befehl für Nicht-Steam-Spiele („<Profil>/bgmod [-- env gamemoderun]“ ohne %command%) ist ein Wrapper
+        nonsteam, args = goverlay_profiles.split_nonsteam_command(opts.args)
         desc = f"{runner}" + (f" · {tool.name}" if tool else "")
         return LaunchPlan(env=env, cwd=cwd, tool=tool, prefix=str(prefix), runner=runner, description=desc,
-                          base=base, user_wrappers=list(opts.wrapper), compositor=compositor, wrappers=wrappers,
-                          args=list(opts.args), exe=exe_path)
+                          base=base, user_wrappers=[*opts.wrapper, *nonsteam], compositor=compositor, wrappers=wrappers,
+                          args=args, exe=exe_path)
 
     # ------------------------------------------------------------------ Start
     def is_running(self, product_id: str) -> bool:

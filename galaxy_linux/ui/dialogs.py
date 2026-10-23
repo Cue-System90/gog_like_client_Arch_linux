@@ -14,7 +14,7 @@ from ..api.client import ApiError
 from ..content.installer import InstallError, safe_dirname
 from ..content.manifest import BuildManifest
 from ..jsonstore import read_json
-from ..launch import compat, goverlay, launch_options
+from ..launch import compat, goverlay, goverlay_profiles, launch_options
 from ..launch.launcher import LaunchError
 from ..settings import GameSettings, format_bytes
 from . import prefs_registry, store, web
@@ -512,11 +512,14 @@ class GameSettingsDialog(Adw.PreferencesDialog):
 
         tg = Adw.PreferencesGroup(title=GLib.markup_escape_text(tr('Overlays & Leistung (Schalter)')),
                                   description=tr('Werden zusätzlich zu den Startoptionen angewendet.'))
-        self.sw_mango = Adw.SwitchRow(title="MangoHud", subtitle="FPS-Overlay" + ("" if st.mangohud else tr(' – nicht installiert')), active=self.gs.use_mangohud)
+        self._mango_ok = st.mangohud
+        self._mango_sub = "FPS-Overlay" + ("" if st.mangohud else tr(' – nicht installiert'))
+        self._vk_sub = "Post-Processing (ENABLE_VKBASALT=1)" + ("" if st.vkbasalt else tr(' – Layer nicht gefunden'))
+        self.sw_mango = Adw.SwitchRow(title="MangoHud", subtitle=self._mango_sub, active=self.gs.use_mangohud)
         self.sw_mango.set_sensitive(st.mangohud)
         self.sw_mango.connect("notify::active", lambda r, _: self._save(use_mangohud=r.get_active()))
         tg.add(self.sw_mango)
-        self.sw_vk = Adw.SwitchRow(title="vkBasalt", subtitle="Post-Processing (ENABLE_VKBASALT=1)" + ("" if st.vkbasalt else tr(' – Layer nicht gefunden')), active=self.gs.use_vkbasalt)
+        self.sw_vk = Adw.SwitchRow(title="vkBasalt", subtitle=self._vk_sub, active=self.gs.use_vkbasalt)
         self.sw_vk.connect("notify::active", lambda r, _: self._save(use_vkbasalt=r.get_active()))
         tg.add(self.sw_vk)
         self.sw_gm = Adw.SwitchRow(title="GameMode", subtitle="gamemoderun" + ("" if st.gamemode else tr(' – nicht installiert')), active=self.gs.use_gamemode)
@@ -561,7 +564,28 @@ class GameSettingsDialog(Adw.PreferencesDialog):
         self._save(launch_options=text)
         row.set_selected(0)
 
+    def _update_overlay_switches(self) -> None:
+        """Bestimmt ein GOverlay-Profil MangoHud/vkBasalt, wirken die eigenen Schalter nicht (MangoHud bei
+        Linux-Spielen schon) – dann ausgegraut mit Hinweis."""
+        if not hasattr(self, "sw_vk") or self.installed is None:
+            return
+        try:
+            prof = goverlay_profiles.profile_for_game(self.backend, self.pid)
+        except Exception:  # pragma: no cover – Anzeige darf nie scheitern
+            prof = None
+        active = prof is not None and prof.active
+        note = ""
+        if active:
+            name = tr('globales GOverlay-Profil') if prof.kind == "global" else prof.name
+            note = tr('vom GOverlay-Profil „{0}“ bestimmt').format(name)
+        mango_off = active and self.installed.platform == "windows"
+        self.sw_mango.set_sensitive(self._mango_ok and not mango_off)
+        self.sw_mango.set_subtitle(note if mango_off else self._mango_sub)
+        self.sw_vk.set_sensitive(not active)
+        self.sw_vk.set_subtitle(note if active else self._vk_sub)
+
     def _refresh_preview(self) -> None:
+        self._update_overlay_switches()
         if not hasattr(self, "preview"):
             return
         try:
@@ -1099,9 +1123,7 @@ class PreferencesDialog(Adw.PreferencesDialog):
                 ("feature_galaxy_services", tr('Galaxy-Dienste im Spiel (comet)'),
                  tr('Erfolge, Statistiken und Bestenlisten für Spiele mit GOG Galaxy-SDK – comet ersetzt den Galaxy-Dienst im Prefix.')),
                 ("sync_playtime", tr('Erfassung der Spielzeit'),
-                 tr('Spielzeit nach jeder Sitzung an GOG übertragen – erscheint im GOG-Profil und in GOG Galaxy.')),
-                ("goverlay_use_profiles", tr('GOverlay-Profile pro Spiel'),
-                 tr('Spiele mit ihrem eigenen GOverlay-Profil (MangoHud, vkBasalt …) starten statt mit der globalen Konfiguration.')))),
+                 tr('Spielzeit nach jeder Sitzung an GOG übertragen – erscheint im GOG-Profil und in GOG Galaxy.')))),
         )
         for title, desc, rows in sections:
             grp = Adw.PreferencesGroup(title=title, description=desc)

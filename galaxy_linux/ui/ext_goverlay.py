@@ -79,8 +79,6 @@ def build_prefs_group(dlg) -> Adw.PreferencesGroup:
             if after:
                 after()
         row.connect("notify::active", toggled)
-        # derselbe Schalter steht auch unter „Spielfunktionen“ – beim Anzeigen den aktuellen Wert übernehmen
-        row.connect("map", lambda r, key=key: r.get_active() != getattr(dlg.s, key) and r.set_active(getattr(dlg.s, key)))
         grp.add(row)
     grp.add(status)
     op = _open_row()

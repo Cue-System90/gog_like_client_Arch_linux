@@ -1790,6 +1790,10 @@ msgid "GOverlay-Profil: aus"
 msgstr "GOverlay profile: off"
 
 #: galaxy_linux/launch/goverlay_profiles.py
+msgid "GOverlay-Profil: {0} (aus den Startoptionen, wird einmal vorangestellt)"
+msgstr "GOverlay profile: {0} (from the launch options, prepended once)"
+
+#: galaxy_linux/launch/goverlay_profiles.py
 msgid "GOverlay-Profil: {0} (pro Spiel)"
 msgstr "GOverlay profile: {0} (per game)"
 
@@ -1797,7 +1801,7 @@ msgstr "GOverlay profile: {0} (per game)"
 msgid "GOverlay-Änderungen werden zurückgenommen …"
 msgstr "Undoing GOverlay changes …"
 
-#: galaxy_linux/launch/goverlay_profiles.py galaxy_linux/ui/ext_goverlay.py
+#: galaxy_linux/launch/goverlay_profiles.py galaxy_linux/ui/dialogs.py galaxy_linux/ui/ext_goverlay.py
 msgid "globales GOverlay-Profil"
 msgstr "global GOverlay profile"
 
@@ -2266,10 +2270,6 @@ msgid "GOG-Spiel (goggame-Daten gefunden)"
 msgstr "GOG game (goggame data found)"
 
 #: galaxy_linux/ui/dialogs.py
-msgid "GOverlay-Profile pro Spiel"
-msgstr "GOverlay profiles per game"
-
-#: galaxy_linux/ui/dialogs.py
 msgid "Galaxy Content-System (Build {0}), Sprache {1}"
 msgstr "Galaxy content system (build {0}), language {1}"
 
@@ -2638,10 +2638,6 @@ msgid "Spiele laufen direkt unter Wayland statt XWayland (PROTON_ENABLE_WAYLAND=
 msgstr "Games run directly on Wayland instead of XWayland (PROTON_ENABLE_WAYLAND=1); can be turned off per game under “Properties → Compatibility”"
 
 #: galaxy_linux/ui/dialogs.py
-msgid "Spiele mit ihrem eigenen GOverlay-Profil (MangoHud, vkBasalt …) starten statt mit der globalen Konfiguration."
-msgstr "Launch games with their own GOverlay profile (MangoHud, vkBasalt …) instead of the global configuration."
-
-#: galaxy_linux/ui/dialogs.py
 msgid "Spiele-Ordner der Bibliothek"
 msgstr "Library games folder"
 
@@ -2976,6 +2972,10 @@ msgstr "umu-launcher (Proton in the Steam Linux Runtime container)"
 #: galaxy_linux/ui/dialogs.py
 msgid "umu-launcher bevorzugen"
 msgstr "Prefer umu-launcher"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "vom GOverlay-Profil „{0}“ bestimmt"
+msgstr "set by the GOverlay profile \"{0}\""
 
 #: galaxy_linux/ui/dialogs.py
 msgid "vorhanden · "

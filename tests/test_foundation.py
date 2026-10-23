@@ -25,7 +25,7 @@ OLD_GAME = {"compat_tool": "proton:/opt/p", "launch_options": "mangohud %command
 NEW_GLOBAL = {"library_sync_interval": 10, "library_sync_on_focus": True, "library_new_ids": {}, "library_checksum": "",
               "feature_cloud_saves": True, "feature_galaxy_services": True, "feature_achievements": True,
               "feature_auto_update": False, "goverlay_register_folders": True, "goverlay_use_profiles": True,
-              "goverlay_global_fallback": True, "goverlay_added_folders": [], "comet_path": "", "store_visible": True,
+              "goverlay_global_fallback": False, "goverlay_added_folders": [], "comet_path": "", "store_visible": True,
               "store_last_url": ""}
 NEW_GAME = {"cloud_saves": "", "galaxy_services": "", "goverlay_profile": "", "cloud_timestamps": {}, "setup_done": []}
 

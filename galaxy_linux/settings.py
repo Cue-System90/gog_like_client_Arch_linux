@@ -129,7 +129,7 @@ class GlobalSettings:
     # GOverlay
     goverlay_register_folders: bool = True     # Spiele-Ordner in GOverlays nonsteam_folders.txt eintragen
     goverlay_use_profiles: bool = True         # GOverlay-Profil (bgmod) pro Spiel nutzen
-    goverlay_global_fallback: bool = True      # ohne eigenes Profil das globale GOverlay-Profil nutzen
+    goverlay_global_fallback: bool = False     # ohne eigenes Profil das globale GOverlay-Profil nutzen (auf Wunsch)
     goverlay_added_folders: list[str] = field(default_factory=list)   # von galaxy-linux eingetragene Ordner
     # Galaxy-Dienste (comet) und Store
     comet_path: str = ""              # "" = automatisch suchen

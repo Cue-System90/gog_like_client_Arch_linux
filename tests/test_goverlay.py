@@ -164,6 +164,19 @@ class FolderSyncTest(TempEnv):
         self.assertEqual((d / gp.FOLDERS_FILE).read_text(), "/eigene/Spiele\n")
         self.assertEqual(plan.ours, [])
 
+    def test_symlinked_folder_file_stays_a_symlink(self):
+        self.install_goverlay()
+        self.games.mkdir(parents=True, exist_ok=True)
+        dotfiles = self.root / "dotfiles"
+        dotfiles.mkdir()
+        target = dotfiles / gp.FOLDERS_FILE
+        target.write_text("/eigene/Spiele\n")
+        link = self.cfg / "goverlay" / gp.FOLDERS_FILE
+        link.symlink_to(target)
+        gp.sync_folders(self.settings)
+        self.assertTrue(link.is_symlink())
+        self.assertEqual(target.read_text(), f"/eigene/Spiele\n{self.games}\n")
+
     def test_sync_all_saves_added_folders(self):
         self.install_goverlay()
         backend = types.SimpleNamespace(settings=self.settings, registry=InstalledRegistry(), _covers={}, _meta={})
@@ -309,11 +322,12 @@ class ProfileTest(TempEnv):
 
     def test_global_fallback(self):
         self.profile(gp.GLOBAL_PROFILE)
-        prof = gp.resolve_profile(str(self.game_dir), "", self.settings)
-        self.assertEqual(prof.kind, "global")
+        self.assertFalse(GlobalSettings().goverlay_global_fallback)            # nur auf Wunsch (goverlay.md §5.6)
         self.settings.goverlay_global_fallback = False
         self.assertEqual(gp.resolve_profile(str(self.game_dir), "", self.settings).kind, "none")
         self.settings.goverlay_global_fallback = True
+        prof = gp.resolve_profile(str(self.game_dir), "", self.settings)
+        self.assertEqual(prof.kind, "global")
         self.profile()                                               # eigenes Profil geht vor
         self.assertEqual(gp.resolve_profile(str(self.game_dir), "", self.settings).kind, "game")
         self.assertEqual(gp.resolve_profile(str(self.game_dir), "global", self.settings).kind, "global")
@@ -477,6 +491,64 @@ class LaunchIntegrationTest(TempEnv):
         log_text = (self.root / "gl" / "logs" / "1.log").read_text()
         self.assertIn(f"GOverlay-Profil {PROFILE}", log_text)
 
+    def test_bgmod_from_launch_options_used_once(self):
+        """Bekannter Fehler: global/bgmod in den Startoptionen + globaler Rückfall → bgmod wickelte bgmod ein."""
+        gdir = self.profile(gp.GLOBAL_PROFILE)
+        self.settings.goverlay_global_fallback = True
+        self.gs.update("1", launch_options=f'"{gdir}/bgmod" %command%')
+        p = self.preview()
+        bg = [a for a in p.argv if os.path.basename(a) in ("bgmod", "fgmod")]
+        self.assertEqual(bg, [os.path.realpath(gdir / "bgmod")])
+        self.settings.goverlay_global_fallback = False                  # auch ohne Rückfall: Profil aus den Startoptionen
+        p = self.preview()
+        self.assertEqual(p.tool_wrappers, [os.path.realpath(gdir / "bgmod")])
+        self.assertEqual(p.user_wrappers, [])
+        backend = types.SimpleNamespace(settings=self.settings, registry=self.registry, game_settings=self.gs)
+        prof = gp.profile_for_game(backend, "1")
+        self.assertEqual((prof.kind, prof.from_options), ("global", True))
+        self.assertEqual(gp.describe(prof), gp.tr('GOverlay-Profil: {0} (aus den Startoptionen, wird einmal vorangestellt)')
+                         .format(gp.tr('globales GOverlay-Profil')))
+        self.gs.update("1", goverlay_profile="none")                    # Profil aus: Startoptionen bleiben, wie sie sind
+        self.assertEqual(self.preview().user_wrappers, [str(gdir / "bgmod")])
+
+    def test_nonsteam_command_is_a_wrapper(self):
+        pdir = self.profile(conf="[Config]\ngamemode=1\nwinedetectionenable=0\n")
+        self.gs.update("1", launch_options=f'"{pdir}/bgmod" -- env gamemoderun /WineDetectionEnabled:False')
+        p = self.preview()
+        self.assertEqual(p.argv[:4], [os.path.realpath(pdir / "bgmod"), "--", "env", "gamemoderun"])
+        self.assertEqual(p.argv.count("gamemoderun"), 1)
+        self.assertEqual(p.argv[-1], "/WineDetectionEnabled:False")
+        self.assertEqual(p.argv.count("/WineDetectionEnabled:False"), 1)
+        self.assertEqual(p.args, ["/WineDetectionEnabled:False"])
+        self.gs.update("1", goverlay_profile="none")
+        p = self.preview()
+        self.assertEqual(p.user_wrappers, [str(pdir / "bgmod"), "--", "env", "gamemoderun"])
+        self.assertEqual(p.args, ["/WineDetectionEnabled:False"])
+
+    def test_legacy_launch_options_from_0_1_6(self):
+        self.profile(conf="[Config]\nGOVERLAY_MANGOHUD=0\n")
+        self.gs.update("1", use_mangohud=False, launch_options="ENABLE_VKBASALT=1 MANGOHUD=1 mangohud %command% -x2")
+        p = self.preview()
+        self.assertNotIn("mangohud", p.argv)
+        self.assertNotIn("ENABLE_VKBASALT", p.env)
+        self.assertNotIn("MANGOHUD", p.env)
+        self.assertEqual(p.args, ["-x2"])
+        self.gs.update("1", env={"ENABLE_VKBASALT": "1"})                # eigene Umgebung bleibt
+        self.assertEqual(self.preview().env["ENABLE_VKBASALT"], "1")
+
+    def test_explicit_env_wins_over_profile_env(self):
+        pdir = self.profile(conf="[Config]\ngamemode=1\n[Env]\nPROTON_ENABLE_WAYLAND=1\nPROTON_USE_WOW64=1\n")
+        self.gs.update("1", wayland_driver="off")
+        p = self.preview()
+        self.assertEqual(p.env["PROTON_ENABLE_WAYLAND"], "0")
+        self.assertEqual(p.argv[:5], [os.path.realpath(pdir / "bgmod"), "--", "env", "PROTON_ENABLE_WAYLAND=0",
+                                      "gamemoderun"])
+        self.gs.update("1", wayland_driver="", launch_options="PROTON_USE_WOW64=0 %command%")
+        p = self.preview()
+        self.assertEqual(p.argv[:4], [os.path.realpath(pdir / "bgmod"), "--", "env", "PROTON_USE_WOW64=0"])
+        self.gs.update("1", launch_options="")                           # globale Vorgabe: Profil bestimmt
+        self.assertEqual(self.preview().argv[:4], [os.path.realpath(pdir / "bgmod"), "--", "env", "gamemoderun"])
+
     def test_registered_hook(self):
         import importlib
         from galaxy_linux import backend
@@ -549,7 +621,8 @@ class ImportTest(unittest.TestCase):
         for raw, want in (("ENABLE_VKBASALT=1 mangohud %command% -skipintro", "-skipintro"),
                           ('"/h/.local/share/goverlay/gameconfig/global/bgmod" %command%', ""),
                           ("DISABLE_VULKAN_LAYER_LS_frame_generation=1 %command%", "DISABLE_VULKAN_LAYER_LS_frame_generation=1 %command%"),
-                          ("PROTON_LOG=1 /p/bgmod -- env gamemoderun %command% -x", "PROTON_LOG=1 env gamemoderun %command% -x"),
+                          ("PROTON_LOG=1 /p/bgmod -- env gamemoderun %command% -x", "PROTON_LOG=1 %command% -x"),
+                          ("/p/bgmod -- strangle 60 %command%", "strangle 60 %command%"),
                           ("mangohud %command%", ""), ("", "")):
             self.assertEqual(goverlay.strip_profile_parts(raw), want, raw)
 

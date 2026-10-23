@@ -179,6 +179,9 @@ def read_lines(path: Path) -> list[str]:
 
 
 def _write_atomic(path: Path, data: bytes) -> None:
+    """Atomar ersetzen. Ist ``path`` ein Symlink (z. B. von stow/chezmoi in ein Dotfile-Repository), wird das Ziel
+    ersetzt und der Link bleibt erhalten."""
+    path = Path(os.path.realpath(path))
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(f".{path.name}.galaxy-linux.tmp")
     try:
@@ -202,7 +205,12 @@ def sync_folders(settings: Any, enabled: bool | None = None) -> FolderPlan | Non
     if enabled is None:
         enabled = bool(settings.goverlay_register_folders)
     path = folders_file()
-    plan = plan_folder_lines(read_lines(path), configured_roots(settings), settings.goverlay_added_folders, enabled)
+    lines = read_lines(path)
+    plan = plan_folder_lines(lines, configured_roots(settings), settings.goverlay_added_folders, enabled)
+    if plan.changed:
+        current = read_lines(path)
+        if current != lines:            # inzwischen von GOverlay geändert: auf dem neuen Stand planen
+            plan = plan_folder_lines(current, configured_roots(settings), settings.goverlay_added_folders, enabled)
     if plan.changed:
         _write_atomic(path, "".join(f"{x}\n" for x in plan.lines).encode("utf-8", "surrogateescape"))
         log.info("GOverlay-Ordnerliste %s: eingetragen %s, entfernt %s", path, plan.added or "-", plan.removed or "-")
@@ -370,6 +378,7 @@ class Profile:
     needs_copy: bool = False     # bgmod.conf da, bgmod fehlt → Vorlage kopieren (wie GOverlay beim Klick)
     conf: BgmodConf = field(default_factory=BgmodConf)
     reason: str = ""             # warum kein Profil (für das Protokoll)
+    from_options: bool = False   # Profil stammt aus einem bgmod-Pfad in den Startoptionen
 
     @property
     def active(self) -> bool:
@@ -444,6 +453,9 @@ def resolve_profile(install_path: str, choice: str, settings: Any) -> Profile:
 
 def describe(prof: Profile, registered: bool = True) -> str:
     """Kurztext für Spielseite und Eigenschaften. ``registered`` = Spielordner erscheint in GOverlay."""
+    if prof.from_options and prof.active:
+        name = tr('globales GOverlay-Profil') if prof.kind == "global" else prof.name
+        return tr('GOverlay-Profil: {0} (aus den Startoptionen, wird einmal vorangestellt)').format(name)
     if prof.kind == "game":
         return tr('GOverlay-Profil: {0} (pro Spiel)').format(prof.name)
     if prof.kind == "global":
@@ -483,84 +495,179 @@ def is_goverlay_wrapper(token: str) -> bool:
     return os.path.basename(str(token)) in GOVERLAY_WRAPPERS
 
 
+def _wrapper_tail(tokens: list[str], i: int) -> int:
+    """Index hinter ``bgmod`` samt GOverlays Anhang ``-- env gamemoderun`` (bzw. nur ``--``)."""
+    if tokens[i:i + 4] == [tokens[i], "--", "env", "gamemoderun"]:
+        return i + 4
+    if tokens[i + 1:i + 2] == ["--"]:
+        return i + 2
+    return i + 1
+
+
 def drop_goverlay_wrappers(tokens: list[str]) -> tuple[list[str], list[str]]:
-    """``bgmod``/``fgmod`` (samt direkt folgendem ``--``) aus einer Wrapper-Liste entfernen → (Rest, entfernt)."""
+    """``bgmod``/``fgmod`` samt direkt folgendem ``--`` bzw. ``-- env gamemoderun`` (GOverlays Befehl; das Profil
+    bestimmt GameMode selbst) aus einer Wrapper-Liste entfernen → (Rest, entfernte Wrapper)."""
     kept: list[str] = []
     dropped: list[str] = []
-    skip_dashes = False
-    for t in tokens:
-        if is_goverlay_wrapper(t):
-            dropped.append(t)
-            skip_dashes = True
+    i = 0
+    while i < len(tokens):
+        if is_goverlay_wrapper(tokens[i]):
+            dropped.append(tokens[i])
+            i = _wrapper_tail(tokens, i)
             continue
-        if skip_dashes and t == "--":
-            skip_dashes = False
-            continue
-        skip_dashes = False
-        kept.append(t)
+        kept.append(tokens[i])
+        i += 1
     return kept, dropped
 
 
+def split_nonsteam_command(args: list[str]) -> tuple[list[str], list[str]]:
+    """GOverlays Befehl für Nicht-Steam-Spiele hat kein ``%command%`` (``<Profil>/bgmod [-- env gamemoderun]
+    [/WineDetectionEnabled:False]``); ohne ``%command%`` landen alle Token als Spielargumente. Führendes ``bgmod``
+    samt Anhang wird wieder zum Wrapper → (Wrapper, Spielargumente)."""
+    if not args or not is_goverlay_wrapper(args[0]):
+        return [], list(args)
+    end = _wrapper_tail(args, 0)
+    return list(args[:end]), list(args[end:])
+
+
+def wrapper_profile(tokens: Iterable[str]) -> str:
+    """Name des GOverlay-Profils, dessen ``bgmod``/``fgmod`` in den Startoptionen steht ("" = keins)."""
+    root = os.path.realpath(gameconfig_dir())
+    for t in tokens:
+        if is_goverlay_wrapper(t):
+            parent = os.path.dirname(os.path.normpath(os.path.abspath(os.path.expanduser(str(t)))))
+            if os.path.realpath(os.path.dirname(parent)) == root and _safe_profile_name(os.path.basename(parent)):
+                return os.path.basename(parent)
+    return ""
+
+
 def apply_profile(plan: Any, prof: Profile, is_windows: bool, own_vkbasalt: bool = False,
-                  which: Callable[[str], str | None] | None = None) -> list[str]:
+                  which: Callable[[str], str | None] | None = None, keep_env: dict[str, str] | None = None,
+                  drop_env: Iterable[str] = ()) -> list[str]:
     """Profil in den Startbefehl einsetzen (nur ``plan`` ändern, einmal pro Plan). Gibt Hinweise fürs Protokoll zurück.
 
-    ``argv = [*Startoptionen-Wrapper, *gamescope, <Profil>/bgmod, (-- env gamemoderun), *Schalter, umu-run …,
-    spiel.exe, *Argumente, (/WineDetectionEnabled:False)]``"""
+    ``argv = [*Startoptionen-Wrapper, *gamescope, <Profil>/bgmod, (-- env [VAR=wert …] [gamemoderun]), *Schalter,
+    umu-run …, spiel.exe, *Argumente, (/WineDetectionEnabled:False)]``
+
+    ``keep_env``: ausdrücklich in galaxy-linux gesetzte Variablen (pro Spiel/Bibliothek, Startoptionen). bgmod exportiert
+    den ``[Env]``-Abschnitt des Profils erst nach galaxy-linux – widerspricht er, kommen die eigenen Werte per ``env``
+    hinter bgmod und gelten damit (z. B. „Wayland-Treiber: Aus“ gegen ``PROTON_ENABLE_WAYLAND=1`` im Profil).
+    ``drop_env``: MangoHud-/vkBasalt-Variablen aus alten Startoptionen (0.1.x), die das Profil übernimmt."""
     notes: list[str] = []
     if not prof.active or prof.bgmod is None:
         return notes
     which = which or shutil.which
     tw = [str(prof.bgmod)]
+    after: list[str] = []
+    profile_env = prof.conf.sections.get("env", {})
+    override = {k: v for k, v in sorted((keep_env or {}).items()) if k in profile_env and profile_env[k] != v}
+    if override:
+        after += [f"{k}={v}" for k, v in override.items()]
+        notes.append("Umgebung aus galaxy-linux geht vor dem Profil: " + ", ".join(f"{k}={v}" for k, v in override.items()))
     if prof.conf.get("config", "gamemode") == "1":
         if which("gamemoderun"):
-            tw += ["--", "env", "gamemoderun"]
+            after.append("gamemoderun")
             if "gamemoderun" in plan.wrappers:
                 plan.wrappers = [w for w in plan.wrappers if w != "gamemoderun"]
         else:
             notes.append("gamemode=1 im Profil, aber gamemoderun ist nicht installiert")
+    if after:
+        tw += ["--", "env", *after]
     if (GAME_PERFORMANCE in prof.conf.broken_flags.get("env", [])
             and prof.conf.get("config", "GOVERLAY_TWEAKS") == "1" and which(GAME_PERFORMANCE)):
         tw.append(GAME_PERFORMANCE)            # „=game-performance“ übergeht bgmod (GOverlay-Fehler, §4.4)
         notes.append("„=game-performance“ im Profil: game-performance selbst vorangestellt")
     if is_windows and prof.conf.get("config", "winedetectionenable") == "0" \
-            and WINE_DETECTION_OFF not in plan.game_args_suffix:
+            and WINE_DETECTION_OFF not in plan.game_args_suffix and WINE_DETECTION_OFF not in plan.args:
         plan.game_args_suffix.append(WINE_DETECTION_OFF)
     plan.user_wrappers, nested = drop_goverlay_wrappers(list(plan.user_wrappers))
     if nested:
         notes.append(f"GOverlay-Wrapper aus den Startoptionen ersetzt: {', '.join(nested)}")
+    plan.args, nested = drop_goverlay_wrappers(list(plan.args))
+    if nested:
+        notes.append(f"GOverlay-Wrapper aus den Spielargumenten entfernt: {', '.join(nested)}")
     plan.tool_wrappers = [*tw, *drop_goverlay_wrappers(list(plan.tool_wrappers))[0]]
     if is_windows and "mangohud" in plan.wrappers:
         plan.wrappers = [w for w in plan.wrappers if w != "mangohud"]
         notes.append("eigener MangoHud-Schalter entfällt – das Profil bestimmt MangoHud")
+    if is_windows and any(os.path.basename(w) == "mangohud" for w in plan.user_wrappers):
+        plan.user_wrappers = [w for w in plan.user_wrappers if os.path.basename(w) != "mangohud"]
+        notes.append("mangohud aus den Startoptionen entfällt – das Profil bestimmt MangoHud")
     if own_vkbasalt and plan.env.pop("ENABLE_VKBASALT", None) is not None:
         notes.append("eigener vkBasalt-Schalter entfällt – das Profil bestimmt vkBasalt")
+    dropped = [k for k in drop_env if plan.env.pop(k, None) is not None]
+    if dropped:
+        notes.append(f"{', '.join(dropped)} aus den Startoptionen entfällt – das Profil bestimmt MangoHud/vkBasalt")
     return notes
+
+
+def _library(launcher: Any, game: Any) -> Any:
+    if launcher is not None and hasattr(launcher, "library_of"):
+        try:
+            return launcher.library_of(game)
+        except Exception:  # pragma: no cover
+            return None
+    return None
+
+
+def _launch_options(settings: Any, gs: Any, lib: Any) -> list[Any]:
+    """Geparste Startoptionen wie beim Start: globale und die des Spiels (sonst die Vorgabe seiner Bibliothek)."""
+    from . import launch_options
+    out = []
+    for text in (settings.default_launch_options, gs.launch_options or (lib.launch_options if lib is not None else "")):
+        try:
+            out.append(launch_options.parse(text))
+        except launch_options.LaunchOptionsError:
+            pass
+    return out
+
+
+def option_wrappers(settings: Any, gs: Any, lib: Any = None) -> list[str]:
+    """Wrapper aus den Startoptionen (vor ``%command%`` bzw. GOverlays Nicht-Steam-Befehl ohne ``%command%``)."""
+    out: list[str] = []
+    for o in _launch_options(settings, gs, lib):
+        out += [*o.wrapper, *split_nonsteam_command(o.args)[0]]
+    return out
 
 
 def _configured_env_keys(ctx: Any, inherited: bool = True) -> set[str]:
     """Umgebungsvariablen, die der Nutzer selbst gesetzt hat (Einstellungen, Startoptionen; mit ``inherited`` auch
     die Umgebung, aus der galaxy-linux gestartet wurde)."""
-    from . import launch_options
     keys = set(ctx.settings.env) | set(ctx.gs.env)
     if inherited:
         keys |= set(os.environ)
-    lib = None
-    if ctx.launcher is not None and hasattr(ctx.launcher, "library_of"):
-        try:
-            lib = ctx.launcher.library_of(ctx.game)
-        except Exception:  # pragma: no cover
-            lib = None
-    for text in (ctx.settings.default_launch_options, ctx.gs.launch_options, lib.launch_options if lib is not None else ""):
-        try:
-            keys |= set(launch_options.parse(text).env)
-        except launch_options.LaunchOptionsError:
-            pass
+    for o in _launch_options(ctx.settings, ctx.gs, _library(ctx.launcher, ctx.game)):
+        keys |= set(o.env)
     return keys
 
 
+def _explicit_env(ctx: Any) -> tuple[dict[str, str], list[str]]:
+    """(Variablen, die vor dem Profil gelten sollen, MangoHud-/vkBasalt-Variablen aus den Startoptionen)."""
+    from .goverlay import PROFILE_ENV
+    lib = _library(ctx.launcher, ctx.game)
+    option_env: dict[str, str] = {}
+    for o in _launch_options(ctx.settings, ctx.gs, lib):
+        option_env.update(o.env)
+    keys = set(ctx.gs.env) | set(option_env)
+    if ctx.gs.wayland_driver in ("on", "off") or (lib is not None and lib.wayland_driver in ("on", "off")):
+        keys.add("PROTON_ENABLE_WAYLAND")
+    keep = {k: ctx.plan.env[k] for k in keys if k in ctx.plan.env and k not in PROFILE_ENV}
+    own = set(ctx.settings.env) | set(ctx.gs.env)
+    drop = [k for k in PROFILE_ENV if k in option_env and k not in own
+            and (ctx.is_windows or not k.startswith("MANGOHUD"))]
+    return keep, drop
+
+
 def profile_for_context(ctx: Any) -> Profile:
-    return resolve_profile(ctx.game.install_path, ctx.gs.goverlay_profile, ctx.settings)
+    """Profil des Spiels; steht bei „Automatisch“ der bgmod eines Profils in den Startoptionen, gilt dieses (so wird
+    bgmod nie doppelt vorangestellt)."""
+    choice = (ctx.gs.goverlay_profile or "").strip()
+    from_options = ""
+    if not choice and ctx.plan is not None:
+        from_options = wrapper_profile(ctx.plan.user_wrappers)
+    prof = resolve_profile(ctx.game.install_path, from_options or choice, ctx.settings)
+    prof.from_options = bool(from_options)
+    return prof
 
 
 def adjust_context(ctx: Any, prof: Profile | None = None) -> Profile:
@@ -574,7 +681,9 @@ def adjust_context(ctx: Any, prof: Profile | None = None) -> Profile:
     ctx.data["goverlay"] = prof
     if prof.active and (not prof.needs_copy or ctx.preview) and not ctx.data.get("goverlay_applied"):
         own_vk = bool(ctx.gs.use_vkbasalt) and "ENABLE_VKBASALT" not in _configured_env_keys(ctx)
-        ctx.data["goverlay_notes"] = apply_profile(plan, prof, ctx.is_windows, own_vkbasalt=own_vk)
+        keep, drop = _explicit_env(ctx)
+        ctx.data["goverlay_notes"] = apply_profile(plan, prof, ctx.is_windows, own_vkbasalt=own_vk, keep_env=keep,
+                                                   drop_env=drop)
         ctx.data["goverlay_applied"] = True
     return prof
 
@@ -613,10 +722,11 @@ def _within(path: str, root: Path) -> bool:
     return p == r or r in p.parents
 
 
-def uninstall_candidates(install_path: str, choice: str) -> list[Path]:
+def uninstall_candidates(install_path: str, choice: str, extra: Iterable[str] = ()) -> list[Path]:
     """Profile, deren bgmod nachweislich in diesem Spielordner gearbeitet hat (``GAME_DIR`` aus bgmod.conf,
-    von bgmod zurückgeschrieben) und die einen bgmod-uninstaller haben – das globale Profil nie (geteilte Backups)."""
-    names = [n for n in dict.fromkeys([(choice or "").strip(), auto_profile_name(install_path)])
+    von bgmod zurückgeschrieben) und die einen bgmod-uninstaller haben – das globale Profil nie (geteilte Backups).
+    ``extra``: weitere Profilnamen (z. B. aus einem bgmod-Pfad in den Startoptionen)."""
+    names = [n for n in dict.fromkeys([(choice or "").strip(), *extra, auto_profile_name(install_path)])
              if n and n not in (OFF, GLOBAL_PROFILE) and _safe_profile_name(n)]
     out = []
     for n in names:
@@ -659,8 +769,9 @@ def undo_bgmod_changes(backend: Any, product_id: str, action: str, status: Calla
     if g is None or not os.path.isdir(g.install_path):
         return 0
     gs = backend.game_settings.get(str(product_id))
+    from_options = wrapper_profile(option_wrappers(backend.settings, gs, _library(getattr(backend, "launcher", None), g)))
     n = 0
-    for pdir in uninstall_candidates(g.install_path, gs.goverlay_profile):
+    for pdir in uninstall_candidates(g.install_path, gs.goverlay_profile, [from_options]):
         if status:
             status(tr('GOverlay-Änderungen werden zurückgenommen …'))
         from .. import paths
@@ -788,7 +899,14 @@ def profile_for_game(backend: Any, product_id: str) -> Profile | None:
     if g is None:
         return None
     gs = backend.game_settings.get(str(product_id))
-    return resolve_profile(g.install_path, gs.goverlay_profile, backend.settings)
+    choice = (gs.goverlay_profile or "").strip()
+    from_options = ""
+    if not choice:
+        lib = _library(getattr(backend, "launcher", None), g)
+        from_options = wrapper_profile(option_wrappers(backend.settings, gs, lib))
+    prof = resolve_profile(g.install_path, from_options or choice, backend.settings)
+    prof.from_options = bool(from_options)
+    return prof
 
 
 def status_for(backend: Any, product_id: str) -> str | None:
