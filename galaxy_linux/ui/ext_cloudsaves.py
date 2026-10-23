@@ -1,9 +1,9 @@
-"""Cloud-Speicherstände in der Oberfläche (Logik: ``content/cloudsaves.py``, Spielstart: ``launch/hook_cloudsaves.py``).
+"""Cloud-Spielstände in der Oberfläche (Logik: ``content/cloudsaves.py``, Spielstart: ``launch/hook_cloudsaves.py``).
 
-* Spielansicht: Kennzahl CLOUD-SPEICHERSTÄNDE in der Play-Leiste („Synchronisiert · vor 5 Min.“, „Konflikt“,
+* Spielansicht: Kennzahl CLOUD-SPIELSTÄNDE in der Play-Leiste („Synchronisiert · vor 5 Min.“, „Konflikt“,
   „Aus“ …), Tooltip mit Galaxys Wortlaut; ein Klick öffnet Eigenschaften → Spielfunktionen.
-* Eigenschaften → Spielfunktionen: Gruppe „Cloud-Speicherstände“ mit Zustand, „Jetzt hochladen“, „Jetzt
-  herunterladen“, „Lokale Sicherungen öffnen“ und den aufgelösten Speicherorten. Der Schalter „Lokale Speicherstände
+* Eigenschaften → Spielfunktionen: Gruppe „Cloud-Spielstände“ mit Zustand, „Jetzt hochladen“, „Jetzt
+  herunterladen“, „Lokale Sicherungen öffnen“ und den aufgelösten Speicherorten. Der Schalter „Lokale Spielstände
   mit der GOG Galaxy-Cloud synchronisieren“ (Globale Vorgabe/An/Aus) steht direkt darüber in der eingebauten Gruppe.
 
 Netz und Dateien laufen in ``run_async``; Rückfragen (Konflikt, Kontingent, Überschreiben der Cloud) zeigt
@@ -27,7 +27,7 @@ _WARN = {"conflict": "warning", "quota": "warning", "pending": "warning", "error
 
 
 def applicable(backend, pid: str | None) -> bool:
-    """Installiertes GOG-Windows-Spiel – nur dort gibt es Cloud-Speicherstände (Linux-Versionen haben keine)."""
+    """Installiertes GOG-Windows-Spiel – nur dort gibt es Cloud-Spielstände (Linux-Versionen haben keine)."""
     if not pid:
         return False
     g = backend.registry.get(str(pid))
@@ -54,7 +54,7 @@ class CloudStat(Gtk.Button):
         self.pid: str | None = None
         self._timer = 0
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2, valign=Gtk.Align.CENTER)
-        self.key = label(tr('Cloud-Speicherstände').upper(), css=["stat-key"])
+        self.key = label(tr('Cloud-Spielstände').upper(), css=["stat-key"])
         self.val = label("–", css=["stat-val"], ellipsize=True)
         self.val.set_max_width_chars(26)
         box.append(self.key)
@@ -95,7 +95,7 @@ class CloudStat(Gtk.Button):
 # --------------------------------------------------------------------------- Eigenschaften → Spielfunktionen
 class CloudGroup(Adw.PreferencesGroup):
     def __init__(self, dlg, pid: str) -> None:
-        super().__init__(title=tr('Cloud-Speicherstände'))
+        super().__init__(title=tr('Cloud-Spielstände'))
         self.dlg, self.pid, self.backend = dlg, str(pid), dlg.backend
         self._busy = False
         self._loc_rows: list[Gtk.Widget] = []
@@ -133,7 +133,7 @@ class CloudGroup(Adw.PreferencesGroup):
         kind, at, message = cloudsaves.cloud_status(self.pid, gs, self.backend.settings)
         text = cloudsaves.status_tooltip(kind, at, message)
         if gs.cloud_saves == "" and not self.backend.settings.feature_cloud_saves:
-            text += "\n" + tr('Cloud-Speicherstände sind in den Einstellungen (Spielfunktionen) deaktiviert.')
+            text += "\n" + tr('Cloud-Spielstände sind in den Einstellungen (Spielfunktionen) deaktiviert.')
         self.state_row.set_subtitle(text)
         n = len(cloudsaves.list_backups(self.pid))
         self.backup_row.set_subtitle(tr('Sicherungen: {0} · {1}').format(n, cloudsaves.backup_dir(self.pid)) if n
@@ -187,7 +187,7 @@ class CloudGroup(Adw.PreferencesGroup):
             self._toast(tr('Das Spiel läuft – die Spielstände werden nach dem Beenden synchronisiert.'))
             return
         if not backend.api.logged_in:
-            self._toast(tr('Nicht angemeldet – Cloud-Speicherstände brauchen eine GOG-Anmeldung.'))
+            self._toast(tr('Nicht angemeldet – Cloud-Spielstände brauchen eine GOG-Anmeldung.'))
             return
         self._busy = True
         self.state_row.set_subtitle(tr('Synchronisiere Cloud-Spielstände …'))

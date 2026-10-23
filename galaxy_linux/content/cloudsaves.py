@@ -1,4 +1,4 @@
-"""Cloud-Speicherstände wie in GOG Galaxy (cloudstorage.gog.com, Protokoll wie gogdl/Heroic).
+"""Cloud-Spielstände wie in GOG Galaxy (cloudstorage.gog.com, Protokoll wie gogdl/Heroic).
 
 Ablauf eines Abgleichs (``sync_game``):
   1. ``client_id``/``client_secret`` aus dem Installations-Datensatz (``build_records.ensure_record``), Spiel-Token
@@ -97,7 +97,7 @@ class CloudError(Exception):
 
 
 class CloudUnsupported(CloudError):
-    """Spiel ohne Cloud-Speicherstände (Linux-Version, extern, kein Galaxy-Zugang, von GOG nicht freigeschaltet)."""
+    """Spiel ohne Cloud-Spielstände (Linux-Version, extern, kein Galaxy-Zugang, von GOG nicht freigeschaltet)."""
 
 
 # --------------------------------------------------------------------------- Speicherorte
@@ -271,16 +271,16 @@ def enabled_for(gs, settings) -> bool:
 def game_cloud(launcher, api, product_id: str, prefix: Path | None = None, runner: str = "",
                need_secret: bool = True) -> GameCloud:
     """Speicherorte eines Spiels ermitteln (Netz: Installations-Datensatz, remote-config).
-    ``CloudUnsupported``, wenn das Spiel keine Cloud-Speicherstände haben kann."""
+    ``CloudUnsupported``, wenn das Spiel keine Cloud-Spielstände haben kann."""
     from . import build_records
     pid = str(product_id)
     game = launcher.registry.get(pid)
     if game is None:
         raise CloudUnsupported(tr('Spiel ist nicht installiert.'))
     if game.method == "external" or pid.startswith("ext-"):
-        raise CloudUnsupported(tr('Cloud-Speicherstände gibt es nur für GOG-Spiele.'))
+        raise CloudUnsupported(tr('Cloud-Spielstände gibt es nur für GOG-Spiele.'))
     if game.platform != "windows":
-        raise CloudUnsupported(tr('Linux-Versionen von GOG-Spielen haben keine Cloud-Speicherstände.'))
+        raise CloudUnsupported(tr('Linux-Versionen von GOG-Spielen haben keine Cloud-Spielstände.'))
     rec = build_records.ensure_record(api, game) or {}
     cid, secret = str(rec.get("client_id") or ""), str(rec.get("client_secret") or "")
     if not cid:
@@ -289,7 +289,7 @@ def game_cloud(launcher, api, product_id: str, prefix: Path | None = None, runne
         raise CloudUnsupported(tr('Kein Galaxy-Zugang für dieses Spiel (Installations-Datensatz ohne Client-ID).'))
     cfg = parse_remote_config(remote_config(api, cid), cid)
     if not cfg.enabled or not cfg.locations:
-        raise CloudUnsupported(tr('Das Spiel unterstützt keine Cloud-Speicherstände.'))
+        raise CloudUnsupported(tr('Das Spiel unterstützt keine Cloud-Spielstände.'))
     gs = launcher.game_settings.get(pid)
     if prefix is None:
         prefix = launcher.prefix_for(pid, gs)
@@ -516,7 +516,7 @@ class CloudStorage:
             try:
                 headers["Authorization"] = f"Bearer {self._token(attempt == 1)}"
             except (ApiError, AuthError) as exc:
-                raise CloudError(tr('Kein Zugang zu den Cloud-Speicherständen: {0}').format(exc)) from exc
+                raise CloudError(tr('Kein Zugang zu den Cloud-Spielständen: {0}').format(exc)) from exc
             try:
                 r = self.session.request(method, url, headers=headers, timeout=self.timeout, **kw)
             except requests.RequestException as exc:
@@ -715,7 +715,7 @@ def ago(ts: float, now: float | None = None) -> str:
 
 
 def status_label(kind: str, at: float = 0.0, now: float | None = None) -> str:
-    """Kurzer Wert für die Kennzahl „Cloud-Speicherstände“ der Spielansicht."""
+    """Kurzer Wert für die Kennzahl „Cloud-Spielstände“ der Spielansicht."""
     if kind == "synced":
         return tr('Synchronisiert · {0}').format(ago(at, now)) if at else tr('Synchronisiert')
     return {"off": tr('Aus'), "busy": tr('Synchronisiere …'), "never": tr('Noch nicht synchronisiert'),
@@ -726,17 +726,17 @@ def status_label(kind: str, at: float = 0.0, now: float | None = None) -> str:
 def status_tooltip(kind: str, at: float = 0.0, message: str = "") -> str:
     """Ausführlicher Text (Galaxy-Bezeichnungen) für Tooltip und Eigenschaften."""
     if kind == "synced":
-        head = tr('Cloud-Speicherstände synchronisiert') + (f" ({_fmt_time(at)})" if at else "")
+        head = tr('Cloud-Spielstände synchronisiert') + (f" ({_fmt_time(at)})" if at else "")
     elif kind == "off":
-        head = tr('Lokale Speicherstände werden nicht mit der GOG Galaxy-Cloud synchronisiert.')
+        head = tr('Lokale Spielstände werden nicht mit der GOG Galaxy-Cloud synchronisiert.')
     elif kind == "busy":
         head = tr('Synchronisiere Cloud-Spielstände …')
     elif kind == "error":
-        head = tr('Beim Synchronisieren deiner Cloud-Speicherstände ist ein Problem aufgetreten.')
+        head = tr('Beim Synchronisieren deiner Cloud-Spielstände ist ein Problem aufgetreten.')
     elif kind == "unsupported":
-        head = tr('Für dieses Spiel sind keine Cloud-Speicherstände verfügbar.')
+        head = tr('Für dieses Spiel sind keine Cloud-Spielstände verfügbar.')
     else:
-        head = tr('Cloud-Speicherstände nicht synchronisiert')
+        head = tr('Cloud-Spielstände nicht synchronisiert')
     return head + ("\n" + message if message and message != head else "")
 
 
@@ -773,8 +773,8 @@ class SyncResult:
         if self.state == "synced" and (up or down):
             return tr('Synchronisiert in GOG Galaxy-Cloud ({0} hochgeladen, {1} heruntergeladen)').format(up, down)
         if self.state == "synced":
-            return tr('Cloud-Speicherstände synchronisiert')
-        return self.message or tr('Cloud-Speicherstände nicht synchronisiert')
+            return tr('Cloud-Spielstände synchronisiert')
+        return self.message or tr('Cloud-Spielstände nicht synchronisiert')
 
 
 def _fmt_time(ts: float) -> str:
@@ -795,7 +795,7 @@ def conflict_question(title: str, local_latest: float, cloud_latest: float) -> t
 
 def quota_message(total: int, quota: int, last: float = 0.0) -> str:
     """Text wie Galaxys Dialog „Kontingent überschritten“ (beim Starten und Beenden)."""
-    return (tr('Die Benutzerdaten auf diesem Computer übersteigen deinen GOG Galaxy Cloud-Speicherplatz. Starte bitte das Spiel und entferne ältere Speicherstände.')
+    return (tr('Die Benutzerdaten auf diesem Computer übersteigen deinen GOG Galaxy Cloud-Speicherplatz. Starte bitte das Spiel und entferne ältere Spielstände.')
             + "\n\n" + tr('GOG Galaxy Cloud-Speicherplatz: {0}').format(format_bytes(quota))
             + "\n" + tr('Benutzerdaten auf diesem Computer: {0}').format(format_bytes(total))
             + "\n" + tr('Letzte erfolgreiche Synchronisierung: {0}').format(_fmt_time(last)))
@@ -825,7 +825,7 @@ def sync_game(launcher, api, product_id: str, mode: str = "auto", ask: AskFn | N
     if mode not in MODES:
         raise ValueError(f"unbekannte Betriebsart: {mode}")
     if not getattr(api, "logged_in", False):
-        raise CloudError(tr('Nicht angemeldet – Cloud-Speicherstände brauchen eine GOG-Anmeldung.'))
+        raise CloudError(tr('Nicht angemeldet – Cloud-Spielstände brauchen eine GOG-Anmeldung.'))
     lock = _game_lock(pid)
     if not lock.acquire(blocking=False):
         return SyncResult(pid, "busy", tr('Synchronisation läuft bereits.'))
@@ -861,7 +861,7 @@ def _sync(launcher, api, pid: str, mode: str, ask: AskFn | None, status: Callabl
     try:
         tok = api.game_token(gc.client_id, gc.client_secret)
     except (ApiError, AuthError) as exc:
-        raise CloudError(tr('Kein Zugang zu den Cloud-Speicherständen: {0}').format(exc)) from exc
+        raise CloudError(tr('Kein Zugang zu den Cloud-Spielständen: {0}').format(exc)) from exc
     user_id = str(getattr(tok, "user_id", "") or api.user_id)
     if not user_id:
         raise CloudError(tr('GOG-Benutzerkennung unbekannt – bitte neu anmelden.'))

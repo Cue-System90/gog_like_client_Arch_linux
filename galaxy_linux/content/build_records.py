@@ -1,7 +1,7 @@
 """Installations-Datensätze ``~/.local/share/galaxy-linux/manifests/<id>.json`` für alle installierten GOG-Spiele.
 
 Der Installer schreibt den Datensatz bei jeder Content-System-Installation. Für übernommene (kopierte) Spiele und
-Offline-Installer-Spiele fehlt er – damit fehlen auch ``client_id``/``client_secret`` (Erfolge, Cloud-Speicherstände,
+Offline-Installer-Spiele fehlt er – damit fehlen auch ``client_id``/``client_secret`` (Erfolge, Cloud-Spielstände,
 comet) und die Abhängigkeiten (Redistributables, ISI). ``ensure_record()`` legt ihn nach:
 
   1. ``goggame-<id>.info`` / ``goggame-<id>.id`` im Spielordner lesen (buildId, clientId, Sprache, vorhandene DLCs),

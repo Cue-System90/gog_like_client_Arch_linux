@@ -1,4 +1,4 @@
-"""Tests für die Cloud-Speicherstände (content/cloudsaves.py, launch/hook_cloudsaves.py) – ohne Netz:
+"""Tests für die Cloud-Spielstände (content/cloudsaves.py, launch/hook_cloudsaves.py) – ohne Netz:
 cloudstorage.gog.com und remote-config werden durch Attrappen ersetzt, alle Pfade liegen in Temp-Ordnern."""
 from __future__ import annotations
 

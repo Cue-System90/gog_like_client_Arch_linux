@@ -34,7 +34,7 @@ Fundament; weitere Bausteine folgen.
   Herunterladen und eigener Pfad unter Einstellungen → Kompatibilität → Galaxy-Dienste, im Terminal `galaxy-linux comet`.
 - Unter der Haube: Erweiterungspunkte für den Spielstart (Launch-Hooks), für Einstellungsdialoge, Spielansicht und
   Auftragsarten; die Redistributables beim ersten Start laufen jetzt als Hook.
-- **Cloud-Speicherstände wie in Galaxy**: vor jedem Start herunterladen, nach dem Beenden hochladen; Konfliktdialog
+- **Cloud-Spielstände wie in Galaxy**: vor jedem Start herunterladen, nach dem Beenden hochladen; Konfliktdialog
   (GOG Galaxy-Cloud / Dieser Computer / Ignorieren) und Kontingent-Hinweis wie im Original; Sicherung der lokalen
   Stände, bevor sie ersetzt werden. Zustand als Kennzahl in der Spielansicht; „Jetzt hochladen“, „Jetzt
   herunterladen“, Sicherungen und Speicherorte unter Eigenschaften → Spielfunktionen; `galaxy-linux cloud <spiel>`.

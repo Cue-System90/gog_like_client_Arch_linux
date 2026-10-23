@@ -25,7 +25,7 @@ des ``Backend`` und vor jedem Start). Dort dürfen sie auch ``backend.register_j
 Empfohlene ``order``-Bereiche:
   10–19  Prefix-Einrichtung (Redistributables, ISI-Skripte, Registry)        – meist ``setup = True``
   20–29  Galaxy-Dienste (GalaxyCommunication-Dienst, comet)
-  30–39  Cloud-Speicherstände (Download vor dem Start, Upload nach dem Ende)
+  30–39  Cloud-Spielstände (Download vor dem Start, Upload nach dem Ende)
   50–59  Overlays/Werkzeuge (GOverlay-Profil → ``plan.tool_wrappers``/env)
   90+    Sonstiges
 """

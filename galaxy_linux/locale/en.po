@@ -450,7 +450,7 @@ msgid "Build"
 msgstr "Build"
 
 #: galaxy_linux/cli.py
-msgid "Cloud-Speicherstände abgleichen (ohne Schalter: beide Richtungen, Konflikte mit Rückfrage)"
+msgid "Cloud-Spielstände abgleichen (ohne Schalter: beide Richtungen, Konflikte mit Rückfrage)"
 msgstr "sync cloud saves (without a switch: both directions, asks on conflicts)"
 
 #: galaxy_linux/cli.py
@@ -1098,7 +1098,7 @@ msgid "Automatischer Abgleich: {0}"
 msgstr "Automatic sync: {0}"
 
 #: galaxy_linux/content/cloudsaves.py
-msgid "Beim Synchronisieren deiner Cloud-Speicherstände ist ein Problem aufgetreten."
+msgid "Beim Synchronisieren deiner Cloud-Spielstände ist ein Problem aufgetreten."
 msgstr "There was a problem while syncing your cloud saves."
 
 #: galaxy_linux/content/cloudsaves.py
@@ -1114,15 +1114,15 @@ msgid "Cloud-Dateiliste nicht abrufbar (HTTP {0})"
 msgstr "Cloud file list unavailable (HTTP {0})"
 
 #: galaxy_linux/content/cloudsaves.py
-msgid "Cloud-Speicherstände gibt es nur für GOG-Spiele."
+msgid "Cloud-Spielstände gibt es nur für GOG-Spiele."
 msgstr "Cloud saves are only available for GOG games."
 
 #: galaxy_linux/content/cloudsaves.py
-msgid "Cloud-Speicherstände nicht synchronisiert"
+msgid "Cloud-Spielstände nicht synchronisiert"
 msgstr "Cloud saves not synced"
 
 #: galaxy_linux/content/cloudsaves.py
-msgid "Cloud-Speicherstände synchronisiert"
+msgid "Cloud-Spielstände synchronisiert"
 msgstr "Cloud saves synced"
 
 #: galaxy_linux/content/cloudsaves.py
@@ -1134,11 +1134,11 @@ msgid "Das Spiel läuft – die Spielstände werden nach dem Beenden synchronisi
 msgstr "The game is running - saves will be synced after it exits."
 
 #: galaxy_linux/content/cloudsaves.py
-msgid "Das Spiel unterstützt keine Cloud-Speicherstände."
+msgid "Das Spiel unterstützt keine Cloud-Spielstände."
 msgstr "This game does not support cloud saves."
 
 #: galaxy_linux/content/cloudsaves.py
-msgid "Die Benutzerdaten auf diesem Computer übersteigen deinen GOG Galaxy Cloud-Speicherplatz. Starte bitte das Spiel und entferne ältere Speicherstände."
+msgid "Die Benutzerdaten auf diesem Computer übersteigen deinen GOG Galaxy Cloud-Speicherplatz. Starte bitte das Spiel und entferne ältere Spielstände."
 msgstr "User data files on this computer exceed GOG Galaxy Cloud storage quota for this game. Launch the game and remove some older saves data."
 
 #: galaxy_linux/content/cloudsaves.py
@@ -1158,7 +1158,7 @@ msgid "Fehler"
 msgstr "Error"
 
 #: galaxy_linux/content/cloudsaves.py
-msgid "Für dieses Spiel sind keine Cloud-Speicherstände verfügbar."
+msgid "Für dieses Spiel sind keine Cloud-Spielstände verfügbar."
 msgstr "No cloud saves are available for this game."
 
 #: galaxy_linux/content/cloudsaves.py
@@ -1214,7 +1214,7 @@ msgid "Kein Speicherort des Spiels ließ sich im Prefix auflösen."
 msgstr "None of the game's save locations could be resolved in the prefix."
 
 #: galaxy_linux/content/cloudsaves.py
-msgid "Kein Zugang zu den Cloud-Speicherständen: {0}"
+msgid "Kein Zugang zu den Cloud-Spielständen: {0}"
 msgstr "No access to cloud saves: {0}"
 
 #: galaxy_linux/content/cloudsaves.py
@@ -1234,23 +1234,23 @@ msgid "Letzte erfolgreiche Synchronisierung: {0}"
 msgstr "Last successful sync date: {0}"
 
 #: galaxy_linux/content/cloudsaves.py
-msgid "Linux-Versionen von GOG-Spielen haben keine Cloud-Speicherstände."
+msgid "Linux-Versionen von GOG-Spielen haben keine Cloud-Spielstände."
 msgstr "Linux versions of GOG games have no cloud saves."
-
-#: galaxy_linux/content/cloudsaves.py
-msgid "Lokale Speicherstände werden nicht mit der GOG Galaxy-Cloud synchronisiert."
-msgstr "Local saves are not synced with GOG Galaxy Cloud."
 
 #: galaxy_linux/content/cloudsaves.py
 msgid "Lokale Spielstände sind neuer – sie werden nach dem Spielen hochgeladen."
 msgstr "Local saves are newer - they will be uploaded after playing."
 
 #: galaxy_linux/content/cloudsaves.py
+msgid "Lokale Spielstände werden nicht mit der GOG Galaxy-Cloud synchronisiert."
+msgstr "Local saves are not synced with GOG Galaxy Cloud."
+
+#: galaxy_linux/content/cloudsaves.py
 msgid "Löschen von {0} in der Cloud fehlgeschlagen (HTTP {1})"
 msgstr "Deleting {0} in the cloud failed (HTTP {1})"
 
 #: galaxy_linux/content/cloudsaves.py galaxy_linux/ui/ext_cloudsaves.py
-msgid "Nicht angemeldet – Cloud-Speicherstände brauchen eine GOG-Anmeldung."
+msgid "Nicht angemeldet – Cloud-Spielstände brauchen eine GOG-Anmeldung."
 msgstr "Not signed in - cloud saves need a GOG sign-in."
 
 #: galaxy_linux/content/cloudsaves.py
@@ -1809,8 +1809,8 @@ msgstr "no profile – the games folder is not registered in GOverlay"
 msgid "kein Profil – in GOverlay das Spiel anklicken"
 msgstr "no profile – click the game in GOverlay"
 
-#: galaxy_linux/launch/hook_cloudsaves.py galaxy_linux/ui/ext_cloudsaves.py
-msgid "Cloud-Speicherstände"
+#: galaxy_linux/launch/hook_cloudsaves.py galaxy_linux/ui/dialogs.py galaxy_linux/ui/ext_cloudsaves.py
+msgid "Cloud-Spielstände"
 msgstr "Cloud saves"
 
 #: galaxy_linux/launch/hook_cloudsaves.py
@@ -2134,10 +2134,6 @@ msgid "Bibliotheken"
 msgstr "Libraries"
 
 #: galaxy_linux/ui/dialogs.py
-msgid "Cloud-Spielstände"
-msgstr "Cloud saves"
-
-#: galaxy_linux/ui/dialogs.py
 msgid "Cloud-Spielstände lädt deine Spielstände herunter, wenn du ein unterstütztes GOG-Spiel installierst. Außerdem werden die Spielstände vor und nach jeder Session synchronisiert."
 msgstr "Cloud saves downloads your saves when installing a supported GOG game, and syncs them before and after play sessions."
 
@@ -2430,7 +2426,7 @@ msgid "Login-Seite neu laden"
 msgstr "Reload sign-in page"
 
 #: galaxy_linux/ui/dialogs.py
-msgid "Lokale Speicherstände mit der GOG Galaxy-Cloud synchronisieren"
+msgid "Lokale Spielstände mit der GOG Galaxy-Cloud synchronisieren"
 msgstr "Sync local saves with GOG Galaxy Cloud"
 
 #: galaxy_linux/ui/dialogs.py galaxy_linux/ui/game_page.py
@@ -3050,7 +3046,7 @@ msgid "„{0}“ gelöscht – {1} Spiel(e) ausgetragen, Dateien bleiben"
 msgstr "“{0}” deleted – {1} game(s) removed from the library, files kept"
 
 #: galaxy_linux/ui/ext_cloudsaves.py
-msgid "Cloud-Speicherstände sind in den Einstellungen (Spielfunktionen) deaktiviert."
+msgid "Cloud-Spielstände sind in den Einstellungen (Spielfunktionen) deaktiviert."
 msgstr "Cloud saves are disabled in the settings (Game features)."
 
 #: galaxy_linux/ui/ext_cloudsaves.py

@@ -642,7 +642,7 @@ class GameSettingsDialog(Adw.PreferencesDialog):
         gog = self.installed is not None and self.installed.method != "external" and not self.pid.startswith("ext-")
         s = self.backend.settings
         modes = ["", "on", "off"]
-        for key, title, glob in (("cloud_saves", tr('Lokale Speicherstände mit der GOG Galaxy-Cloud synchronisieren'), s.feature_cloud_saves),
+        for key, title, glob in (("cloud_saves", tr('Lokale Spielstände mit der GOG Galaxy-Cloud synchronisieren'), s.feature_cloud_saves),
                                  ("galaxy_services", tr('GOG Galaxy-Funktionen im Spiel nutzen'), s.feature_galaxy_services)):
             row = Adw.ComboRow(title=title, model=Gtk.StringList.new(
                 [tr('Globale Vorgabe ({0})').format(tr('an') if glob else tr('aus')), tr('An'), tr('Aus')]))
