@@ -9,7 +9,7 @@ from pathlib import Path
 from unittest import mock
 
 from galaxy_linux.launch import compat, launch_options as lo
-from galaxy_linux.launch.launcher import Launcher, PlayTask, split_windows_args, primary_task, play_tasks
+from galaxy_linux.launch.launcher import LaunchError, Launcher, PlayTask, split_windows_args, primary_task, play_tasks
 from galaxy_linux.content.manifest import BuildManifest, DepotManifest, normalize_path, pick_language, ManifestError
 from galaxy_linux.settings import GameSettings, GameSettingsStore, GlobalSettings, InstalledGame, InstalledRegistry, PlaytimeStore
 
@@ -196,6 +196,42 @@ class LauncherPlanTest(unittest.TestCase):
         self.assertEqual(plan.runner, "wine")
         self.assertEqual(plan.argv[0], "/usr/bin/wine")
         self.assertTrue(plan.env["WINEPREFIX"].endswith("/prefixes/1"))
+
+    def test_wineserver_command_per_runner(self):
+        """``wineserver -k`` nach einem abgebrochenen Einrichtungsschritt: wineserver des gewählten Tools, Prefix."""
+        root = Path(self.td.name)
+        tool_dir = root / "proton-x"
+        (tool_dir / "files" / "bin").mkdir(parents=True)
+        (tool_dir / "files" / "bin" / "wineserver").write_text("#!/bin/sh\n")
+        proton = compat.CompatTool(f"proton:{tool_dir}", "Proton X", "proton", str(tool_dir), "x", "System")
+        self.gs.set("1", GameSettings(compat_tool=proton.id))
+        with mock.patch.object(compat, "resolve", return_value=proton), \
+             mock.patch.object(compat, "umu_available", return_value=True), \
+             mock.patch.object(compat, "umu_path", return_value="/usr/bin/umu-run"):
+            argv, env = self.launcher.wineserver_command("1")
+        self.assertEqual(argv, [str(tool_dir / "files" / "bin" / "wineserver"), "-k"])
+        self.assertEqual(env["WINEPREFIX"], str(root / "prefixes" / "1"))       # umu: Prefix selbst (pfx fehlt)
+        (root / "prefixes" / "1" / "pfx").mkdir(parents=True)
+        self.settings.prefer_umu = False
+        with mock.patch.object(compat, "resolve", return_value=proton), \
+             mock.patch.object(compat, "steam_root", return_value=None):
+            argv, env = self.launcher.wineserver_command("1")
+        self.assertEqual(env["WINEPREFIX"], str(root / "prefixes" / "1" / "pfx"))   # Proton: <prefix>/pfx
+        wine_dir = root / "wine" / "bin"
+        wine_dir.mkdir(parents=True)
+        (wine_dir / "wine").write_text("#!/bin/sh\n")
+        (wine_dir / "wineserver").write_text("#!/bin/sh\n")
+        wine = compat.CompatTool(f"wine:{wine_dir / 'wine'}", "Wine", "wine", str(wine_dir / "wine"), "", "System")
+        self.gs.set("1", GameSettings(compat_tool=wine.id))
+        with mock.patch.object(compat, "resolve", return_value=wine):
+            argv, env = self.launcher.wineserver_command("1")
+        self.assertEqual(argv, [str(wine_dir / "wineserver"), "-k"])
+        self.assertEqual(env["WINEPREFIX"], str(root / "prefixes" / "1" / "pfx"))
+        (wine_dir / "wineserver").unlink()
+        with mock.patch.object(compat, "resolve", return_value=wine), \
+             mock.patch("galaxy_linux.launch.launcher.shutil.which", return_value=None):
+            with self.assertRaises(LaunchError):
+                self.launcher.wineserver_command("1")
 
     def _umu_plan(self):
         proton = compat.CompatTool("proton:/opt/p", "Proton X", "proton", "/opt/p", "x", "System", requires_runtime="1628350")

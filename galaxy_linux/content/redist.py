@@ -708,12 +708,26 @@ def record_result(state: dict, key: str, ok: bool, rc: int | None, title: str = 
     """Ergebnis eines Schritts festhalten. True genau dann, wenn der Schritt damit endgültig aufgegeben ist und das
     noch nicht gemeldet wurde (→ einmal anzeigen)."""
     s = state["steps"].setdefault(key, {})
+    s.pop("cancelled", None)
     s.update(ok=bool(ok), rc=rc, at=time.time(), title=title or s.get("title", ""))
     s["tries"] = 0 if ok else _tries(s) + 1
     if not ok and s["tries"] > MAX_RETRIES and key not in state["reported"]:
         state["reported"].append(key)
         return True
     return False
+
+
+def mark_cancelled(state: dict, key: str, title: str = "") -> None:
+    """Schritt mit BEENDEN abgebrochen: weder erledigt noch Fehlversuch (Zähler und letzter Exit-Code bleiben), er
+    läuft beim nächsten Start erneut."""
+    s = state["steps"].setdefault(key, {})
+    s.update(ok=False, cancelled=time.time(), title=title or s.get("title", ""))
+    s.setdefault("tries", 0)
+
+
+def step_cancelled(state: dict, key: str) -> bool:
+    s = state["steps"].get(key) or {}
+    return bool(s.get("cancelled")) and not s.get("ok")
 
 
 def reset_steps(state: dict, keys: Iterable[str]) -> None:
@@ -788,7 +802,8 @@ def status_rows(state: dict, steps: list[SetupStep]) -> list[dict[str, Any]]:
     for s in steps:
         own.add(s.key)
         e = state["steps"].get(s.key) or {}
-        st = "ok" if e.get("ok") else "gave_up" if step_gave_up(state, s.key) else "failed" if e else "pending"
+        st = "ok" if e.get("ok") else "gave_up" if step_gave_up(state, s.key) else \
+            "cancelled" if step_cancelled(state, s.key) else "failed" if e else "pending"
         rows.append({"key": s.key, "title": s.title, "state": st, "rc": e.get("rc"), "tries": _tries(e),
                      "at": float(e.get("at") or 0), "kind": s.kind})
     for key, e in sorted(state["steps"].items()):
@@ -809,6 +824,8 @@ def state_text(row: dict[str, Any]) -> str:
         return tr('Installiert (für ein anderes Spiel in diesem Prefix)')
     if st == "pending":
         return tr('Ausstehend – läuft beim nächsten Start')
+    if st == "cancelled":
+        return tr('Abgebrochen – läuft beim nächsten Start')
     if st == "gave_up":
         return tr('Fehlgeschlagen (Exit-Code {0}) – wird nicht mehr versucht').format(rc)
     return tr('Fehlgeschlagen (Exit-Code {0}) – neuer Versuch beim nächsten Start ({1}/{2})').format(

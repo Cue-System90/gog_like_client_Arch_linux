@@ -3,8 +3,12 @@ Ausschnitt des echten GOG-Abhängigkeits-Repositorys als Beispiel."""
 from __future__ import annotations
 
 import json
+import os
+import subprocess
+import sys
 import tempfile
 import threading
+import time
 import types
 import unittest
 from pathlib import Path
@@ -492,10 +496,17 @@ class SetupHookTest(Base):
         redist.write_support_marker("100", "5555", ["100", "200"], 0)
         self.statuses: list[str] = []
         self.rc = {}
-        self.run_patch = mock.patch("galaxy_linux.launch.hook_redist.subprocess.run", side_effect=self.fake_run)
-        self.run = self.run_patch.start()
+        # Schritte laufen über Popen (eigene Prozessgruppe, BEENDEN-fähig); self.run zeichnet Befehl und Optionen auf
+        # und liefert den Exit-Code – ein Wert None in self.rc heißt „läuft, bis BEENDEN“
+        self.run = mock.Mock(side_effect=self.fake_run)
+        self.run_patch = mock.patch.object(hook_redist, "_spawn",
+                                           side_effect=lambda argv, **kw: FakePopen(self.run(argv, **kw).returncode))
+        self.run_patch.start()
+        self.term_patch = mock.patch.object(hook_redist, "terminate_group", return_value="term")
+        self.terminate = self.term_patch.start()
 
     def tearDown(self):
+        self.term_patch.stop()
         self.run_patch.stop()
         super().tearDown()
 
@@ -505,14 +516,16 @@ class SetupHookTest(Base):
 
     def fake_run(self, argv, **kw):
         exe = argv[1] if argv[0] == "umu-run" else argv[0]
-        return types.SimpleNamespace(returncode=self.rc.get(Path(exe).name, 0))
+        name = Path(exe).name
+        return types.SimpleNamespace(returncode=self.rc[name] if name in self.rc else 0)
 
     def ctx(self, prepare_only=False, api=None):
         launcher = types.SimpleNamespace(
             game_settings=self.gs, ui_bridge=None, registry=self.registry, settings=self.settings,
             prefix_for=lambda pid, gs=None: self.prefix,
             prefix_command=mock.Mock(side_effect=lambda pid, argv, verb, extra_env: (["umu-run", *argv],
-                                                                                     {"PROTON_VERB": verb})))
+                                                                                     {"PROTON_VERB": verb})),
+            wineserver_command=mock.Mock(return_value=([sys.executable, "-c", "pass"], dict(os.environ))))
         self.launcher = launcher
         return LaunchContext(product_id="100", game=self.game, gs=self.gs.get("100"), settings=self.settings, plan=None,
                              install_dir=self.game_dir, exe=None, prefix=self.prefix, runner="umu", tool=None,
@@ -563,6 +576,55 @@ class SetupHookTest(Base):
         self.assertFalse(out["finished"])
         self.assertEqual(len(out["pending"]), 2)
         self.assertEqual(self.gs.get("100").setup_done, [])
+
+    def test_cancel_during_running_step_is_not_a_failed_try(self):
+        """BEENDEN während ISI läuft: Prozessgruppe beenden, wineserver -k, Schritt „abgebrochen“ statt Fehlversuch."""
+        self.put_cache(["ISI", "MSVC2017"])
+        self.rc["scriptinterpreter.exe"] = None                       # läuft, bis BEENDEN kommt
+        ctx = self.ctx()
+        threading.Timer(0.3, ctx.cancel.set).start()
+        out = hook_redist.setup_prefix(ctx)
+        self.assertEqual(self.ran(), ["scriptinterpreter.exe"])
+        self.terminate.assert_called_once()
+        self.launcher.wineserver_command.assert_called_once_with("100")
+        self.assertEqual(out["cancelled"], ["isi:100:5555"])
+        self.assertEqual(out["failed"], [])
+        self.assertEqual(out["pending"], ["isi:100:5555", "isi:200:5555", "redist:MSVC2017"])
+        self.assertFalse(out["finished"])
+        state = redist.load_setup_state(self.prefix)
+        step = state["steps"]["isi:100:5555"]
+        self.assertEqual((step["ok"], step["tries"]), (False, 0))
+        self.assertTrue(redist.step_due(state, "isi:100:5555"))
+        self.assertEqual(state["reported"], [])
+        rows = hook_redist.prefix_status(self.launcher, "100")
+        self.assertEqual([r["state"] for r in rows], ["cancelled", "pending", "pending"])
+        self.assertIn("Abgebrochen", redist.state_text(rows[0]))
+        self.assertIn("Einrichtung abgebrochen", self.statuses[-1])
+        log = (self.root / "logs" / "100.log").read_text()
+        self.assertIn("--- Abgebrochen (BEENDEN)", log)
+        self.assertIn("Einrichtung isi:100:5555: abgebrochen", log)
+        self.assertEqual(self.gs.get("100").setup_done, [])
+        # nächster Start: alles läuft wieder, der abgebrochene Schritt zählt als Erstversuch
+        self.rc["scriptinterpreter.exe"] = 0
+        self.run.reset_mock()
+        out = hook_redist.setup_prefix(self.ctx())
+        self.assertTrue(out["finished"])
+        self.assertEqual(self.ran(), ["scriptinterpreter.exe", "scriptinterpreter.exe", "VC_redist.x86.exe"])
+        step = redist.load_setup_state(self.prefix)["steps"]["isi:100:5555"]
+        self.assertTrue(step["ok"])
+        self.assertNotIn("cancelled", step)
+
+    def test_cancel_after_failed_try_keeps_counter(self):
+        self.put_cache(["ISI", "MSVC2017"])
+        self.rc["VC_redist.x86.exe"] = 1603
+        hook_redist.setup_prefix(self.ctx())                              # Fehlversuch 1
+        self.rc["VC_redist.x86.exe"] = None
+        ctx = self.ctx()
+        threading.Timer(0.3, ctx.cancel.set).start()
+        out = hook_redist.setup_prefix(ctx)
+        self.assertEqual(out["cancelled"], ["redist:MSVC2017"])
+        step = redist.load_setup_state(self.prefix)["steps"]["redist:MSVC2017"]
+        self.assertEqual((step["tries"], step["rc"]), (1, 1603))           # kein weiterer Fehlversuch
 
     def test_failed_step_retried_three_times_then_reported_once(self):
         self.put_cache(["ISI", "MSVC2017"])
@@ -719,6 +781,94 @@ class SetupHookTest(Base):
         self.assertEqual((job.kind, job.state, job.title, job.label), ("redist", "done", "Galaxy-Redistributables",
                                                                       "Galaxy-Redistributables"))
         self.assertIs(JOB_KINDS["redist"].network, False)
+
+
+class FakePopen:
+    """Ersatz für subprocess.Popen: ``returncode`` None = läuft, bis ``terminate_group`` (gepatcht) es beendet."""
+
+    def __init__(self, returncode):
+        self.returncode = returncode
+        self.pid = None                         # nie an os.killpg geben
+
+    def poll(self):
+        return self.returncode
+
+    def wait(self, timeout=None):
+        return self.returncode
+
+
+class CancellableStepTest(Base):
+    """run_step mit echten, harmlosen Prozessen (sh/sleep): eigene Prozessgruppe, SIGTERM, SIGKILL nach der Frist."""
+
+    def setUp(self):
+        super().setUp()
+        self.prefix = self.root / "prefix"
+        self.procs = []
+        self.ws = mock.Mock(return_value=([sys.executable, "-c", "pass"], dict(os.environ)))
+
+    def ctx(self, script):
+        launcher = types.SimpleNamespace(
+            prefix_command=lambda pid, argv, verb, extra_env: (["sh", "-c", script], dict(os.environ)),
+            wineserver_command=self.ws)
+        return LaunchContext(product_id="100", game=None, gs=None, settings=None, plan=None, install_dir=self.root,
+                             exe=None, prefix=self.prefix, runner="umu", tool=None, log_file=self.root / "logs" / "100.log",
+                             status=lambda t: None, ask=lambda *a: a[-1], launcher=launcher)
+
+    def step(self):
+        return redist.SetupStep("isi:100:1", "isi", "ISI", ["scriptinterpreter.exe"], str(self.root), "isi.exe")
+
+    def run_cancelled(self, script, after=0.3):
+        real = subprocess.Popen
+
+        def spawn(argv, **kw):
+            p = real(argv, **kw)
+            self.procs.append(p)
+            return p
+        ctx = self.ctx(script)
+        threading.Timer(after, ctx.cancel.set).start()
+        t0 = time.monotonic()
+        with mock.patch.object(hook_redist, "_spawn", side_effect=spawn):
+            with self.assertRaises(hook_redist.StepCancelled):
+                hook_redist.run_step(ctx, self.step())
+        return time.monotonic() - t0
+
+    def assert_group_gone(self):
+        self.assertEqual(len(self.procs), 1)
+        with self.assertRaises(ProcessLookupError):
+            os.killpg(self.procs[0].pid, 0)
+
+    def test_cancel_terminates_whole_group(self):
+        # Kindprozess im Hintergrund wie Wine-Programme hinter umu-run
+        took = self.run_cancelled("sleep 30 & sleep 30; wait")
+        self.assertLess(took, 4)
+        self.assert_group_gone()
+        self.ws.assert_called_once_with("100")
+        log = (self.root / "logs" / "100.log").read_text()
+        self.assertIn("--- Abgebrochen (BEENDEN)", log)
+        self.assertNotIn("Exit-Code", log)
+
+    def test_sigkill_after_grace_when_sigterm_is_ignored(self):
+        with mock.patch.object(hook_redist, "TERM_GRACE", 0.5):
+            took = self.run_cancelled("trap '' TERM; sleep 30 & sleep 30; wait")
+        self.assertGreaterEqual(took, 0.7)
+        self.assertLess(took, 4)
+        self.assert_group_gone()
+
+    def test_normal_exit_and_timeout(self):
+        ctx = self.ctx("exit 3")
+        self.assertEqual(hook_redist.run_step(ctx, self.step()), 3)
+        self.ws.assert_not_called()
+        ctx = self.ctx("sleep 30")
+        with mock.patch.object(hook_redist, "TERM_GRACE", 0.5):
+            self.assertEqual(hook_redist.run_step(ctx, self.step(), timeout=0.3), -1)
+        self.ws.assert_called_once()                                 # auch nach Zeitüberschreitung aufräumen
+        self.assertIn("--- Zeitüberschreitung", (self.root / "logs" / "100.log").read_text())
+
+    def test_missing_program_is_exit_code_minus_two(self):
+        ctx = self.ctx("")
+        ctx.launcher.prefix_command = lambda *a, **k: (["/nonexistent/umu-run"], dict(os.environ))
+        self.assertEqual(hook_redist.run_step(ctx, self.step()), -2)
+        self.ws.assert_not_called()
 
 
 class JobTest(Base):

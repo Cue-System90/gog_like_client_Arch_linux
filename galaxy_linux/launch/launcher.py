@@ -753,6 +753,28 @@ class Launcher:
         env["WINEPREFIX"] = str(pfx if pfx.exists() else prefix)
         return [tool.path, *exe_argv], env
 
+    def wineserver_command(self, product_id: str) -> tuple[list[str], dict[str, str]]:
+        """``wineserver -k`` für den Prefix des Spiels: Umgebung aus ``prefix_command``, ``wineserver`` des gewählten
+        Proton/Wine (Proton: ``files/bin`` bzw. ``dist/bin``, Prefix ``<prefix>/pfx``; Wine: neben ``wine``, sonst
+        aus dem PATH). Beendet alle Wine-Prozesse dieses Prefix, z. B. nach einem abgebrochenen Einrichtungsschritt."""
+        gs = self.game_settings.get(product_id)
+        tool = self.resolve_tool(gs, "windows", product_id)
+        if tool is None:
+            raise LaunchError(tr('Kein Proton/Wine verfügbar.'))
+        _argv, env = self.prefix_command(product_id, [], verb="run")
+        prefix = self.prefix_for(product_id, gs)
+        base = Path(tool.path)
+        if self.runner_for(tool) in ("umu", "proton"):
+            candidates = [base / "files" / "bin" / "wineserver", base / "dist" / "bin" / "wineserver"]
+            pfx = prefix / "pfx"
+            env["WINEPREFIX"] = str(pfx if pfx.exists() else prefix)
+        else:
+            candidates = [base.with_name("wineserver")]
+        server = next((c for c in candidates if c.is_file()), None) or shutil.which("wineserver")
+        if not server:
+            raise LaunchError(tr('wineserver nicht gefunden.'))
+        return [str(server), "-k"], env
+
     def run_in_prefix(self, product_id: str, exe_argv: list[str], timeout: float | None = 1800,
                       extra_env: dict[str, str] | None = None) -> int:
         argv, env = self.prefix_command(product_id, exe_argv, extra_env=extra_env)

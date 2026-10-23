@@ -11,7 +11,9 @@ Wunsch – „Einrichtung erneut ausführen“, ``galaxy-linux prefix setup``):
      ISI-Skripte bzw. Support-Programme je Produkt, dann die Redistributables des Spiels.
 Zustand je Prefix in ``<prefix>/galaxy-linux-setup.json`` (Exit-Codes, Fehlversuche), fertige Builds zusätzlich in
 ``GameSettings.setup_done``. Ein fehlgeschlagener Schritt läuft beim nächsten Start erneut (höchstens
-``redist.MAX_RETRIES``-mal) und wird danach einmal gemeldet. Fehlt ein Programm (oder für ISI die Support-Dateien),
+``redist.MAX_RETRIES``-mal) und wird danach einmal gemeldet. BEENDEN während der Vorbereitung bricht einen laufenden
+Schritt ab: eigene Prozessgruppe, SIGTERM, nach ``TERM_GRACE`` Sekunden SIGKILL, danach ``wineserver -k`` im Prefix;
+der Schritt gilt dann als abgebrochen (kein Fehlversuch) und läuft beim nächsten Start erneut. Fehlt ein Programm (oder für ISI die Support-Dateien),
 weil Netz oder Anmeldung fehlen, bleibt der Schritt offen, ohne als Fehlversuch zu zählen. ``install_redist`` (global
 und pro Spiel) schaltet nur die Redistributables ab, die Installationsskripte laufen immer (wie in Galaxy).
 
@@ -23,7 +25,9 @@ from __future__ import annotations
 from ..i18n import tr
 
 import logging
+import os
 import shlex
+import signal
 import subprocess
 import threading
 import time
@@ -43,6 +47,9 @@ log = logging.getLogger(__name__)
 
 STEP_TIMEOUT = 1800                 # Sekunden je Installer (wie bisher)
 SETUP_ENV = {"PROTONFIXES_DISABLE": "1"}
+POLL = 0.2                          # so oft prüft ein laufender Schritt, ob BEENDEN gedrückt wurde
+TERM_GRACE = 5.0                    # Sekunden zwischen SIGTERM und SIGKILL an die Prozessgruppe
+WINESERVER_TIMEOUT = 15
 
 _backend_ref: "weakref.ReferenceType | None" = None
 _tried: set[tuple[str, str]] = set()      # (Art, Produkt-ID): Netzabfragen für Datensätze einmal je Programmlauf
@@ -255,23 +262,105 @@ def ensure_support(ctx: LaunchContext, record: dict, build_id: str) -> bool:
     return redist.support_ready(ctx.product_id, build_id)
 
 
+class StepCancelled(Exception):
+    """Ein laufender Schritt wurde mit BEENDEN abgebrochen – kein Fehlversuch, er läuft beim nächsten Start erneut."""
+
+
+def _spawn(argv: list[str], **kw: Any) -> subprocess.Popen:
+    """Schritt starten (eigene Funktion, damit Tests den Start ersetzen können, ohne ``subprocess`` zu verbiegen)."""
+    return subprocess.Popen(argv, **kw)
+
+
+def _killpg(pgid: int, sig: int) -> bool:
+    try:
+        os.killpg(pgid, sig)
+        return True
+    except (ProcessLookupError, PermissionError):
+        return False
+
+
+def _group_alive(pgid: int) -> bool:
+    return _killpg(pgid, 0)
+
+
+def terminate_group(proc: subprocess.Popen, grace: float | None = None) -> str:
+    """Prozessgruppe eines Schritts beenden (umu-run, Proton, Wine-Programme): SIGTERM, nach ``grace`` Sekunden
+    SIGKILL für alles, was noch lebt. Rückgabe ``"term"`` oder ``"kill"``."""
+    grace = TERM_GRACE if grace is None else grace
+    pgid = proc.pid                                   # start_new_session=True → Gruppe = PID des Schritts
+    _killpg(pgid, signal.SIGTERM)
+    deadline = time.monotonic() + grace
+    while time.monotonic() < deadline:
+        if proc.poll() is not None and not _group_alive(pgid):
+            return "term"
+        time.sleep(0.05)
+    _killpg(pgid, signal.SIGKILL)
+    try:
+        proc.wait(timeout=5)
+    except subprocess.TimeoutExpired:                 # pragma: no cover – SIGKILL wirkt sofort
+        log.warning("Schritt %s reagiert nicht auf SIGKILL", proc.pid)
+    return "kill"
+
+
+def wait_step(proc: subprocess.Popen, cancel: threading.Event, timeout: float | None, poll: float = POLL,
+              grace: float | None = None) -> tuple[int | None, str]:
+    """Auf einen Schritt warten und dabei ``cancel`` (BEENDEN) beachten. Rückgabe (Exit-Code, Grund) mit Grund ""
+    (normal beendet), ``"cancelled"`` (Exit-Code None) oder ``"timeout"`` (Exit-Code -1)."""
+    deadline = None if timeout is None else time.monotonic() + timeout
+    while True:
+        rc = proc.poll()
+        if rc is not None:
+            return rc, ""
+        if cancel.is_set():
+            terminate_group(proc, grace)
+            return None, "cancelled"
+        if deadline is not None and time.monotonic() >= deadline:
+            terminate_group(proc, grace)
+            return -1, "timeout"
+        cancel.wait(poll)
+
+
+def stop_wineserver(ctx: LaunchContext, lf=None) -> int | None:
+    """``wineserver -k`` im Prefix des Spiels (über ``Launcher.wineserver_command`` → ``prefix_command``), damit keine
+    Wine-Prozesse des abgebrochenen Schritts weiterlaufen. Nach bestem Bemühen: Fehler werden nur protokolliert."""
+    cmd = getattr(ctx.launcher, "wineserver_command", None)
+    if cmd is None:
+        return None
+    try:
+        argv, env = cmd(ctx.product_id)
+        rc = subprocess.run(argv, env=env, stdout=lf or subprocess.DEVNULL, stderr=subprocess.STDOUT,
+                            stdin=subprocess.DEVNULL, timeout=WINESERVER_TIMEOUT).returncode
+    except (LaunchError, OSError, subprocess.SubprocessError, ValueError) as exc:
+        log.info("wineserver -k für %s nicht möglich: %s", ctx.product_id, exc)
+        return None
+    log.info("wineserver -k für %s: Exit-Code %s", ctx.product_id, rc)
+    return rc
+
+
 def run_step(ctx: LaunchContext, step: redist.SetupStep, timeout: float | None = STEP_TIMEOUT) -> int:
     """Einen Schritt im Prefix ausführen (``prefix_command`` mit Verb ``run`` wie Heroic, Startordner wie dort).
-    Ausgabe und Exit-Code ins Spielprotokoll. ``LaunchError`` (kein Proton/Wine) wird weitergereicht."""
+    Ausgabe und Exit-Code ins Spielprotokoll. Der Schritt läuft in einer eigenen Prozessgruppe; BEENDEN
+    (``ctx.cancel``) beendet sie und wirft ``StepCancelled``. ``LaunchError`` (kein Proton/Wine) wird weitergereicht."""
     argv, env = ctx.launcher.prefix_command(ctx.product_id, list(step.argv), verb="run", extra_env=dict(SETUP_ENV))
     cwd = step.cwd if step.cwd and Path(step.cwd).is_dir() else None
     with open(ctx.log_file, "ab") as lf:
         lf.write(f"--- Einrichtung {step.key}: {shlex.join(argv)}\n".encode())
         lf.flush()
         try:
-            rc = subprocess.run(argv, env=env, cwd=cwd, stdout=lf, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
-                                timeout=timeout).returncode
-        except subprocess.TimeoutExpired:
-            rc = -1
-            lf.write("--- Zeitüberschreitung\n".encode())
+            proc = _spawn(argv, env=env, cwd=cwd, stdout=lf, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+                          start_new_session=True)
         except OSError as exc:
-            rc = -2
+            rc, why = -2, ""
             lf.write(f"--- Start fehlgeschlagen: {exc}\n".encode())
+        else:
+            rc, why = wait_step(proc, ctx.cancel, timeout)
+        if why:
+            lf.write(("--- Abgebrochen (BEENDEN)\n" if why == "cancelled" else "--- Zeitüberschreitung\n").encode())
+            lf.flush()
+            stop_wineserver(ctx, lf)
+        if why == "cancelled":
+            lf.write(f"--- Einrichtung {step.key}: abgebrochen\n".encode())
+            raise StepCancelled(step.key)
         lf.write(f"--- Einrichtung {step.key}: Exit-Code {rc}\n".encode())
     return rc
 
@@ -301,9 +390,9 @@ def _finish(ctx: LaunchContext, state: dict, build_id: str, dirty: bool) -> None
 
 def setup_prefix(ctx: LaunchContext) -> dict[str, Any]:
     """Einrichtung des Prefix für dieses Spiel. Rückgabe für Protokoll/Tests:
-    ``{mode, ran: [keys], failed: [keys], pending: [keys], finished: bool}``."""
+    ``{mode, ran: [keys], failed: [keys], pending: [keys], cancelled: [keys], finished: bool}``."""
     pid = ctx.product_id
-    out: dict[str, Any] = {"mode": "", "ran": [], "failed": [], "pending": [], "finished": False}
+    out: dict[str, Any] = {"mode": "", "ran": [], "failed": [], "pending": [], "cancelled": [], "finished": False}
     record = game_record(ctx)
     if not record or not record.get("build_id"):
         log.info("Einrichtung %s übersprungen: kein Installations-Datensatz mit Build", pid)
@@ -372,6 +461,14 @@ def setup_prefix(ctx: LaunchContext) -> dict[str, Any]:
             ctx.status(tr('Einrichtung {0}/{1}: {2} …').format(i, len(due), step.title))
             try:
                 rc = run_step(ctx, step)
+            except StepCancelled:
+                # BEENDEN: weder erledigt noch Fehlversuch – der Schritt und alle danach laufen beim nächsten Start
+                log.info("Einrichtung %s: %s abgebrochen (BEENDEN)", pid, step.key)
+                redist.mark_cancelled(state, step.key, step.title)
+                out["cancelled"].append(step.key)
+                out["pending"].extend(s.key for s in due[i - 1:])
+                ctx.status(tr('Einrichtung abgebrochen – „{0}“ läuft beim nächsten Start erneut.').format(step.title))
+                break
             except LaunchError as exc:
                 log.warning("Einrichtung %s abgebrochen: %s", pid, exc)
                 out["pending"].extend(s.key for s in due[i - 1:])

@@ -1742,6 +1742,10 @@ msgid "Wird finalisiert"
 msgstr "Finalizing"
 
 #: galaxy_linux/content/redist.py
+msgid "Abgebrochen – läuft beim nächsten Start"
+msgstr "Cancelled – runs on the next launch"
+
+#: galaxy_linux/content/redist.py
 msgid "Abhängigkeits-Repository abrufen …"
 msgstr "Fetching the dependency repository …"
 
@@ -2121,6 +2125,10 @@ msgstr "GalaxyCommunication service"
 msgid "GOverlay-Profil"
 msgstr "GOverlay profile"
 
+#: galaxy_linux/launch/hook_redist.py
+msgid "Einrichtung abgebrochen – „{0}“ läuft beim nächsten Start erneut."
+msgstr "Setup cancelled – “{0}” will run again on the next launch."
+
 #: galaxy_linux/launch/hook_redist.py galaxy_linux/ui/ext_redist.py
 msgid "Einrichtung im Prefix"
 msgstr "Prefix setup"
@@ -2228,6 +2236,10 @@ msgstr "Default of library “{0}”"
 #: galaxy_linux/launch/launcher.py
 msgid "umu-run nicht gefunden (Paket umu-launcher)."
 msgstr "umu-run not found (package umu-launcher)."
+
+#: galaxy_linux/launch/launcher.py
+msgid "wineserver nicht gefunden."
+msgstr "wineserver not found."
 
 #: galaxy_linux/launch/launcher.py
 msgid "winetricks ist nicht installiert."
