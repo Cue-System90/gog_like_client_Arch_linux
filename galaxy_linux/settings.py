@@ -122,7 +122,7 @@ class GlobalSettings:
     library_group: str = "none"       # Gruppieren nach (library_view.GROUP_KEYS)
     bookmarks: list[dict] = field(default_factory=list)   # Lesezeichen in der Seitenleiste (library_view.Bookmark)
     # Allgemein (Galaxy: Einstellungen → Allgemein → Komfort)
-    starting_page: str = "all"        # session | recent | all | installed | store
+    starting_page: str = "all"        # session | discover | recent (Aktuelle Übersicht) | store | all | installed
     last_view: str = "all"            # für „Vorherige Sitzung fortsetzen“
     launch_on_startup: bool = False   # „GOG Galaxy beim Systemstart öffnen“ (XDG-Autostart)
     keep_logged_in: bool = True       # „Eingeloggt bleiben“; aus = beim Beenden abmelden
@@ -131,8 +131,15 @@ class GlobalSettings:
     when_minimizing: str = "taskbar"  # taskbar | tray
     when_closing: str = "exit"        # tray | exit
     when_launching_game: str = "nothing"   # nothing | taskbar | tray
-    # Benachrichtigungen
-    notify_download_status: str = "desktop"   # desktop | none
+    # Benachrichtigungen (je Typ wie Galaxy): desktop = Desktop und Benachrichtigungszentrum, center = nur
+    # Benachrichtigungszentrum (statt Galaxys Overlay), none = aus – siehe notifications.py
+    notify_download_status: str = "desktop"   # Installation/Update (auch Updates verfügbar, Redistributables)
+    notify_wishlist: str = "desktop"          # Wunschliste: Rabatte, neu erhältlich
+    notify_new_games: str = "desktop"         # Neue Spiele in der Bibliothek
+    notify_cloud_saves: str = "desktop"       # Cloud-Spielstände: Konflikte, Kontingent, Fehler
+    # Aktuelle Übersicht (ab 0.4.0)
+    recent_widgets: list[dict] = field(default_factory=list)   # [{"key", "enabled"}] in Anzeigereihenfolge
+    recent_next_seen: str = ""        # zuletzt gezeigter Vorschlag „Was als Nächstes spielen“ („Neu“ in der Seitenleiste)
     # Installieren/aktualisieren
     extras_dir: str = ""              # Ordner für andere Downloads (Offline-Installer, Extras); "" = Downloads/GOG
     pause_downloads_when_playing: bool = True
@@ -438,8 +445,13 @@ class InstalledRegistry:
             write_json(paths.INSTALLED_FILE, self._data)
 
 
+SESSION_KEEP_DAYS = 400       # Sitzungen für „Meine Übersicht“ (Aktuelle Übersicht) so lange aufheben
+SESSION_MAX = 500             # höchstens so viele je Spiel
+
+
 class PlaytimeStore:
-    """Lokale Spielzeit (Minuten) und letzter Start, analog zu Galaxy/Steam."""
+    """Lokale Spielzeit (Minuten) und letzter Start, analog zu Galaxy/Steam; dazu die einzelnen Sitzungen
+    (``sessions``: [Start, Ende] in Unixzeit) für die Statistik der Aktuellen Übersicht."""
 
     def __init__(self) -> None:
         self._lock = threading.Lock()
@@ -449,12 +461,36 @@ class PlaytimeStore:
         v = self._data.get(str(product_id), {})
         return int(v.get("minutes", 0)), float(v.get("last_played", 0))
 
-    def add_session(self, product_id: str, minutes: int, ended_at: float | None = None) -> None:
+    def add_session(self, product_id: str, minutes: int, ended_at: float | None = None,
+                    started_at: float | None = None) -> None:
+        ended = ended_at or time.time()
+        minutes = max(0, int(minutes))
         with self._lock:
             v = self._data.setdefault(str(product_id), {"minutes": 0, "last_played": 0})
-            v["minutes"] = int(v.get("minutes", 0)) + max(0, int(minutes))
-            v["last_played"] = ended_at or time.time()
+            v["minutes"] = int(v.get("minutes", 0)) + minutes
+            v["last_played"] = ended
+            start = started_at if started_at is not None and started_at <= ended else ended - minutes * 60
+            if ended > start:
+                limit = ended - SESSION_KEEP_DAYS * 86400
+                old = v.get("sessions") if isinstance(v.get("sessions"), list) else []
+                kept = [s for s in old if isinstance(s, list) and len(s) == 2 and float(s[1]) >= limit]
+                v["sessions"] = (kept + [[round(start), round(ended)]])[-SESSION_MAX:]
             write_json(paths.PLAYTIME_FILE, self._data)
+
+    def sessions(self, since: float = 0.0) -> list[tuple[str, float, float]]:
+        """Alle gemerkten Sitzungen (Spiel, Start, Ende), die nach ``since`` endeten."""
+        out = []
+        with self._lock:
+            for pid, v in self._data.items():
+                items = v.get("sessions") if isinstance(v, dict) else None
+                for s in items if isinstance(items, list) else []:
+                    try:
+                        start, end = float(s[0]), float(s[1])
+                    except (TypeError, ValueError, IndexError):
+                        continue
+                    if end >= since and end > start:
+                        out.append((str(pid), start, end))
+        return out
 
     def set_remote(self, product_id: str, minutes: int, last_played: float) -> None:
         """Übernimmt Werte vom GOG-Server, falls die höher sind (Mehrgeräte-Nutzung)."""

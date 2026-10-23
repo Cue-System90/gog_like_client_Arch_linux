@@ -30,6 +30,8 @@ CREDENTIALS_FILE = CONFIG_DIR / "credentials.json"
 INSTALLED_FILE = DATA_DIR / "installed.json"
 PLAYTIME_FILE = DATA_DIR / "playtime.json"
 JOBS_FILE = DATA_DIR / "jobs.json"          # offene Downloads (überstehen einen Neustart der Oberfläche)
+NOTIFICATIONS_FILE = DATA_DIR / "notifications.json"     # Benachrichtigungszentrum (höchstens 200, 30 Tage)
+WISHLIST_STATE_FILE = DATA_DIR / "wishlist_state.json"   # Rabatte der Wunschliste bei der letzten Prüfung
 
 
 def ensure_dirs() -> None:

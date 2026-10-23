@@ -616,7 +616,7 @@ class Launcher:
         minutes = int(round((ended - rg.started_at) / 60.0))
         try:
             log.info("Spiel %s beendet: Exit-Code %s nach %.0f s", rg.product_id, code, ended - rg.started_at)
-            self.playtime.add_session(rg.product_id, minutes, ended)
+            self.playtime.add_session(rg.product_id, minutes, ended, started_at=rg.started_at)
             with open(rg.log_file, "ab") as lf:
                 lf.write(f"===== Ende, Exit-Code {code}, {minutes} Min. =====\n".encode())
             if gs.post_exit.strip():

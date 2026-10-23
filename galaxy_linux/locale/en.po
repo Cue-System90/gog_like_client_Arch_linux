@@ -57,7 +57,7 @@ msgstr "HTTP {0} for GamesDB {1}"
 msgid "HTTP {0} für Produkt {1}"
 msgstr "HTTP {0} for product {1}"
 
-#: galaxy_linux/api/client.py
+#: galaxy_linux/api/client.py galaxy_linux/api/discover.py galaxy_linux/api/wishlist.py
 msgid "HTTP {0} für {1}"
 msgstr "HTTP {0} for {1}"
 
@@ -73,9 +73,45 @@ msgstr "Network error for {0}: {1}"
 msgid "Nicht bei GOG angemeldet."
 msgstr "Not signed in to GOG."
 
-#: galaxy_linux/api/client.py
+#: galaxy_linux/api/client.py galaxy_linux/api/discover.py galaxy_linux/api/wishlist.py
 msgid "Ungültige JSON-Antwort von {0}"
 msgstr "Invalid JSON response from {0}"
+
+#: galaxy_linux/api/discover.py
+msgid "Angebote"
+msgstr "Deals"
+
+#: galaxy_linux/api/discover.py
+msgid "Aus deiner Wunschliste"
+msgstr "From your wishlist"
+
+#: galaxy_linux/api/discover.py
+msgid "Good Old Games"
+msgstr "Good Old Games"
+
+#: galaxy_linux/api/discover.py
+msgid "Neuerscheinungen"
+msgstr "New arrivals"
+
+#: galaxy_linux/api/discover.py
+msgid "Spiele für dich"
+msgstr "Games for you"
+
+#: galaxy_linux/api/discover.py
+msgid "Zusätzliche Inhalte für deine Spiele"
+msgstr "Additional content for your games"
+
+#: galaxy_linux/api/wishlist.py galaxy_linux/ui/discover_view.py
+msgid "Kostenlos"
+msgstr "Free"
+
+#: galaxy_linux/api/wishlist.py
+msgid "Neu erhältlich: „{0}“ – {1}"
+msgstr "Now available: “{0}” – {1}"
+
+#: galaxy_linux/api/wishlist.py
+msgid "„{0}“ ist jetzt um {1} % reduziert – {2}"
+msgstr "“{0}” is now {1}% off – {2}"
 
 #: galaxy_linux/backend.py
 msgid " (mehrdeutig)"
@@ -1265,7 +1301,7 @@ msgstr "None of the game's save locations could be resolved in the prefix."
 msgid "Kein Zugang zu den Cloud-Spielständen: {0}"
 msgstr "No access to cloud saves: {0}"
 
-#: galaxy_linux/content/cloudsaves.py
+#: galaxy_linux/content/cloudsaves.py galaxy_linux/launch/hook_cloudsaves.py
 msgid "Konflikt"
 msgstr "Conflict"
 
@@ -1273,7 +1309,7 @@ msgstr "Conflict"
 msgid "Konflikt zwischen Cloud und diesem Computer – nicht synchronisiert."
 msgstr "Conflict between the cloud and this computer - not synced."
 
-#: galaxy_linux/content/cloudsaves.py
+#: galaxy_linux/content/cloudsaves.py galaxy_linux/launch/hook_cloudsaves.py
 msgid "Kontingent überschritten"
 msgstr "Quota exceeded"
 
@@ -1965,9 +2001,13 @@ msgstr "no profile – click the game in GOverlay to create its profile"
 msgid "kein Profil – das Spiel erscheint nicht in GOverlay (Einstellungen → Kompatibilität → GOverlay)"
 msgstr "no profile – the game does not appear in GOverlay (Settings → Compatibility → GOverlay)"
 
-#: galaxy_linux/launch/hook_cloudsaves.py galaxy_linux/ui/dialogs.py galaxy_linux/ui/ext_cloudsaves.py
+#: galaxy_linux/launch/hook_cloudsaves.py galaxy_linux/notifications.py galaxy_linux/ui/dialogs.py
 msgid "Cloud-Spielstände"
 msgstr "Cloud saves"
+
+#: galaxy_linux/launch/hook_cloudsaves.py
+msgid "Cloud-Spielstände: {0}"
+msgstr "Cloud saves: {0}"
 
 #: galaxy_linux/launch/hook_cloudsaves.py
 msgid "Cloud-Synchronisation fehlgeschlagen"
@@ -2000,6 +2040,10 @@ msgstr "GOverlay profile"
 #: galaxy_linux/launch/hook_redist.py galaxy_linux/ui/ext_redist.py
 msgid "Einrichtung im Prefix"
 msgstr "Prefix setup"
+
+#: galaxy_linux/launch/hook_redist.py
+msgid "Einrichtung im Prefix: {0}"
+msgstr "Prefix setup: {0}"
 
 #: galaxy_linux/launch/hook_redist.py
 msgid "Einrichtung {0}/{1}: {2} …"
@@ -2129,7 +2173,7 @@ msgstr "Date added"
 msgid "Datum unbekannt"
 msgstr "Date unknown"
 
-#: galaxy_linux/library_view.py
+#: galaxy_linux/library_view.py galaxy_linux/ui/discover_view.py
 msgid "Demnächst"
 msgstr "Upcoming"
 
@@ -2221,9 +2265,45 @@ msgstr "Update available"
 msgid "Veröffentlichungsdatum"
 msgstr "Release date"
 
-#: galaxy_linux/library_view.py galaxy_linux/ui/game_page.py galaxy_linux/ui/window.py
+#: galaxy_linux/library_view.py galaxy_linux/ui/game_page.py galaxy_linux/ui/recent_view.py
 msgid "Zuletzt gespielt"
 msgstr "Last played"
+
+#: galaxy_linux/notifications.py
+msgid "Desktop und Benachrichtigungszentrum"
+msgstr "Desktop and notification center"
+
+#: galaxy_linux/notifications.py
+msgid "Downloads fertig oder fehlgeschlagen, Updates verfügbar, Probleme mit Galaxy-Redistributables"
+msgstr "Downloads finished or failed, updates available, problems with Galaxy redistributables"
+
+#: galaxy_linux/notifications.py
+msgid "Installation/Update"
+msgstr "Installing/updating"
+
+#: galaxy_linux/notifications.py
+msgid "Konflikte, überschrittenes Kontingent und Fehler beim Synchronisieren"
+msgstr "Conflicts, exceeded quota and sync errors"
+
+#: galaxy_linux/notifications.py
+msgid "Käufe und eingelöste Codes, sobald der Abgleich sie findet"
+msgstr "Purchases and redeemed codes as soon as the library sync finds them"
+
+#: galaxy_linux/notifications.py
+msgid "Neue Spiele in der Bibliothek"
+msgstr "New games in library"
+
+#: galaxy_linux/notifications.py
+msgid "Nur Benachrichtigungszentrum"
+msgstr "Notification center only"
+
+#: galaxy_linux/notifications.py
+msgid "Rabatte und neu erhältliche Spiele deiner Wunschliste"
+msgstr "Discounts and newly available games on your wishlist"
+
+#: galaxy_linux/notifications.py galaxy_linux/ui/store.py
+msgid "Wunschliste"
+msgstr "Wishlist"
 
 #: galaxy_linux/power_search.py galaxy_linux/ui/game_page.py
 msgid "Entwickler"
@@ -2273,7 +2353,7 @@ msgstr "not played yet"
 msgid "{0:.1f} TB"
 msgstr "{0:.1f} TB"
 
-#: galaxy_linux/settings.py
+#: galaxy_linux/settings.py galaxy_linux/ui/recent_view.py
 msgid "{0} Min."
 msgstr "{0} min"
 
@@ -2557,7 +2637,7 @@ msgstr "1. Click “Open GOG login in browser” and sign in to GOG (two-factor 
 msgid "Abweichend von „Einstellungen → Spielfunktionen“ nur für dieses Spiel."
 msgstr "Overrides \"Settings → Game features\" for this game only."
 
-#: galaxy_linux/ui/dialogs.py
+#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/recent_view.py galaxy_linux/ui/window.py
 msgid "Aktuelle Übersicht"
 msgstr "Recent"
 
@@ -2685,7 +2765,7 @@ msgstr "When closing the window"
 msgid "Beim Start nach Spiel-Updates suchen"
 msgstr "Check for game updates on startup"
 
-#: galaxy_linux/ui/dialogs.py
+#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/notification_center.py
 msgid "Benachrichtigungen"
 msgstr "Notifications"
 
@@ -2742,10 +2822,6 @@ msgid "Der Prefix-Ordner wird gelöscht – inklusive Spielständen darin. Beim 
 msgstr "The prefix folder will be deleted – including any saved games inside it. A new one is created on the next launch or via “Create prefix now”."
 
 #: galaxy_linux/ui/dialogs.py
-msgid "Desktop-Benachrichtigungen, solange das Fenster nicht im Vordergrund ist; im Fenster erscheinen die Meldungen unten."
-msgstr "Desktop notifications while the window is not in front; inside the window, messages appear at the bottom."
-
-#: galaxy_linux/ui/dialogs.py
 msgid "Desktopverknüpfung erstellen"
 msgstr "Create desktop shortcut"
 
@@ -2796,6 +2872,10 @@ msgstr "Keep me logged in"
 #: galaxy_linux/ui/dialogs.py galaxy_linux/ui/menus.py
 msgid "Einstellungen"
 msgstr "Settings"
+
+#: galaxy_linux/ui/dialogs.py galaxy_linux/ui/discover_view.py galaxy_linux/ui/window.py
+msgid "Entdecken"
+msgstr "Discover"
 
 #: galaxy_linux/ui/dialogs.py galaxy_linux/ui/downloads_view.py
 msgid "Entfernen"
@@ -3126,10 +3206,6 @@ msgid "Nicht genügend freier Speicherplatz auf „{0}“. Wähle bitte ein ande
 msgstr "Not enough free space on disk \"{0}\". To install this game, select another disk or free up space."
 
 #: galaxy_linux/ui/dialogs.py
-msgid "Nur Desktop"
-msgstr "Desktop only"
-
-#: galaxy_linux/ui/dialogs.py
 msgid "Oberfläche"
 msgstr "Interface"
 
@@ -3389,10 +3465,6 @@ msgstr "Launch method"
 msgid "Stattdessen den System-Browser nutzen und die Adresse einfügen"
 msgstr "Use the system browser instead and paste the address"
 
-#: galaxy_linux/ui/dialogs.py
-msgid "Statusmeldung Installation/Update"
-msgstr "Installing / updating status"
-
 #: galaxy_linux/ui/dialogs.py galaxy_linux/ui/power_search_dialog.py
 msgid "Store"
 msgstr "Store"
@@ -3508,6 +3580,10 @@ msgstr "Tools"
 #: galaxy_linux/ui/dialogs.py
 msgid "Wert"
 msgstr "Value"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Wie in GOG Galaxy je Art wählbar. Ein Galaxy-Overlay gibt es unter Linux nicht – seine Rolle übernimmt das Benachrichtigungszentrum (Glocke oben links). Desktop-Benachrichtigungen erscheinen nur, solange das Fenster nicht im Vordergrund ist."
+msgstr "Chosen per type, as in GOG Galaxy. There is no Galaxy overlay on Linux – the notification center (bell, top left) takes its place. Desktop notifications only appear while the window is not in the foreground."
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Wie unter Steam: pro Spiel eine Proton-/Wine-Version erzwingen. Die globale Vorgabe gilt, wenn nichts gewählt ist."
@@ -3753,6 +3829,34 @@ msgstr "Remove “{0}” from the library?"
 msgid "„{0}“ gelöscht – {1} Spiel(e) ausgetragen, Dateien bleiben"
 msgstr "“{0}” deleted – {1} game(s) removed from the library, files kept"
 
+#: galaxy_linux/ui/discover_view.py
+msgid "Alle anzeigen"
+msgstr "Show all"
+
+#: galaxy_linux/ui/discover_view.py
+msgid "Der GOG-Store ist gerade nicht erreichbar. Entdecken zeigt die Regale wieder, sobald eine Verbindung besteht."
+msgstr "The GOG store can't be reached right now. Discover shows its shelves again as soon as there is a connection."
+
+#: galaxy_linux/ui/discover_view.py galaxy_linux/ui/downloads_view.py
+msgid "Erneut versuchen"
+msgstr "Retry"
+
+#: galaxy_linux/ui/discover_view.py
+msgid "IM BESITZ"
+msgstr "OWNED"
+
+#: galaxy_linux/ui/discover_view.py galaxy_linux/ui/store.py
+msgid "Neu laden"
+msgstr "Reload"
+
+#: galaxy_linux/ui/discover_view.py
+msgid "Weiter"
+msgstr "Next"
+
+#: galaxy_linux/ui/discover_view.py galaxy_linux/ui/store.py galaxy_linux/ui/window.py
+msgid "Zurück"
+msgstr "Back"
+
 #: galaxy_linux/ui/downloads_view.py
 msgid "Abgeschlossen"
 msgstr "Completed"
@@ -3820,10 +3924,6 @@ msgstr "Average"
 #: galaxy_linux/ui/downloads_view.py
 msgid "Erhältliche Updates"
 msgstr "Available updates"
-
-#: galaxy_linux/ui/downloads_view.py
-msgid "Erneut versuchen"
-msgstr "Retry"
 
 #: galaxy_linux/ui/downloads_view.py galaxy_linux/ui/game_menu.py galaxy_linux/ui/game_page.py
 msgid "Fortsetzen"
@@ -4617,7 +4717,7 @@ msgstr "Syncing library…"
 msgid "Bibliothek wird geladen … {0}/{1}"
 msgstr "Loading library… {0}/{1}"
 
-#: galaxy_linux/ui/library_sync.py galaxy_linux/ui/window.py
+#: galaxy_linux/ui/library_sync.py galaxy_linux/ui/recent_view.py galaxy_linux/ui/window.py
 msgid "Neu in der Bibliothek"
 msgstr "New in library"
 
@@ -4802,6 +4902,22 @@ msgstr "Update check failed: {0}"
 msgid "galaxy-linux {0} – inoffizieller, nativer Client für GOG.com."
 msgstr "galaxy-linux {0} – unofficial native client for GOG.com."
 
+#: galaxy_linux/ui/notification_center.py
+msgid "Alle löschen"
+msgstr "Clear all"
+
+#: galaxy_linux/ui/notification_center.py
+msgid "Als gelesen markieren"
+msgstr "Mark as read"
+
+#: galaxy_linux/ui/notification_center.py
+msgid "BENACHRICHTIGUNGEN"
+msgstr "NOTIFICATIONS"
+
+#: galaxy_linux/ui/notification_center.py
+msgid "Keine Benachrichtigungen"
+msgstr "No notifications"
+
 #: galaxy_linux/ui/power_search_dialog.py
 msgid "Durchsuche Tags, Genres, Bewertungen & mehr..."
 msgstr "Search in tags, genres, ratings & more..."
@@ -4818,7 +4934,7 @@ msgstr "Games"
 msgid "Spiele, Tags, Genres, Entwickler, Lesezeichen, Store …"
 msgstr "Games, tags, genres, developers, bookmarks, store …"
 
-#: galaxy_linux/ui/power_search_dialog.py
+#: galaxy_linux/ui/power_search_dialog.py galaxy_linux/ui/window.py
 msgid "Suche"
 msgstr "Search"
 
@@ -4902,6 +5018,141 @@ msgstr "New purchases show up in the library without a restart. Manually: gear �
 msgid "höchstens alle 5 Minuten"
 msgstr "at most every 5 minutes"
 
+#: galaxy_linux/ui/recent_view.py
+msgid "Alle Widgets sind ausgeblendet – „Ansicht anpassen“ schaltet sie wieder ein."
+msgstr "All widgets are hidden – “Customize view” switches them back on."
+
+#: galaxy_linux/ui/recent_view.py
+msgid "An- und abschalten, mit den Pfeilen anordnen"
+msgstr "Switch on and off, reorder with the arrows"
+
+#: galaxy_linux/ui/recent_view.py
+msgid "Ansicht anpassen"
+msgstr "Customize view"
+
+#: galaxy_linux/ui/recent_view.py
+msgid "DIESE WOCHE"
+msgstr "THIS WEEK"
+
+#: galaxy_linux/ui/recent_view.py
+msgid "DIESER MONAT"
+msgstr "THIS MONTH"
+
+#: galaxy_linux/ui/recent_view.py
+msgid "Erst {0} gespielt"
+msgstr "Played only {0}"
+
+#: galaxy_linux/ui/recent_view.py
+msgid "GESTERN"
+msgstr "YESTERDAY"
+
+#: galaxy_linux/ui/recent_view.py
+msgid "HEUTE"
+msgstr "TODAY"
+
+#: galaxy_linux/ui/recent_view.py
+msgid "Hinzugefügt {0}"
+msgstr "Added {0}"
+
+#: galaxy_linux/ui/recent_view.py
+msgid "In den letzten 30 Tagen ist nichts Neues dazugekommen."
+msgstr "Nothing new in the last 30 days."
+
+#: galaxy_linux/ui/recent_view.py
+msgid "Installiert {0}"
+msgstr "Installed {0}"
+
+#: galaxy_linux/ui/recent_view.py
+msgid "Keine Vorschläge: alle installierten Spiele sind schon ausgiebig gespielt. Installiere ein neues Spiel oder lass dich überraschen."
+msgstr "No suggestions: all installed games have been played a lot already. Install a new game or let yourself be surprised."
+
+#: galaxy_linux/ui/recent_view.py
+msgid "Meine Übersicht"
+msgstr "My summary"
+
+#: galaxy_linux/ui/recent_view.py
+msgid "Nach oben"
+msgstr "Move up"
+
+#: galaxy_linux/ui/recent_view.py
+msgid "Nach unten"
+msgstr "Move down"
+
+#: galaxy_linux/ui/recent_view.py
+msgid "Neu mischen"
+msgstr "Reshuffle"
+
+#: galaxy_linux/ui/recent_view.py
+msgid "Noch nicht gespielt"
+msgstr "Not played yet"
+
+#: galaxy_linux/ui/recent_view.py
+msgid "Noch nichts gespielt – gestartete Spiele erscheinen hier."
+msgstr "Nothing played yet – games you launch appear here."
+
+#: galaxy_linux/ui/recent_view.py
+msgid "SPIEL ANZEIGEN"
+msgstr "SHOW GAME"
+
+#: galaxy_linux/ui/recent_view.py
+msgid "SPIELEN"
+msgstr "PLAY"
+
+#: galaxy_linux/ui/recent_view.py
+msgid "Spielzeit je Tag in den letzten 14 Tagen – gezählt werden Spiele, die galaxy-linux startet."
+msgstr "Playtime per day over the last 14 days – counting games launched by galaxy-linux."
+
+#: galaxy_linux/ui/recent_view.py
+msgid "WIDGETS"
+msgstr "WIDGETS"
+
+#: galaxy_linux/ui/recent_view.py
+msgid "Was als Nächstes spielen"
+msgstr "What to play next"
+
+#: galaxy_linux/ui/recent_view.py
+msgctxt "Wochentag"
+msgid "Di"
+msgstr "Tue"
+
+#: galaxy_linux/ui/recent_view.py
+msgctxt "Wochentag"
+msgid "Do"
+msgstr "Thu"
+
+#: galaxy_linux/ui/recent_view.py
+msgctxt "Wochentag"
+msgid "Fr"
+msgstr "Fri"
+
+#: galaxy_linux/ui/recent_view.py
+msgctxt "Wochentag"
+msgid "Mi"
+msgstr "Wed"
+
+#: galaxy_linux/ui/recent_view.py
+msgctxt "Wochentag"
+msgid "Mo"
+msgstr "Mon"
+
+#: galaxy_linux/ui/recent_view.py
+msgctxt "Wochentag"
+msgid "Sa"
+msgstr "Sat"
+
+#: galaxy_linux/ui/recent_view.py
+msgctxt "Wochentag"
+msgid "So"
+msgstr "Sun"
+
+#: galaxy_linux/ui/recent_view.py
+msgid "Zufällig ausgewählt"
+msgstr "Picked at random"
+
+#: galaxy_linux/ui/recent_view.py
+msgid "Überrasch mich"
+msgstr "Surprise me"
+
 #: galaxy_linux/ui/store.py galaxy_linux/ui/window.py
 msgid "Alle Spiele"
 msgstr "All games"
@@ -4975,10 +5226,6 @@ msgid "Laden abbrechen"
 msgstr "Stop loading"
 
 #: galaxy_linux/ui/store.py
-msgid "Neu laden"
-msgstr "Reload"
-
-#: galaxy_linux/ui/store.py
 msgid "Prüfe die Internetverbindung und versuche es erneut."
 msgstr "Check your internet connection and try again."
 
@@ -4993,14 +5240,6 @@ msgstr "Forward"
 #: galaxy_linux/ui/store.py
 msgid "Warenkorb"
 msgstr "Cart"
-
-#: galaxy_linux/ui/store.py
-msgid "Wunschliste"
-msgstr "Wishlist"
-
-#: galaxy_linux/ui/store.py galaxy_linux/ui/window.py
-msgid "Zurück"
-msgstr "Back"
 
 #: galaxy_linux/ui/tags.py
 msgid "Alle Spiele, denen diese Tags zugewiesen sind."
@@ -5243,6 +5482,10 @@ msgid "Freunde online"
 msgstr "Friends online"
 
 #: galaxy_linux/ui/window.py
+msgid "GOG GALAXY"
+msgstr "GOG GALAXY"
+
+#: galaxy_linux/ui/window.py
 msgid "GOG-Spiel(e) im Spiele-Ordner"
 msgstr "GOG game(s) in the games folder"
 
@@ -5361,6 +5604,10 @@ msgstr "Medium"
 #: galaxy_linux/ui/window.py
 msgid "Nachrichten"
 msgstr "Messages"
+
+#: galaxy_linux/ui/window.py
+msgid "Neu"
+msgstr "New"
 
 #: galaxy_linux/ui/window.py
 msgid "Nicht angemeldet"
@@ -5495,6 +5742,10 @@ msgid "Umbenennen"
 msgstr "Rename"
 
 #: galaxy_linux/ui/window.py
+msgid "Update verfügbar: {0}"
+msgstr "Update available: {0}"
+
+#: galaxy_linux/ui/window.py
 msgid "Updates verfügbar für {0} Spiel(e)"
 msgstr "Updates available for {0} game(s)"
 
@@ -5601,3 +5852,15 @@ msgstr "Open"
 #: galaxy_linux/ui/window.py
 msgid "„{0}“ hinzugefügt"
 msgstr "“{0}” added"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Desktop-Benachrichtigungen, solange das Fenster nicht im Vordergrund ist; im Fenster erscheinen die Meldungen unten."
+msgstr "Desktop notifications while the window is not in front; inside the window, messages appear at the bottom."
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Nur Desktop"
+msgstr "Desktop only"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Statusmeldung Installation/Update"
+msgstr "Installing / updating status"
