@@ -99,7 +99,8 @@ class GalaxyApp(Adw.Application):
             lib = self.backend.get_library("external") or next(iter(self.backend.libraries()), None)
             self.window.navigate(f"lib:{lib.id}" if lib else "all")
             return
-        if rest and rest[0] == "view" and len(rest) >= 2 and rest[1] in ("all", "recent", "installed", "downloads"):
+        if rest and rest[0] == "view" and len(rest) >= 2 and rest[1] in ("all", "recent", "installed", "downloads", "discover",
+                                                                         "overview"):
             self.window.navigate(rest[1])
             return
         if len(rest) >= 2 and (rest[1].isdigit() or rest[1].startswith("ext-")):

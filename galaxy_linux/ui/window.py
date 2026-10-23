@@ -3,9 +3,12 @@
 Titelleiste: links Zahnrad-Menü (wie Galaxy 2.1, siehe ui/menus.py) · Avatar-Menü · Power Search (Strg+F, über der
 Seitenleiste), rechts Zurück/Vor, Lesezeichen, Filter, „+“, Suchfeld, Ansicht (Sortieren nach, Gruppieren nach …) und
 die Fensterknöpfe (Minimieren/Schließen je nach „Verhalten des Hauptfensters“, auch in den System-Tray).
-Seitenleiste wie im Original: GOG STORE (eingebettete gog.com-Seiten, ui/store.py), SPIELE (Zuletzt gespielt, Alle
-Spiele, Installiert, Downloads), LESEZEICHEN, darunter BIBLIOTHEKEN (eigene Bibliotheken für Nicht-GOG-Spiele, je ein
-Eintrag mit Zähler), FREUNDE. Inhalt: Cover-Raster in Abschnitten oder Gruppen, Downloads-Seite, Spielansicht, Store.
+Seitenleiste wie im Original: GOG GALAXY (Entdecken, Suche, Aktuelle Übersicht), GOG STORE (eingebettete
+gog.com-Seiten, ui/store.py), SPIELE (Zuletzt gespielt, Alle Spiele, Installiert, Downloads), BIBLIOTHEKEN (eigene
+Bibliotheken für Nicht-GOG-Spiele, je ein Eintrag mit Zähler), LESEZEICHEN, FREUNDE. Inhalt: Entdecken
+(ui/discover_view.py), Aktuelle Übersicht (ui/recent_view.py), Cover-Raster in Abschnitten oder Gruppen,
+Downloads-Seite, Spielansicht, Store. Die Glocke neben der Suche öffnet das Benachrichtigungszentrum
+(ui/notification_center.py).
 Rechtsklick auf ein Spiel öffnet das Kontextmenü wie in Galaxy (ui/game_menu.py).
 """
 from __future__ import annotations
@@ -17,18 +20,21 @@ import socket
 import time
 from pathlib import Path
 
-from .. import APP_ID, APP_NAME, __version__, i18n, library_view as lv, paths
+from .. import APP_ID, APP_NAME, __version__, i18n, library_view as lv, paths, recent as rc
 from ..api.client import NotLoggedIn
+from ..api.discover import DiscoverService
 from ..presence import Presence
 from ..settings import format_bytes, format_minutes
 from . import footer, menus, prefs_registry, store, ui_registry, util
 from .bridge import GtkBridge
 from .dialogs import LoginDialog, PreferencesDialog
+from .discover_view import DiscoverPage
 from .downloads_view import DownloadsView
 from .game_menu import GameActions, attach_context_menu
 from .game_page import GamePage
 from .library_sync import LibrarySyncController
 from .notification_center import NotificationCenter
+from .recent_view import RecentPage
 from .tray import Tray
 from .util import (Adw, Gdk, Gio, GLib, Gtk, ImageLoader, Pango, choose_folder, clamped_picture, icon_button, idle, label,
                    pick_icon, relative_time, run_async)
@@ -41,7 +47,8 @@ SIZE_NAMES = {"XS": tr('Sehr klein'), "S": tr('Klein'), "M": tr('Mittel'), "L": 
 SPACING = {"0": (4, 6), "S": (12, 16), "M": (24, 30), "L": (40, 46)}   # (Spalten, Zeilen) in px
 SPACING_NAMES = {"0": tr('Keiner'), "S": tr('Klein'), "M": tr('Mittel'), "L": tr('Groß')}
 LIB_VIEWS = ("all", "installed", "recent")        # dazu "lib:<ID>" je eigener Bibliothek, "bm:<ID>" je Lesezeichen
-START_VIEWS = ("recent", "all", "installed")
+START_VIEWS = ("discover", "overview", "all", "installed")
+PAGE_VIEWS = ("discover", "overview")              # eigene Seiten der Gruppe GOG GALAXY
 
 
 def is_lib_view(view: str) -> bool:
@@ -292,6 +299,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.sections: list[LibrarySection] = []
         self.library_sync = LibrarySyncController(self)   # Abgleich mit GOG: Start, Intervall, Fokus, Login, Kauf, F5
         self.game_actions = GameActions(self)     # Anpassen-Menü und Kontextmenü der Spiele (Aktionsgruppe „game“)
+        self.discover_service = DiscoverService(backend.api)   # Katalog-Regale, Region (auch für die Wunschliste)
         self.notifications = NotificationCenter(self)          # Glocke, Liste, Desktop-Meldungen je Einstellung
         util.SPEED_IN_BITS[0] = backend.settings.speed_in_bits
 
@@ -306,6 +314,11 @@ class MainWindow(Adw.ApplicationWindow):
         self.toasts.set_child(root)
         self.set_content(self.toasts)
 
+        # GOG GALAXY: Entdecken und Aktuelle Übersicht
+        self.discover = DiscoverPage(self)
+        self.stack.add_named(self.discover, "discover")
+        self.overview = RecentPage(self)
+        self.stack.add_named(self.overview, "overview")
         # Bibliothek (Abschnitte)
         self.lib_scroll = Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER)
         self.lib_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=28, margin_top=18, margin_bottom=28,
@@ -358,6 +371,9 @@ class MainWindow(Adw.ApplicationWindow):
         # Spielzeit aller Geräte von GOG: kurz nach dem Start und dann halbstündlich (je Spiel höchstens alle 6 h)
         GLib.timeout_add_seconds(25, lambda: (self.pull_playtime_async(), False)[1])
         GLib.timeout_add_seconds(1800, lambda: (self.pull_playtime_async(), True)[1])
+        # „Neu“ bei der Aktuellen Übersicht: neuer Vorschlag am nächsten Tag
+        GLib.timeout_add_seconds(1800, lambda: (self.update_overview_badge(), True)[1])
+        self.update_overview_badge()
         ui_registry.run_window_hooks(self)      # Erweiterungen (ui/ext_*.py): Timer, Fokus, eigene Seiten …
 
     # ------------------------------------------------------------------ Kopfzeile
@@ -627,6 +643,13 @@ class MainWindow(Adw.ApplicationWindow):
             box.append(it)
             return it
 
+        # GOG GALAXY wie im Original ganz oben: Entdecken, Suche (Power Search), Aktuelle Übersicht („Neu“ bei einem
+        # neuen Vorschlag „Was als Nächstes spielen“)
+        section(tr('GOG GALAXY'))
+        item("discover", tr('Entdecken'), pick_icon("compass-symbolic", "find-location-symbolic", "starred-symbolic"))
+        item("search", tr('Suche'), pick_icon("system-search-symbolic", "edit-find-symbolic"), cb=lambda: self.open_power_search())
+        item("overview", tr('Aktuelle Übersicht'), pick_icon("view-dashboard-symbolic", "view-grid-symbolic",
+                                                              "document-open-recent-symbolic"))
         # GOG STORE wie im Original vor den Spielen (Startseite … Bisherige Bestellungen), ausblendbar über
         # Einstellungen → Oberfläche → „Bevorzugter Store“
         box.append(store.build_sidebar_group(self, NavItem))
@@ -635,12 +658,6 @@ class MainWindow(Adw.ApplicationWindow):
         item("all", tr('Spiele im Besitz'), pick_icon("view-grid-symbolic", "view-app-grid-symbolic"))
         item("installed", tr('Installiert'), pick_icon("computer-symbolic", "video-display-symbolic"))
         item("downloads", tr('Downloads'), pick_icon("folder-download-symbolic", "go-down-symbolic"))
-        # LESEZEICHEN: gespeicherte Ansichten (mit Filter, Suche, Sortierung) und Spiele – Rechtsklick öffnet ihr Menü
-        self.bm_header = label(tr('LESEZEICHEN'), css=["nav-section"])
-        box.append(self.bm_header)
-        self.bmnav_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        box.append(self.bmnav_box)
-        self._rebuild_bookmark_nav()
         # BIBLIOTHEKEN: eigene Bibliotheken (wie die Plattform-Einträge in Galaxy 2.0), „+“ legt eine neue an
         head = Gtk.Box()
         head.add_css_class("nav-section-row")
@@ -655,6 +672,12 @@ class MainWindow(Adw.ApplicationWindow):
         self.libnav_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         box.append(self.libnav_box)
         self._rebuild_library_nav()
+        # LESEZEICHEN: gespeicherte Ansichten (mit Filter, Suche, Sortierung) und Spiele – Rechtsklick öffnet ihr Menü
+        self.bm_header = label(tr('LESEZEICHEN'), css=["nav-section"])
+        box.append(self.bm_header)
+        self.bmnav_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        box.append(self.bmnav_box)
+        self._rebuild_bookmark_nav()
         section(tr('FREUNDE'))
         item("activity", tr('Aktivität'), pick_icon("emblem-shared-symbolic", "network-workgroup-symbolic"), enabled=False)
         item("friends", tr('Freunde online'), pick_icon("system-users-symbolic", "avatar-default-symbolic"), enabled=False)
@@ -876,6 +899,12 @@ class MainWindow(Adw.ApplicationWindow):
         elif view == "downloads":
             self.downloads.rebuild()
             self.stack.set_visible_child_name("downloads")
+        elif view == "discover":
+            self.stack.set_visible_child_name("discover")
+            self.discover.on_show()
+        elif view == "overview":
+            self.overview.on_show()
+            self.stack.set_visible_child_name("overview")
         elif view.startswith("store:") and getattr(self, "store_page", None) is not None:
             self.stack.set_visible_child_name("store")
             self.store_page.sync_nav()
@@ -1203,7 +1232,7 @@ class MainWindow(Adw.ApplicationWindow):
         if getattr(self, "_search_guard", False):
             return
         self._search = entry.get_text().strip().lower()
-        if (self.view in ("game", "downloads", "welcome") or self.view.startswith("store:")) and self._search:
+        if (self.view in ("game", "downloads", "welcome", *PAGE_VIEWS) or self.view.startswith("store:")) and self._search:
             self.navigate("all")
         self._refilter()
         self._sync_bookmark()
@@ -1295,7 +1324,29 @@ class MainWindow(Adw.ApplicationWindow):
         if is_lib_view(self.view):
             self._rebuild_library()
             self.stack.set_visible_child_name("library")
+        elif self.view == "overview":
+            y = self.overview.get_vadjustment().get_value()
+            self.overview.rebuild()
+            GLib.idle_add(lambda: (self.overview.get_vadjustment().set_value(y), False)[1])
         self.update_nav_badges()
+        self.update_overview_badge()
+
+    def update_overview_badge(self) -> None:
+        """„Neu“ bei der Aktuellen Übersicht, solange der Vorschlag „Was als Nächstes spielen“ noch nicht gezeigt wurde
+        (selten aufgerufen: Start, Ansichtswechsel, Bibliothek/Installationen geändert, halbstündlich)."""
+        it = self.nav.get("overview")
+        if it is None:
+            return
+        try:
+            pick = rc.suggestion(self.backend, time.time())
+        except Exception:  # pragma: no cover
+            log.exception("Vorschlag „Was als Nächstes spielen“ fehlgeschlagen")
+            pick = None
+        new = rc.is_new_suggestion(pick.id if pick else "", self.backend.settings.recent_next_seen)
+        order = rc.merge_order(self.backend.settings.recent_widgets, [w.key for w in ui_registry.recent_widgets()])
+        if "next_to_play" not in rc.enabled_keys(order):
+            new = False                        # Widget abgeschaltet: nichts Neues zu sehen
+        it.set_badge(tr('Neu') if new else "", accent=True)
 
     # ------------------------------------------------------------------ Konto / Daten
     def _update_avatar(self) -> None:
@@ -1593,9 +1644,10 @@ class MainWindow(Adw.ApplicationWindow):
 
     # ------------------------------------------------------------------ Verhalten des Hauptfensters, Tray
     def _start_view(self) -> str:
-        """Einstellungen → Allgemein → Startseite (wie Galaxy, ohne „Entdecken“)."""
+        """Einstellungen → Allgemein → Startseite wie Galaxy: Vorherige Sitzung, Entdecken, Aktuelle Übersicht
+        (``recent``), Store, Spiele im Besitz, Installiert."""
         s = self.backend.settings
-        page = s.starting_page
+        page = {"recent": "overview"}.get(s.starting_page, s.starting_page)
         if page == "session":
             last = s.last_view or "all"
             if last.startswith("game:") and self.backend.entry(last[5:]) is not None:
@@ -1608,7 +1660,7 @@ class MainWindow(Adw.ApplicationWindow):
             if last.startswith("store:") or last == "store":
                 GLib.idle_add(lambda: (self.open_store(""), False)[1])
                 return "all"
-            return last if last in (*START_VIEWS, "downloads") else "all"
+            return last if last in (*START_VIEWS, *LIB_VIEWS, "downloads") else "all"
         if page == "store":
             GLib.idle_add(lambda: (self.open_store(""), False)[1])
             return "all"
@@ -1667,6 +1719,11 @@ class MainWindow(Adw.ApplicationWindow):
     def game_exited(self, pid: str) -> None:
         running = [p for p in self.backend.launcher.active_ids() if p != pid]
         self.presence.set_game(running[0] if running else "")
+        # neue Spielzeit: Aktuelle Übersicht (Zuletzt gespielt, Meine Übersicht, Vorschlag) auf den neuen Stand
+        if self.view == "overview":
+            self.populate()
+        else:
+            self.update_overview_badge()
 
     def pull_playtime_async(self) -> None:
         """Spielzeit aller Geräte von GOG für installierte und zuletzt gespielte Spiele (je Spiel höchstens alle 6 h)."""
@@ -1688,7 +1745,6 @@ class MainWindow(Adw.ApplicationWindow):
         """Ältere Aufrufe: Meldung über das Benachrichtigungszentrum (Desktop nur, solange das Fenster nicht im
         Vordergrund ist, je nach Einstellung des Typs)."""
         self.notifications.post(kind, title, body, action=action, key=key)
-
 
     # ------------------------------------------------------------------ Schließen / Beenden
     def _on_close_request(self, *_: object) -> bool:
@@ -1791,6 +1847,7 @@ class MainWindow(Adw.ApplicationWindow):
                 else tr('{0} abgeschlossen').format(job.label)
             self.toast(text)
             self._post_job(job, tr('Installation abgeschlossen') if job.kind.startswith("install") else text)
+            self.update_overview_badge()           # neu installiert: vielleicht ein neuer Vorschlag
             # Aufträge ohne Spiel der Bibliothek (z. B. Galaxy-Redistributables) ändern keine Karte – kein Neuaufbau,
             # der die Bibliothek nach oben springen ließe
             if is_lib_view(self.view) and (self.backend.registry.is_installed(job.product_id)

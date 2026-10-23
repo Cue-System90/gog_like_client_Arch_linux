@@ -935,8 +935,9 @@ class PreferencesDialog(Adw.PreferencesDialog):
                              active=self.s.keep_logged_in)
         keep.connect("notify::active", lambda r, _p: self._save(keep_logged_in=r.get_active()))
         comfort.add(keep)
-        pages = [("session", tr('Vorherige Sitzung fortsetzen')), ("recent", tr('Aktuelle Übersicht')), ("store", tr('Store')),
-                 ("all", tr('Spiele im Besitz')), ("installed", tr('Installiert'))]
+        pages = [("session", tr('Vorherige Sitzung fortsetzen')), ("discover", tr('Entdecken')),
+                 ("recent", tr('Aktuelle Übersicht')), ("store", tr('Store')), ("all", tr('Spiele im Besitz')),
+                 ("installed", tr('Installiert'))]
         start = Adw.ComboRow(title=tr('Startseite'), model=Gtk.StringList.new([n for _k, n in pages]))
         keys = [k for k, _n in pages]
         start.set_selected(keys.index(self.s.starting_page) if self.s.starting_page in keys else keys.index("all"))

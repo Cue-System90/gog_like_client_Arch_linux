@@ -139,3 +139,20 @@ window.galaxy { background-color: #1b1b20; color: #d9d9de; }
 .notif-body { color: #a0a0a6; font-size: 9pt; }
 .notif-icon { color: #c57be3; }
 .notif-dot { background-color: #c57be3; border-radius: 999px; min-width: 8px; min-height: 8px; }
+
+/* 0.4.0: GOG GALAXY – Entdecken und Aktuelle Übersicht */
+.page-title { font-size: 19pt; font-weight: 800; color: #ffffff; }
+.shelf-title { font-size: 12.5pt; font-weight: 700; color: #ececf0; }
+.discover-card { padding: 0; border-radius: 6px; background: transparent; box-shadow: none; }
+.discover-card:hover { background: transparent; }
+.discover-card:hover .cover { box-shadow: 0 0 0 2px rgba(255,255,255,0.45), 0 6px 18px rgba(0,0,0,0.6); }
+.price-discount { background-color: #8b4fd6; color: #ffffff; border-radius: 3px; padding: 0 5px; font-size: 8.5pt; font-weight: 800; }
+.price-final { color: #ececf0; font-size: 9.5pt; font-weight: 600; }
+.price-base { color: #8c8c92; font-size: 8.5pt; text-decoration-line: line-through; }
+.price-base-plain { color: #8c8c92; font-size: 9pt; }
+.price-owned { color: #8fe0a8; font-size: 8pt; font-weight: 700; letter-spacing: 1px; }
+.widget-panel { background-color: rgba(255,255,255,0.03); border-radius: 8px; padding: 16px 18px; }
+.next-title { font-size: 16pt; font-weight: 800; color: #ffffff; }
+.hist-bar { background-color: rgba(197,123,227,0.55); border-radius: 3px 3px 0 0; min-height: 2px; }
+.hist-bar.today { background-color: #c57be3; }
+.hist-bar.empty { background-color: rgba(255,255,255,0.08); }

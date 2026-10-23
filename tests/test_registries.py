@@ -75,7 +75,7 @@ class PrefsRegistryTest(unittest.TestCase):
 
 class UiRegistryTest(unittest.TestCase):
     def setUp(self):
-        self.ps = [mock.patch.dict(d, clear=True) for d in (ur._actions, ur._sections, ur._window_hooks)]
+        self.ps = [mock.patch.dict(d, clear=True) for d in (ur._actions, ur._sections, ur._window_hooks, ur._recent)]
         for p in self.ps:
             p.start()
 
@@ -142,6 +142,22 @@ class UiRegistryTest(unittest.TestCase):
         self.assertEqual(seen, [("a", "WIN"), ("b", "WIN")])
         ur.unregister("a")
         self.assertEqual(sorted(ur._window_hooks), ["b", "c"])
+
+    def test_recent_widgets(self):
+        """Erweiterungspunkt der Aktuellen Übersicht (z. B. später Freunde-Widgets)."""
+        ur.register_recent_widget("friends", "Freunde", lambda page: ("F", page), order=60)
+        ur.register_recent_widget("played", "Zuletzt gespielt", lambda page: ("P", page), order=10)
+
+        def boom(page):
+            raise RuntimeError("x")
+        ur.register_recent_widget("kaputt", "Kaputt", boom, order=70)
+        widgets = ur.recent_widgets()
+        self.assertEqual([w.key for w in widgets], ["played", "friends", "kaputt"])
+        self.assertEqual(ur.build_recent_widget(widgets[0], "PAGE"), ("P", "PAGE"))
+        with self.assertLogs("galaxy_linux.ui.ui_registry", "ERROR"):
+            self.assertIsNone(ur.build_recent_widget(widgets[2], "PAGE"))
+        ur.unregister("kaputt")
+        self.assertEqual([w.key for w in ur.recent_widgets()], ["played", "friends"])
 
 
 class LaunchEventTest(unittest.TestCase):

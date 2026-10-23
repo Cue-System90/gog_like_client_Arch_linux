@@ -6,6 +6,7 @@ Funktionen hängen sich hier ein, ohne ``window.py``/``game_page.py`` zu ändern
                          visible=lambda page, pid: page.backend.registry.is_installed(pid))
     register_game_section("cloud", lambda page: CloudBox(page), column="right")
     register_window_hook(lambda win: win.connect("notify::is-active", …))
+    register_recent_widget("friends", N_("Freunde"), lambda page: FriendsWidget(page), order=60)
 
 * Spiel-Aktionen erscheinen im „⋯“-Menü der Spielansicht (nach „Im Store anzeigen“); ``visible`` wird bei jedem
   Öffnen des Menüs geprüft.
@@ -14,6 +15,9 @@ Funktionen hängen sich hier ein, ohne ``window.py``/``game_page.py`` zu ändern
   (``stats``: nach SPIELZEIT · ZULETZT GESPIELT · ERFOLGE · KOMPATIBILITÄT). Hat das Widget ``set_game(pid)`` bzw.
   ``refresh_state(pid)``, ruft die Spielansicht sie beim Spielwechsel bzw. bei Zustandsänderungen auf.
 * Fenster-Hooks laufen einmal am Ende von ``MainWindow.__init__`` (Timer, Fokus-Signale, eigene Stack-Seiten).
+* Widgets der Aktuellen Übersicht (Recent, ``ui/recent_view.py``): ``builder(page)`` liefert bei jedem Aufbau der
+  Ansicht ein Gtk.Widget (oder None); der Titel (deutscher Text, ``N_``) erscheint als Überschrift und unter „Ansicht
+  anpassen“, wo man das Widget an-/abschaltet und verschiebt. Neue Widgets kommen eingeschaltet ans Ende.
 
 Alle Rückrufe laufen im GTK-Hauptthread. Fehler werden protokolliert und übersprungen. Erweiterungsmodule
 ``galaxy_linux/ui/ext_<name>.py`` (und ``prefs_<name>.py``) lädt ``prefs_registry.load_extensions()`` automatisch.
@@ -48,9 +52,18 @@ class GameSection:
     order: int = 100
 
 
+@dataclass
+class RecentWidget:
+    key: str
+    title: str                       # deutscher Text (N_), wird beim Anzeigen übersetzt
+    builder: Callable[[Any], Any]
+    order: int = 100
+
+
 _actions: dict[str, GameAction] = {}
 _sections: dict[str, GameSection] = {}
 _window_hooks: dict[str, tuple[int, Callable[[Any], None]]] = {}
+_recent: dict[str, RecentWidget] = {}
 _lock = threading.Lock()
 
 
@@ -75,11 +88,32 @@ def register_window_hook(key: str, fn: Callable[[Any], None], order: int = 100) 
         _window_hooks[key] = (order, fn)
 
 
+def register_recent_widget(key: str, title: str, builder: Callable[[Any], Any], order: int = 100) -> None:
+    """Widget der Aktuellen Übersicht; ``builder(page)`` → Gtk.Widget oder None."""
+    with _lock:
+        _recent[key] = RecentWidget(key, title, builder, order)
+
+
 def unregister(key: str) -> None:
     with _lock:
         _actions.pop(key, None)
         _sections.pop(key, None)
         _window_hooks.pop(key, None)
+        _recent.pop(key, None)
+
+
+def recent_widgets() -> list[RecentWidget]:
+    with _lock:
+        items = list(_recent.values())
+    return sorted(items, key=lambda w: (w.order, w.key))
+
+
+def build_recent_widget(widget: RecentWidget, page: Any) -> Any:
+    try:
+        return widget.builder(page)
+    except Exception:
+        log.exception("Widget %s der Aktuellen Übersicht fehlgeschlagen", widget.key)
+        return None
 
 
 def game_actions() -> list[GameAction]:
