@@ -26,6 +26,10 @@ STORE_SECTIONS: dict[str, str] = {
 # Abschlussseite des Checkouts, auch mit Sprachsegment: /de/checkout/<publicOrderId>/complete
 _COMPLETE = re.compile(r"^/(?:[a-z]{2}(?:-[a-z]{2})?/)?checkout/([A-Za-z0-9._-]+)/complete/?$", re.IGNORECASE)
 _SECRET_QUERY = {"code", "token", "access_token", "refresh_token", "auth", "session"}
+# Fremde Schemata, die eine Store-Seite an das System weitergeben darf (nur nach einem Klick). Alles andere – auch
+# galaxy-linux:// (startet Spiele), steam:// u. Ä. – wird verworfen: jede Seite im Store-Fenster, auch fremde Seiten
+# und eingebettete Werbung, könnte es sonst ohne Zutun auslösen.
+EXTERNAL_SCHEMES = {"mailto"}
 
 
 def store_lang(ui_lang: str) -> str:
@@ -144,16 +148,16 @@ def store_login_url(current: str, lang: str) -> str:
 
 
 def classify_navigation(url: str) -> str:
-    """Navigation im Store-Fenster: ``allow`` (normal laden), ``galaxy`` (goggalaxy://-Link), ``browser``
-    (mailto:, steam: … an das System) oder ``ignore``."""
+    """Navigation im Store-Fenster: ``allow`` (normal laden), ``galaxy`` (goggalaxy://-Link: Spielansicht),
+    ``browser`` (mailto: an das System, nur nach einem Klick) oder ``ignore`` (alle anderen Schemata)."""
     scheme = urlsplit((url or "").strip()).scheme.lower()
     if scheme in ("http", "https", "about", "blob", "data", ""):
         return "allow"
     if scheme == "goggalaxy":
         return "galaxy"
-    if scheme in ("javascript", "file"):
-        return "ignore"
-    return "browser"
+    if scheme in EXTERNAL_SCHEMES:
+        return "browser"
+    return "ignore"
 
 
 def classify_new_window(url: str, link_clicked: bool) -> str:
@@ -169,7 +173,7 @@ def classify_new_window(url: str, link_clicked: bool) -> str:
     if scheme in ("blob", "about"):
         return "popup"
     if scheme not in ("http", "https"):
-        return "browser"
+        return "browser" if scheme in EXTERNAL_SCHEMES and link_clicked else "ignore"
     if link_clicked:
         return "store" if is_store_url(text) else "browser"
     return "popup"

@@ -80,6 +80,9 @@ class LinkClassificationTest(unittest.TestCase):
         self.assertEqual(sl.classify_new_window("https://www.youtube.com/watch?v=1", True), "browser")
         self.assertEqual(sl.classify_new_window("https://support.gog.com/hc", True), "browser")
         self.assertEqual(sl.classify_new_window("mailto:a@example.com", True), "browser")
+        self.assertEqual(sl.classify_new_window("mailto:a@example.com", False), "ignore")     # window.open ohne Klick
+        self.assertEqual(sl.classify_new_window("galaxy-linux://launch/1207658924", True), "ignore")
+        self.assertEqual(sl.classify_new_window("steam://run/1", True), "ignore")
         # window.open aus Skripten (Zahlungsanbieter) → eigenes Fenster in derselben Sitzung
         self.assertEqual(sl.classify_new_window("https://www.paypal.com/checkoutnow?token=x", False), "popup")
         self.assertEqual(sl.classify_new_window("", False), "popup")
@@ -93,7 +96,10 @@ class LinkClassificationTest(unittest.TestCase):
         self.assertEqual(sl.classify_navigation("about:blank"), "allow")
         self.assertEqual(sl.classify_navigation("goggalaxy://openGameView/1207658924"), "galaxy")
         self.assertEqual(sl.classify_navigation("mailto:a@example.com"), "browser")
-        self.assertEqual(sl.classify_navigation("steam://run/1"), "browser")
+        # Seiten im Store dürfen keine lokalen Programme auslösen (galaxy-linux://launch startet Spiele)
+        self.assertEqual(sl.classify_navigation("steam://run/1"), "ignore")
+        self.assertEqual(sl.classify_navigation("galaxy-linux://launch/1207658924"), "ignore")
+        self.assertEqual(sl.classify_navigation("GALAXY-LINUX://launch/ext-x"), "ignore")
         self.assertEqual(sl.classify_navigation("file:///etc/passwd"), "ignore")
 
     def test_galaxy_links_and_downloads(self):

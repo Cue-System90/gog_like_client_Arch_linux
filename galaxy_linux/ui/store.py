@@ -455,14 +455,17 @@ class StorePage(Gtk.Box):
         if dtype == WebKit.PolicyDecisionType.NAVIGATION_ACTION:
             req = decision.get_navigation_action().get_request()
             uri = req.get_uri() if req is not None else ""
+            action = decision.get_navigation_action()
             kind = classify_navigation(uri)
             if kind == "allow":
                 return False
             decision.ignore()
             if kind == "galaxy":
                 self._galaxy_link(uri)
-            elif kind == "browser":
+            elif kind == "browser" and action.is_user_gesture():      # nie ohne Klick an das System
                 open_uri(uri)
+            else:
+                log.info("Store: Navigation zu %s verworfen", uri.split(":", 1)[0] + ":…")
             return True
         if dtype == WebKit.PolicyDecisionType.NEW_WINDOW_ACTION:
             # Links mit target=_blank schon hier einordnen; nur echte Popups (Zahlung) laufen weiter zu „create“
@@ -473,7 +476,8 @@ class StorePage(Gtk.Box):
             if kind == "popup":
                 return False
             decision.ignore()
-            self._open_elsewhere(kind, uri)
+            if kind != "browser" or action.is_user_gesture():
+                self._open_elsewhere(kind, uri)
             return True
         if dtype == WebKit.PolicyDecisionType.RESPONSE:
             if not decision.is_main_frame_main_resource():
@@ -500,7 +504,8 @@ class StorePage(Gtk.Box):
         uri = req.get_uri() if req is not None else ""
         kind = classify_new_window(uri, action.get_navigation_type() == self.WebKit.NavigationType.LINK_CLICKED)
         if kind != "popup":
-            self._open_elsewhere(kind, uri)
+            if kind != "browser" or action.is_user_gesture():
+                self._open_elsewhere(kind, uri)
             return None
         return StorePopup(self, view).view
 
@@ -519,9 +524,13 @@ class StorePage(Gtk.Box):
             return
         if msg is None:
             return
+        # Der Nachrichtenkanal steht jeder Seite im Store-Fenster offen (auch fremden Seiten und eingebetteten
+        # Rahmen) – nur auf GOG-Seiten zählen, und den Kauf nur an der tatsächlich geladenen Adresse erkennen
+        uri = self.view.get_uri() or ""
+        if not is_store_url(uri):
+            return
         if msg["type"] == "nav":
-            self._on_uri(self.view.get_uri() or "")
-            self.check_purchase(msg["url"])
+            self._on_uri(uri)                  # prüft auch den Kaufabschluss (check_purchase)
         elif msg["type"] == "user":
             self.banner.set_revealed(not msg["loggedIn"])
 
