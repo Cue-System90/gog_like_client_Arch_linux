@@ -28,6 +28,7 @@ from ..presence import Presence
 from ..settings import format_bytes, format_minutes
 from . import footer, menus, prefs_registry, store, ui_registry, util
 from .bridge import GtkBridge
+from .client_update import ClientUpdate
 from .dialogs import LoginDialog, PreferencesDialog
 from .discover_view import DiscoverPage
 from .downloads_view import DownloadsView
@@ -327,6 +328,8 @@ class MainWindow(Adw.ApplicationWindow):
 
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         root.append(self._build_header())
+        # Selbst-Update wie Galaxy: Zahnrad-Punkt, „Jetzt aktualisieren“, einmal am Tag beim Start suchen
+        self.client_update = ClientUpdate(self)
         self.width_probe = WidthProbe()         # Fensterbreite für die Freunde-Seitenleiste (ab 1501 px)
         root.append(self.width_probe)
         body = Gtk.Box(vexpand=True)

@@ -1,7 +1,8 @@
 """Menüs wie in GOG Galaxy 2.1: Zahnrad oben links (Hauptmenü) und Avatar-Menü, dazu App-Aktionen und Tastenkürzel.
 
 Zahnrad (Reihenfolge wie im Original): Spiele & Freunde hinzufügen ▸ (… | Freunde hinzufügen) · Bibliothek aktualisieren | Einstellungen ·
-Hilfe erhalten · Protokoll (Linux-Ergänzung) | Neu bei uns | Nach Updates suchen | Rechtliches und Datenschutz · Beenden.
+Hilfe erhalten · Protokoll (Linux-Ergänzung) | Neu bei uns | Nach Updates suchen (mit bekanntem Update „Jetzt
+aktualisieren“ und blauem Punkt, ui/client_update.py) | Rechtliches und Datenschutz · Beenden.
 Avatar: Kopf mit Bild und Name | Online · Unsichtbar | Kontoverwaltung · Bisherige Bestellungen · Geldbeutel | Ausloggen
 (abgemeldet nur „Bei GOG anmelden“).
 """
@@ -12,7 +13,7 @@ from ..i18n import tr
 import logging
 
 from .. import APP_NAME, __version__, clientinfo
-from .util import Adw, Gio, GLib, Gtk, label, open_uri, run_async
+from .util import Adw, Gio, GLib, Gtk, label, open_uri
 
 log = logging.getLogger(__name__)
 
@@ -33,7 +34,7 @@ def install_actions(app) -> None:
         ("help", lambda: open_uri(clientinfo.ISSUES_URL), []),
         ("log", lambda: w() and open_log(w()), []),
         ("whats-new", lambda: w() and show_whats_new(w()), []),
-        ("check-client-update", lambda: w() and check_client_update(w()), []),
+        ("check-client-update", lambda: w() and w().client_update.menu_action(), []),
         ("legal", lambda: w() and show_legal(w()), []),
         ("account", lambda: w() and w().open_store("/account/settings"), []),
         ("orders", lambda: w() and w().open_store("/account/settings/orders"), []),
@@ -75,8 +76,9 @@ def install_actions(app) -> None:
     app.add_action(pres)
 
 
-def main_menu_model() -> Gio.Menu:
-    """Zahnrad-Menü; Abschnitte erscheinen mit Trennlinien."""
+def main_menu_model(update_available: bool = False) -> Gio.Menu:
+    """Zahnrad-Menü; Abschnitte erscheinen mit Trennlinien. Mit bekanntem Client-Update heißt „Nach Updates suchen“
+    wie in Galaxy „Jetzt aktualisieren“ (eigenes Widget mit blauem Punkt, ui/client_update.py)."""
     menu = Gio.Menu()
     add = Gio.Menu()
     games = Gio.Menu()
@@ -100,6 +102,11 @@ def main_menu_model() -> Gio.Menu:
                   ((tr('Rechtliches und Datenschutz'), "app.legal"), (tr('Beenden'), "app.quit"))):
         sec = Gio.Menu()
         for text, action in items:
+            if action == "app.check-client-update" and update_available:
+                item = Gio.MenuItem.new(tr('Jetzt aktualisieren'), action)
+                item.set_attribute_value("custom", GLib.Variant.new_string("client-update"))
+                sec.append_item(item)
+                continue
             sec.append(text, action)
         menu.append_section(None, sec)
     return menu
@@ -196,21 +203,14 @@ def show_whats_new(win) -> None:
 
 
 def check_client_update(win) -> None:
-    """„Nach Updates suchen“: neueste Veröffentlichung auf GitHub mit der installierten Version vergleichen."""
-    def done(res: clientinfo.UpdateCheck) -> None:
-        if res.state == "newer":
-            toast = Adw.Toast.new(GLib.markup_escape_text(tr('Neues Update {0} verfügbar').format(res.latest)))
-            toast.set_button_label(tr('Anzeigen'))
-            toast.connect("button-clicked", lambda *_: open_uri(res.url))
-            toast.set_timeout(10)
-            win.toasts.add_toast(toast)
-        elif res.state == "none":
-            win.toast(tr('Noch keine Veröffentlichung'))
-        else:
-            win.toast(tr('Keine Updates für galaxy-linux verfügbar ({0})').format(__version__))
+    """„Nach Updates suchen“: neueste Veröffentlichung auf GitHub mit der installierten Version vergleichen; ist sie
+    neuer, folgt der Dialog „Neues Update verfügbar“ (ui/client_update.py)."""
+    win.client_update.check(manual=True)
 
-    win.toast(tr('Suche nach Updates …'))
-    run_async(clientinfo.check_for_update, done, lambda e: win.toast(tr('Update-Suche fehlgeschlagen: {0}').format(e)))
+
+def show_client_update(win, res: clientinfo.UpdateCheck) -> None:
+    """Gefundenes Update anzeigen (Zahnrad-Punkt, „Jetzt aktualisieren“, Dialog)."""
+    win.client_update.found(res)
 
 
 def show_legal(win) -> None:

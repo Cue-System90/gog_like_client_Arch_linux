@@ -969,7 +969,7 @@ msgstr "create missing records via the GOG content system"
 msgid "fehlt"
 msgstr "missing"
 
-#: galaxy_linux/cli.py
+#: galaxy_linux/cli.py galaxy_linux/ui/client_update.py
 msgid "galaxy-linux {0}"
 msgstr "galaxy-linux {0}"
 
@@ -1174,6 +1174,38 @@ msgid "übernommen: {0} ({1}, {2}) – {3}"
 msgstr "imported: {0} ({1}, {2}) – {3}"
 
 #: galaxy_linux/clientinfo.py
+msgid "Abgebrochen – die Abfrage des Systems wurde nicht bestätigt."
+msgstr "Cancelled – the system prompt was not confirmed."
+
+#: galaxy_linux/clientinfo.py
+msgid "Das Update ist installiert. Starte galaxy-linux neu, um die neue Version zu verwenden."
+msgstr "The update is installed. Restart galaxy-linux to use the new version."
+
+#: galaxy_linux/clientinfo.py
+msgid "Die Installation hat zu lange gedauert und wurde abgebrochen."
+msgstr "The installation took too long and was stopped."
+
+#: galaxy_linux/clientinfo.py
+msgid "Die Prüfsumme des Pakets stimmt nicht – der Download wurde verworfen."
+msgstr "The package checksum does not match – the download was discarded."
+
+#: galaxy_linux/clientinfo.py
+msgid "Die Veröffentlichung enthält kein pacman-Paket für {0}."
+msgstr "The release has no pacman package for {0}."
+
+#: galaxy_linux/clientinfo.py
+msgid "Die Veröffentlichung enthält keine Datei SHA256SUMS."
+msgstr "The release has no SHA256SUMS file."
+
+#: galaxy_linux/clientinfo.py galaxy_linux/launch/galaxy_services.py
+msgid "Download abgebrochen."
+msgstr "Download cancelled."
+
+#: galaxy_linux/clientinfo.py galaxy_linux/ui/store.py
+msgid "Download fehlgeschlagen: {0}"
+msgstr "Download failed: {0}"
+
+#: galaxy_linux/clientinfo.py
 msgid "GitHub antwortet mit HTTP {0}"
 msgstr "GitHub answered with HTTP {0}"
 
@@ -1181,11 +1213,27 @@ msgstr "GitHub answered with HTTP {0}"
 msgid "GitHub nicht erreichbar: {0}"
 msgstr "GitHub not reachable: {0}"
 
+#: galaxy_linux/clientinfo.py
+msgid "Nicht berechtigt – das System hat die Installation abgelehnt."
+msgstr "Not authorized – the system refused the installation."
+
+#: galaxy_linux/clientinfo.py
+msgid "SHA256SUMS enthält keine Prüfsumme für {0}."
+msgstr "SHA256SUMS has no checksum for {0}."
+
+#: galaxy_linux/clientinfo.py
+msgid "pacman meldet einen Fehler (Exit-Code {0})."
+msgstr "pacman reported an error (exit code {0})."
+
+#: galaxy_linux/clientinfo.py
+msgid "pkexec fehlt – bitte das Paket polkit installieren."
+msgstr "pkexec is missing – please install the polkit package."
+
 #: galaxy_linux/content/cloudsaves.py
 msgid "(nicht auflösbar)"
 msgstr "(cannot be resolved)"
 
-#: galaxy_linux/content/cloudsaves.py galaxy_linux/ui/dialogs.py galaxy_linux/ui/downloads_view.py
+#: galaxy_linux/content/cloudsaves.py galaxy_linux/ui/client_update.py galaxy_linux/ui/dialogs.py
 msgid "Abbrechen"
 msgstr "Cancel"
 
@@ -1910,10 +1958,6 @@ msgid "Anmeldung bei GOG konnte nicht erneuert werden: {0}"
 msgstr "Could not renew the GOG sign-in: {0}"
 
 #: galaxy_linux/launch/galaxy_services.py
-msgid "Download abgebrochen."
-msgstr "Download cancelled."
-
-#: galaxy_linux/launch/galaxy_services.py
 msgid "Download von {0} fehlgeschlagen: HTTP {1}"
 msgstr "Download of {0} failed: HTTP {1}"
 
@@ -2533,6 +2577,90 @@ msgstr "Reload"
 msgid "Nicht angemeldet"
 msgstr "Not signed in"
 
+#: galaxy_linux/ui/client_update.py
+msgid "Diese Veröffentlichung hat keine Versionshinweise."
+msgstr "This release has no release notes."
+
+#: galaxy_linux/ui/client_update.py galaxy_linux/ui/ext_redist.py galaxy_linux/ui/menus.py
+msgid "Jetzt aktualisieren"
+msgstr "Update now"
+
+#: galaxy_linux/ui/client_update.py
+msgid "Keine Updates für galaxy-linux verfügbar ({0})"
+msgstr "No updates for galaxy-linux available ({0})"
+
+#: galaxy_linux/ui/client_update.py galaxy_linux/ui/window.py
+msgid "Menü"
+msgstr "Menu"
+
+#: galaxy_linux/ui/client_update.py
+msgid "Menü – Update verfügbar"
+msgstr "Menu – update available"
+
+#: galaxy_linux/ui/client_update.py
+msgid "Neu starten"
+msgstr "Restart"
+
+#: galaxy_linux/ui/client_update.py
+msgid "Neues Update verfügbar"
+msgstr "New update available"
+
+#: galaxy_linux/ui/client_update.py
+msgid "Noch keine Veröffentlichung"
+msgstr "No release published yet"
+
+#: galaxy_linux/ui/client_update.py
+msgid "Prüfsumme stimmt. Wird installiert – bitte die Abfrage des Systems bestätigen …"
+msgstr "Checksum verified. Installing – please confirm the system prompt …"
+
+#: galaxy_linux/ui/client_update.py galaxy_linux/ui/menus.py
+msgid "Schließen"
+msgstr "Close"
+
+#: galaxy_linux/ui/client_update.py
+msgid "Später"
+msgstr "Later"
+
+#: galaxy_linux/ui/client_update.py
+msgid "Suche nach Updates …"
+msgstr "Checking for updates …"
+
+#: galaxy_linux/ui/client_update.py
+msgid "Update wird geladen …"
+msgstr "Downloading update …"
+
+#: galaxy_linux/ui/client_update.py
+msgid "Update wird geladen … {0} %"
+msgstr "Downloading update … {0} %"
+
+#: galaxy_linux/ui/client_update.py
+msgid "Update-Suche fehlgeschlagen: {0}"
+msgstr "Update check failed: {0}"
+
+#: galaxy_linux/ui/client_update.py
+msgid "Veröffentlichung {0} im Browser geöffnet"
+msgstr "Opened release {0} in your browser"
+
+#: galaxy_linux/ui/client_update.py
+msgid "Veröffentlichung öffnen"
+msgstr "Open release"
+
+#: galaxy_linux/ui/client_update.py
+msgid "Wird abgebrochen …"
+msgstr "Cancelling …"
+
+#: galaxy_linux/ui/client_update.py
+msgid "galaxy-linux aktualisieren"
+msgstr "Update galaxy-linux"
+
+#: galaxy_linux/ui/client_update.py
+msgid "galaxy-linux ist hier nicht als pacman-Paket installiert – „Jetzt aktualisieren“ öffnet die Veröffentlichung im Browser."
+msgstr "galaxy-linux is not installed as a pacman package here – “Update now” opens the release in your browser."
+
+#: galaxy_linux/ui/client_update.py
+msgid "galaxy-linux {0} ist verfügbar – installiert ist {1}."
+msgstr "galaxy-linux {0} is available – {1} is installed."
+
 #: galaxy_linux/ui/configure.py
 msgid " (installiert)"
 msgstr " (installed)"
@@ -2922,6 +3050,10 @@ msgid "Bei Schließung des Fensters"
 msgstr "When closing the window"
 
 #: galaxy_linux/ui/dialogs.py
+msgid "Beim Start nach Client-Updates suchen"
+msgstr "Check for client updates on startup"
+
+#: galaxy_linux/ui/dialogs.py
 msgid "Beim Start nach Spiel-Updates suchen"
 msgstr "Check for game updates on startup"
 
@@ -3164,6 +3296,10 @@ msgstr "Auto-update keeps all installed GOG games up to date in the background, 
 #: galaxy_linux/ui/dialogs.py
 msgid "Hinzufügen"
 msgstr "Add"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Höchstens einmal am Tag auf GitHub nach einer neuen Version von galaxy-linux suchen"
+msgstr "Look for a new galaxy-linux version on GitHub at most once a day"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Im Browser anmelden"
@@ -4410,10 +4546,6 @@ msgid "Gemeinsamer Ordner für ISI, Visual C++, DirectX, .NET … – wie in GOG
 msgstr "Shared folder for ISI, Visual C++, DirectX, .NET … – downloaded once for all games, as in GOG Galaxy."
 
 #: galaxy_linux/ui/ext_redist.py
-msgid "Jetzt aktualisieren"
-msgstr "Update now"
-
-#: galaxy_linux/ui/ext_redist.py
 msgid "Noch nichts eingerichtet"
 msgstr "Nothing set up yet"
 
@@ -5123,10 +5255,6 @@ msgid "„{0}“ wirklich leeren? Die bisherigen Einträge gehen verloren."
 msgstr "Really clear “{0}”? The existing entries will be lost."
 
 #: galaxy_linux/ui/menus.py
-msgid "Anzeigen"
-msgstr "Show"
-
-#: galaxy_linux/ui/menus.py
 msgid "Ausloggen"
 msgstr "Sign out"
 
@@ -5175,10 +5303,6 @@ msgid "Kein Änderungsprotokoll gefunden."
 msgstr "No changelog found."
 
 #: galaxy_linux/ui/menus.py
-msgid "Keine Updates für galaxy-linux verfügbar ({0})"
-msgstr "No updates for galaxy-linux available ({0})"
-
-#: galaxy_linux/ui/menus.py
 msgid "Kontoverwaltung"
 msgstr "Account management"
 
@@ -5198,14 +5322,6 @@ msgstr "Scan folders for GOG Games"
 msgid "Neu bei uns"
 msgstr "What's new"
 
-#: galaxy_linux/ui/menus.py
-msgid "Neues Update {0} verfügbar"
-msgstr "New update {0} available"
-
-#: galaxy_linux/ui/menus.py
-msgid "Noch keine Veröffentlichung"
-msgstr "No release published yet"
-
 #: galaxy_linux/ui/menus.py galaxy_linux/ui/prefs_galaxy_services.py
 msgid "Projektseite öffnen"
 msgstr "Open project page"
@@ -5213,10 +5329,6 @@ msgstr "Open project page"
 #: galaxy_linux/ui/menus.py
 msgid "Rechtliches und Datenschutz"
 msgstr "Legal & privacy"
-
-#: galaxy_linux/ui/menus.py
-msgid "Schließen"
-msgstr "Close"
 
 #: galaxy_linux/ui/menus.py
 msgid "Spiel manuell hinzufügen"
@@ -5227,16 +5339,8 @@ msgid "Spiele & Freunde hinzufügen"
 msgstr "Add games & friends"
 
 #: galaxy_linux/ui/menus.py
-msgid "Suche nach Updates …"
-msgstr "Checking for updates …"
-
-#: galaxy_linux/ui/menus.py
 msgid "Unsichtbar"
 msgstr "Invisible"
-
-#: galaxy_linux/ui/menus.py
-msgid "Update-Suche fehlgeschlagen: {0}"
-msgstr "Update check failed: {0}"
 
 #: galaxy_linux/ui/menus.py
 msgid "galaxy-linux {0} – inoffizieller, nativer Client für GOG.com."
@@ -5512,10 +5616,6 @@ msgstr "The store view was reloaded."
 #: galaxy_linux/ui/store.py
 msgid "Download abgeschlossen: {0}"
 msgstr "Download complete: {0}"
-
-#: galaxy_linux/ui/store.py
-msgid "Download fehlgeschlagen: {0}"
-msgstr "Download failed: {0}"
 
 #: galaxy_linux/ui/store.py
 msgid "Download gestartet: {0}"
@@ -5916,10 +6016,6 @@ msgstr "Running"
 #: galaxy_linux/ui/window.py
 msgid "Melde dich bei GOG an, um deine Bibliothek zu laden."
 msgstr "Sign in to GOG to load your library."
-
-#: galaxy_linux/ui/window.py
-msgid "Menü"
-msgstr "Menu"
 
 #: galaxy_linux/ui/window.py
 msgid "Minimieren"

@@ -126,6 +126,8 @@ class GlobalSettings:
     last_view: str = "all"            # für „Vorherige Sitzung fortsetzen“
     launch_on_startup: bool = False   # „GOG Galaxy beim Systemstart öffnen“ (XDG-Autostart)
     keep_logged_in: bool = True       # „Eingeloggt bleiben“; aus = beim Beenden abmelden
+    check_client_updates: bool = True # „Beim Start nach Client-Updates suchen“ (GitHub, höchstens einmal am Tag)
+    client_update_checked: float = 0.0   # Zeitpunkt der letzten Suche nach Client-Updates
     presence_status: str = "online"   # online | invisible (Avatar-Menü)
     # Oberfläche → Verhalten des Hauptfensters
     when_minimizing: str = "taskbar"  # taskbar | tray

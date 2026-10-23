@@ -935,6 +935,11 @@ class PreferencesDialog(Adw.PreferencesDialog):
                              active=self.s.keep_logged_in)
         keep.connect("notify::active", lambda r, _p: self._save(keep_logged_in=r.get_active()))
         comfort.add(keep)
+        upd = Adw.SwitchRow(title=tr('Beim Start nach Client-Updates suchen'),
+                            subtitle=tr('Höchstens einmal am Tag auf GitHub nach einer neuen Version von galaxy-linux suchen'),
+                            active=self.s.check_client_updates)
+        upd.connect("notify::active", lambda r, _p: self._save(check_client_updates=r.get_active()))
+        comfort.add(upd)
         pages = [("session", tr('Vorherige Sitzung fortsetzen')), ("discover", tr('Entdecken')),
                  ("recent", tr('Aktuelle Übersicht')), ("store", tr('Store')), ("all", tr('Spiele im Besitz')),
                  ("installed", tr('Installiert'))]

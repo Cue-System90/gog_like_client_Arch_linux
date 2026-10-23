@@ -29,6 +29,7 @@ class GalaxyApp(Adw.Application):
         self.backend: Backend | None = None
         self.window = None
         self.start_minimized = start_minimized      # Autostart („GOG Galaxy beim Systemstart öffnen“)
+        self.restart_requested = False              # „Neu starten“ nach einem Client-Update (ui/client_update.py)
 
     def do_startup(self) -> None:
         Adw.Application.do_startup(self)
@@ -121,4 +122,17 @@ def run(argv: list[str]) -> int:
     GLib.set_prgname(APP_ID)          # WM_CLASS / StartupWMClass → richtiges Symbol in Taskleiste und Fensterwechsler
     GLib.set_application_name(APP_NAME)
     app = GalaxyApp(start_minimized=MINIMIZED_ARG in argv)
-    return app.run([sys.argv[0], *[a for a in argv if a not in ("--gui", "gui", MINIMIZED_ARG)]])
+    rc = app.run([sys.argv[0], *[a for a in argv if a not in ("--gui", "gui", MINIMIZED_ARG)]])
+    if app.restart_requested:
+        # nach „Jetzt aktualisieren“: neue Version starten (der D-Bus-Name ist mit dem Ende von app.run frei)
+        import os
+
+        from ..clientinfo import restart_command
+        cmd = restart_command()
+        log.info("Neustart nach Client-Update: %s", " ".join(cmd))
+        logging.shutdown()
+        try:
+            os.execv(cmd[0], cmd)
+        except OSError as exc:
+            print(f"Neustart fehlgeschlagen: {exc}", file=sys.stderr)
+    return rc

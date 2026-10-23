@@ -177,3 +177,9 @@ window.galaxy { background-color: #1b1b20; color: #d9d9de; }
 .presence-dot.online, .presence-dot.playing { background-color: #6bcf8a; }
 .presence-dot.away { background-color: #e3c07a; }
 .friends-sidebar .presence-dot { border-color: #16161a; }
+
+/* Selbst-Update wie Galaxy: blauer Punkt am Zahnrad und am Eintrag „Jetzt aktualisieren“ */
+.update-dot { background-color: #4c9be8; border-radius: 999px; min-width: 8px; min-height: 8px; }
+.update-dot.on-icon { min-width: 7px; min-height: 7px; box-shadow: 0 0 0 2px #1b1b20; }
+.menu-update-item { padding: 0 12px; min-height: 30px; border-radius: 6px; font-weight: normal; }
+.update-notes { background-color: rgba(255,255,255,0.05); border-radius: 8px; }
