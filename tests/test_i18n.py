@@ -20,6 +20,23 @@ class PoTest(unittest.TestCase):
             cat = i18n.parse_po(po)
         self.assertEqual(cat, {'Zeile „eins“\nzwei "x"': 'line one\ntwo "x"'})
 
+    def test_context(self):
+        msgs = {"Kopieren": ["a.py:1"], "Zwischenablage\x04Kopieren": ["b.py:2"]}
+        with tempfile.TemporaryDirectory() as d:
+            po = Path(d) / "en.po"
+            i18n.write_po(po, msgs, {"Kopieren": "Duplicate", "Zwischenablage\x04Kopieren": "Copy"}, "en")
+            self.assertIn('msgctxt "Zwischenablage"', po.read_text())
+            cat = i18n.parse_po(po)
+        self.assertEqual(cat, {"Kopieren": "Duplicate", "Zwischenablage\x04Kopieren": "Copy"})
+        try:
+            i18n.setup("de")
+            self.assertEqual(i18n.tr("Zwischenablage\x04Kopieren"), "Kopieren")
+            i18n.setup("en")
+            self.assertEqual(i18n.tr("Zwischenablage\x04Kopieren"), "Copy")
+            self.assertEqual(i18n.tr("Kopieren"), "Duplicate")
+        finally:
+            i18n.setup("de")
+
     def test_write_and_read_roundtrip(self):
         msgs = {'A "b"\\c\n\td': ["x.py:1"], "neu": ["y.py:2"]}
         with tempfile.TemporaryDirectory() as d:
