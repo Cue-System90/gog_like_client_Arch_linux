@@ -2,10 +2,9 @@
 
 Neueste Version zuerst. „Neu bei uns“ im Zahnrad-Menü zeigt den Abschnitt der installierten Version.
 
-## 0.2.0 – Umbau in Arbeit (22.10.2026)
+## 0.2.0 (23.10.2026)
 
-Ziel des Umbaus: alle Funktionen von GOG Galaxy 2.1, dazu die Linux-Besonderheiten. Diese Version legt das
-Fundament; weitere Bausteine folgen.
+Erster großer Umbau Richtung GOG Galaxy 2.1 mit allen Linux-Besonderheiten.
 
 - **Zahnrad-Menü wie in Galaxy 2.1**: Spiele & Freunde hinzufügen (Spiel manuell hinzufügen, GOG-Code einlösen,
   Nach GOG-Spielen durchsuchen, Bibliothek anlegen), **Bibliothek aktualisieren** (F5 / Strg+R), Einstellungen,
@@ -24,7 +23,7 @@ Fundament; weitere Bausteine folgen.
   Oberfläche → Bevorzugter Store. Spielansicht „⋯“ → Im Store anzeigen. `webkitgtk-6.0` ist jetzt Pflichtpaket.
 - Neue Einstellungsseite **Spielfunktionen**: Spiele automatisch aktualisieren, Cloud-Spielstände, Erfolge,
   Galaxy-Dienste im Spiel (comet), Erfassung der Spielzeit, GOverlay-Profile pro Spiel; pro Spiel abweichend unter
-  Eigenschaften → Spielfunktionen. (Die Schalter wirken, sobald die zugehörigen Bausteine fertig sind.)
+  Eigenschaften → Spielfunktionen.
 - **GOverlay pro Spiel**: Die Spiele-Ordner erscheinen in GOverlay (Eintrag in `nonsteam_folders.txt`, Cover werden
   mitgeliefert); das dort angelegte Profil eines Spiels wird beim Start über `bgmod` angewendet statt der globalen
   MangoHud-Konfiguration. Die Spielseite zeigt das Profil, „GOverlay öffnen“ ersetzt „Aus GOverlay“.
@@ -32,6 +31,14 @@ Fundament; weitere Bausteine folgen.
   Bestenlisten – über **comet** (Apache-2.0) und den GalaxyCommunication-Dienst im Prefix, wie bei Heroic. comet wird
   gesucht (eigener Pfad, PATH, Heroic) oder einmalig aus dem offiziellen Release geladen (SHA-256-geprüft); Status,
   Herunterladen und eigener Pfad unter Einstellungen → Kompatibilität → Galaxy-Dienste, im Terminal `galaxy-linux comet`.
+- **GOG-Abhängigkeiten wie Galaxy und Heroic**: Redistributables (VC++, DirectX, .NET, PhysX, XNA …) liegen einmal in
+  einem gemeinsamen Ordner statt in jedem Spiel; beim ersten Start richtet galaxy-linux den Prefix ein wie der
+  Original-Installer (ISI-Installationsskripte bzw. Support-Programme, danach die Redistributables) und merkt sich pro
+  Prefix, was schon da ist. DOSBox, ScummVM, nGlide und Sprach-Setups kommen in den Spielordner. Eigenschaften →
+  Kompatibilität → Einrichtung im Prefix, Einstellungen → Kompatibilität → Galaxy-Redistributables, `galaxy-linux redist`.
+- Durchgesehen und abgesichert: Nachbereitung nach dem Spiel geht auch beim Schließen des Fensters nicht verloren,
+  Vorbereitung abbrechbar, Cloud-Löschungen nur mit Sicherung, GOverlay-`bgmod` nur einmal und das globale Profil nur
+  auf Wunsch, keine Token-Reste von comet, Seitenleiste „Spiele im Besitz“ wie im Original.
 - Unter der Haube: Erweiterungspunkte für den Spielstart (Launch-Hooks), für Einstellungsdialoge, Spielansicht und
   Auftragsarten; die Redistributables beim ersten Start laufen jetzt als Hook.
 - **Cloud-Spielstände wie in Galaxy**: vor jedem Start herunterladen, nach dem Beenden hochladen; Konfliktdialog
