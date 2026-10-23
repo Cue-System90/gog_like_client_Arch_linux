@@ -757,9 +757,10 @@ class GameSettingsDialog(Adw.PreferencesDialog):
         grp = Adw.PreferencesGroup(title=tr('Start'))
         is_ext = bool(self.installed and self.installed.method == "external")
         if is_ext:
-            name = Adw.EntryRow(title=tr('Name in der Bibliothek'), text=self.installed.title, show_apply_button=True)
-            name.connect("apply", lambda r: (self.backend.rename_external(self.pid, r.get_text()), self.on_changed(),
-                                             self._toast(tr("Name geändert – Cover wird neu gesucht"))))
+            name = Adw.EntryRow(title=tr('Name in der Bibliothek'), text=self.backend.display_title(self.pid),
+                                show_apply_button=True)
+            name.connect("apply", lambda r: (r.set_text(self.backend.set_custom_title(self.pid, r.get_text())),
+                                             self.on_changed(), self._toast(tr('Name geändert (leer = automatisch)'))))
             grp.add(name)
         tasks = self.backend.launcher.tasks_for(self.installed) if self.installed else []
         names = [tr('Standard (primärer Eintrag)')] + [t.name for t in tasks]

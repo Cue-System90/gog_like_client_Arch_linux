@@ -460,6 +460,9 @@ class GogApi:
     def cached_image(self, url: str) -> Path | None:
         if not url:
             return None
+        if url.startswith("file://"):              # eigenes Cover („Bearbeiten …“): Datei direkt
+            p = Path(url[7:])
+            return p if p.is_file() and p.stat().st_size > 0 else None
         name = hashlib.sha1(url.encode()).hexdigest()
         ext = os.path.splitext(url.split("?")[0])[1] or ".img"
         dest = paths.IMAGE_CACHE_DIR / (name + ext)

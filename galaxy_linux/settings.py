@@ -280,6 +280,9 @@ class GameSettings:
     branch_password: str = ""      # Passwort für private Beta-Kanäle
     dlc_excluded: list[str] = field(default_factory=list)   # abgewählte DLCs – auch Updates lassen sie weg
     custom_tasks: list[dict] = field(default_factory=list)  # eigene Dateiverknüpfungen {name, path, arguments, working_dir}
+    # ab 0.3.1: „Bearbeiten …“ wie in Galaxy – gilt überall (Bibliothek, Spielansicht, Suche, GOverlay)
+    custom_title: str = ""         # eigener Titel, "" = automatisch
+    custom_cover: str = ""         # eigenes Cover (Kopie im Datenordner), "" = automatisch
 
 
 def resolve_switch(value: str, default: bool) -> bool:
@@ -384,6 +387,16 @@ class InstalledGame:
     installed_at: float = field(default_factory=time.time)
     branch: str = ""
     library: str = ""               # nur extern: ID der eigenen Bibliothek
+    # nur extern, ab 0.3.1 (content/identity.py): Kopien, Varianten, offizieller Name
+    duplicate_of: str = ""          # Kopie von (Produkt-ID des Originals, gleicher Inhalt)
+    base_title: str = ""            # offizieller Titel ohne Varianten-Zusatz
+    variant: str = ""               # Varianten-Zusatz („1360 x 768“, „HD Edition“ …)
+    title_source: str = ""          # gog | catalog | pe | wikidata | folder
+    gog_match: str = ""             # GOG-Produkt desselben Spiels (installiert oder im Besitz)
+    cover_url: str = ""             # Cover (GOG, Katalog, Steam, Wikipedia)
+    wikidata: str = ""              # Wikidata-Objekt (Q…)
+    identity: int = 0               # Stand der Erkennung (identity.IDENTITY_VERSION), 0 = noch nicht erkannt
+    identity_lang: str = ""         # Sprache der Oberfläche bei der Erkennung (deutsche/englische Bezeichnung)
 
 
 class InstalledRegistry:
@@ -405,6 +418,19 @@ class InstalledRegistry:
         with self._lock:
             self._data[str(game.product_id)] = asdict(game)
             write_json(paths.INSTALLED_FILE, self._data)
+
+    def update(self, product_id: str, **changes: Any) -> InstalledGame | None:
+        """Einzelne Felder eines Spiels ändern (auf dem aktuellen Stand, unter der Sperre) – für Arbeits-Threads."""
+        with self._lock:
+            raw = self._data.get(str(product_id))
+            if not raw:
+                return None
+            g = _from_dict(InstalledGame, raw)
+            for k, v in changes.items():
+                setattr(g, k, v)
+            self._data[str(product_id)] = asdict(g)
+            write_json(paths.INSTALLED_FILE, self._data)
+            return g
 
     def remove(self, product_id: str) -> None:
         with self._lock:

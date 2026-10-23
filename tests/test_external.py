@@ -123,7 +123,8 @@ class ExternalBackendTest(unittest.TestCase):
         self.assertEqual(rep.imported, [])
         self.assertIsNone(self.b.registry.get("ext-freelancer"))
         game = self.b.add_game_manually(self.ext / "Freelancer", title="Freelancer (Original)", create_prefix=False)
-        self.assertEqual(game.title, "Freelancer (Original)")
+        self.assertEqual(game.title, "Freelancer")                                     # erkannter Titel
+        self.assertEqual(self.b.display_title(game.product_id), "Freelancer (Original)")   # eigener Titel
         self.assertEqual(self.b.settings.ignored_paths, [])
 
     def test_manual_add_outside_folders_and_delete_files(self):
@@ -165,7 +166,8 @@ class ExternalBackendTest(unittest.TestCase):
     def test_rename_exe_and_no_gog_playtime(self):
         self.b.scan_install_dirs(wait=0.05, create_prefixes=False)
         self.b.rename_external("ext-freelancer", "Freelancer Classic")
-        self.assertEqual(self.b.registry.get("ext-freelancer").title, "Freelancer Classic")
+        self.assertEqual(self.b.display_title("ext-freelancer"), "Freelancer Classic")      # = eigener Titel
+        self.assertEqual(self.b.game_settings.get("ext-freelancer").custom_title, "Freelancer Classic")
         exe(self.ext / "Freelancer" / "EXE" / "FLServerTool.exe", 100_000)
         self.b.set_external_exe("ext-freelancer", "EXE/FLServerTool.exe")
         tasks = self.b.launcher.tasks_for(self.b.registry.get("ext-freelancer"))

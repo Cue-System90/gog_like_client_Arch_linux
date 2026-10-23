@@ -2,7 +2,7 @@
 (Rechtsklick) in Raster und Liste.
 
 Reihenfolge wie im Original (``GameViewMoreButtonComponent``, Kontextmenü ``client.js`` 2280194):
-Spielen/Installieren · Zusätzliche Dateiverknüpfungen ▸ · Patch-Notizen anzeigen · Eigenschaften … ·
+Spielen/Installieren · Zusätzliche Dateiverknüpfungen ▸ · Patch-Notizen anzeigen · Bearbeiten … · Eigenschaften … ·
 Installation verwalten ▸ (Konfigurieren …, Ordner importieren, Ordner anzeigen, Überprüfen / Reparieren, Deinstallieren)
 · Nach Updates suchen · Spielforum ansehen · Produktseite ansehen | Tags verwalten …, Bewerten ▸, Spiel ausblenden |
 Linux: Wine-Prefix ▸, Verknüpfungen ▸, Protokoll öffnen, Aus Bibliothek entfernen …, Einträge der Erweiterungen.
@@ -34,6 +34,7 @@ class GameActions:
             "install": lambda: self.win.page.install(self.pid),
             "resume": lambda: self._resume(),
             "patch-notes": lambda: self.win.page.show_patch_notes(self.pid),
+            "edit": lambda: self.win.edit_game(self.pid),
             "properties": lambda: self.win.page.open_settings(pid=self.pid),
             "configure": lambda: self.win.configure_game(self.pid),
             "import-folder": lambda: self.win.page.import_folder(self.pid),
@@ -141,6 +142,7 @@ class GameActions:
             top.append_submenu(tr('Zusätzliche Dateiverknüpfungen'), sub)
         if gog and not context:
             top.append(tr('Patch-Notizen anzeigen'), "game.patch-notes")
+        top.append(tr('Bearbeiten …'), "game.edit")
         top.append(tr('Eigenschaften …'), "game.properties")
         manage = Gio.Menu()
         m1 = Gio.Menu()

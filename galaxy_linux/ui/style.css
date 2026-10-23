@@ -116,3 +116,6 @@ window.galaxy { background-color: #1b1b20; color: #d9d9de; }
 .speed-graph { color: #c57be3; }
 .hdr-pill.accent { background-color: #6b4a9e; color: #ffffff; }
 .minimize-btn { margin-right: 2px; }
+
+/* 0.3.1: Bearbeiten … (Vorschau des Covers) */
+.edit-cover { border-radius: 4px; background-color: #26262c; }

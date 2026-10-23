@@ -341,6 +341,8 @@ class MainWindow(Adw.ApplicationWindow):
         self.navigate(self._start_view())
         self.setup_folder_watch()
         GLib.timeout_add_seconds(2, lambda: (self.scan_folders_async(quiet=True), False)[1])
+        # Namen, Kopien und Cover externer Spiele (content/identity.py) – nach der ersten Ordnersuche erneut
+        GLib.timeout_add_seconds(6, lambda: (self.resolve_externals_async(), False)[1])
         # Bibliothek aus dem Cache steht schon – Abgleich kurz danach (leerer Cache: sofort), danach Update-Suche
         self.library_sync.start()
         # offene Downloads vom letzten Mal wieder einreihen (pausierte bleiben pausiert)
@@ -514,6 +516,11 @@ class MainWindow(Adw.ApplicationWindow):
         fav = Gtk.CheckButton(label=tr('Favoriten'), active=flt.favorites)
         fav.connect("toggled", lambda b: self._set_filter("favorites", True, b.get_active()))
         box.append(fav)
+        if flt.copies or any(g.duplicate_of for g in self.backend.registry.all()):
+            cop = Gtk.CheckButton(label=tr('Kopien anzeigen'), active=flt.copies)
+            cop.set_tooltip_text(tr('Ordner mit gleichem Inhalt wie ein anderes Spiel (z. B. „… - Kopie“) – sonst nur einmal gezeigt'))
+            cop.connect("toggled", lambda b: self._set_filter("copies", True, b.get_active()))
+            box.append(cop)
         hid_keys = ["", "hidden", "visible"]
         hid = Gtk.DropDown.new_from_strings([tr('Ausgeblendete wie eingestellt'), tr('Nur ausgeblendete Spiele anzeigen.'),
                                              tr('Nur sichtbare Spiele anzeigen.')])
@@ -935,6 +942,8 @@ class MainWindow(Adw.ApplicationWindow):
         for g in games:
             if not show and self.backend.game_settings.get(g.product_id).hidden:
                 continue
+            if not include_hidden and g.duplicate_of and not self.filter.copies:
+                continue                      # Kopie: wie Galaxys gestapelte Duplikate nur einmal zählen
             e = self.backend.entry(g.product_id)
             if e:
                 out.append(e)
@@ -1186,6 +1195,9 @@ class MainWindow(Adw.ApplicationWindow):
     def _set_filter(self, key: str, val, on: bool) -> None:
         if key == "favorites":
             self.filter.favorites = on
+        elif key == "copies":
+            self.filter.copies = on
+            self.update_nav_badges()
         elif key == "hidden":
             self.filter.hidden = val
         else:
@@ -1392,6 +1404,8 @@ class MainWindow(Adw.ApplicationWindow):
                 self.populate()
                 if self.current_pid:
                     self.page.refresh_state()
+            if any(g.method == "external" for g in report.imported):
+                self.resolve_externals_async()
             self.update_nav_badges()
             msgs = []
             groups = {"": []}
@@ -1431,6 +1445,34 @@ class MainWindow(Adw.ApplicationWindow):
                 self.toast(tr('Durchsuchen fehlgeschlagen: {0}').format(exc))
         # Ordnerüberwachung (quiet) lässt Bibliotheken mit abgeschalteter Überwachung aus, „Durchsuchen“ nimmt alle
         run_async(lambda: self.backend.scan_install_dirs(auto=quiet), done, fail)
+
+    def resolve_externals_async(self, force: bool = False) -> None:
+        """Externe Spiele erkennen (Kopien, offizielle Namen, Cover) – im Hintergrund, danach Ansicht und GOverlay."""
+        def done(changed: list) -> None:
+            if not changed:
+                return
+            self.titles_changed(changed)
+        run_async(lambda: self.backend.resolve_externals(force=force), done,
+                  lambda e: log.warning("Erkennung externer Spiele fehlgeschlagen: %s", e))
+
+    def titles_changed(self, pids: list | None = None) -> None:
+        """Titel, Cover oder Kopien geändert („Bearbeiten …“, Erkennung): Bibliothek, Spielansicht und GOverlay."""
+        self._facts.clear()
+        if is_lib_view(self.view):
+            y = self.lib_scroll.get_vadjustment().get_value()
+            self._rebuild_library()
+            GLib.idle_add(lambda: (self.lib_scroll.get_vadjustment().set_value(y), False)[1])
+        if self.current_pid and self.view == "game" and (pids is None or self.current_pid in pids):
+            self.page.set_game(self.current_pid)
+        self.update_nav_badges()
+        sync = getattr(self, "goverlay_sync", None)
+        if sync is not None:
+            sync.request()
+
+    def edit_game(self, pid: str) -> None:
+        """„Bearbeiten …“ wie in Galaxy: eigener Titel und eigenes Cover."""
+        from .edit_dialog import EditGameDialog
+        EditGameDialog(self, pid).present(self)
 
     # ------------------------------------------------------------------ Spiele und Prefixe von Hand verwalten
     def add_game(self, library: str | None = None) -> None:

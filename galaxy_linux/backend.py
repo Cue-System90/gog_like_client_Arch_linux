@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from .i18n import tr
 
+import dataclasses
 import logging
 import os
 import threading
@@ -23,10 +24,15 @@ from .content.installer import InstallError, InstallManager, InstallPlan, NoGala
 from .content.manifest import Build
 from .launch import hooks as launch_hooks, shortcuts
 from .launch.launcher import LaunchError, Launcher, PlayTask, RunningGame
-from .settings import (EXTERNAL_LIBRARY_ID, VIEW_KEYS, CustomLibrary, GameSettingsStore, GlobalSettings, InstalledGame,
-                       InstalledRegistry, PlaytimeStore)
+from .settings import (EXTERNAL_LIBRARY_ID, VIEW_KEYS, CustomLibrary, GameSettings, GameSettingsStore, GlobalSettings,
+                       InstalledGame, InstalledRegistry, PlaytimeStore)
 
 log = logging.getLogger(__name__)
+
+
+def _file_url(path: str) -> str:
+    """Lokale Bilddatei als URL für den Bild-Cache (``GogApi.cached_image`` liefert sie direkt)."""
+    return "file://" + str(path)
 
 
 @dataclass
@@ -598,6 +604,7 @@ class Backend:
         self._playtime_checked: dict[str, float] = {}
         self.jobs = JobQueue(self)
         self._scan_lock = threading.Lock()
+        self._identity_lock = threading.Lock()
         self._assign_libraries()
         # Hook-Module (launch/hook_*.py) früh laden: sie melden auch Auftragsarten und Job-Rückrufe an
         launch_hooks.load_builtin_hooks()
@@ -626,29 +633,116 @@ class Backend:
         return library_sync.sync(self, reason, force, progress)
 
     def entry(self, product_id: str) -> LibraryEntry | None:
+        """Bibliothekseintrag (GOG oder installiert); ein eigener Titel („Bearbeiten …“) ersetzt den Titel."""
         pid = str(product_id)
+        custom = self.game_settings.get(pid).custom_title
         for e in self.library:
             if e.id == pid:
-                return e
+                return dataclasses.replace(e, title=custom) if custom else e
         inst = self.registry.get(pid)
         if inst:
-            return LibraryEntry(id=pid, title=inst.title, works_on={inst.platform if inst.platform != "osx" else "mac": True})
+            return LibraryEntry(id=pid, title=custom or inst.title,
+                                works_on={inst.platform if inst.platform != "osx" else "mac": True})
         return None
 
     def visible_library(self, include_hidden: bool | None = None) -> list[LibraryEntry]:
         """GOG-Bibliothek ohne ausgeblendete Spiele (hier oder bei GOG ausgeblendet), außer „Versteckte Spiele
-        anzeigen“ ist an bzw. ``include_hidden``."""
+        anzeigen“ ist an bzw. ``include_hidden``. Eigene Titel sind eingesetzt."""
         from .library_view import is_hidden
         show = self.settings.show_hidden if include_hidden is None else include_hidden
+        all_gs = self.game_settings.items()
+        default = GameSettings()
         out = []
         for e in self.library:
-            if not show and is_hidden(e, self.game_settings.get(e.id)):
+            gs = all_gs.get(e.id, default)
+            if not show and is_hidden(e, gs):
                 continue
-            out.append(e)
+            out.append(dataclasses.replace(e, title=gs.custom_title) if gs.custom_title else e)
         return out
 
-    def meta(self, product_id: str) -> GameMeta | None:
+    # ------------------------------------------------------------------ Bearbeiten … (eigener Titel und eigenes Cover)
+    def default_title(self, product_id: str) -> str:
+        """Titel ohne eigenen Titel: GOG-Titel bzw. erkannter Titel eines externen Spiels."""
         pid = str(product_id)
+        inst = self.registry.get(pid)
+        if inst is not None and inst.method == "external":
+            return inst.title
+        for e in self.library:
+            if e.id == pid:
+                return e.title
+        return inst.title if inst is not None else pid
+
+    def display_title(self, product_id: str) -> str:
+        return self.game_settings.get(str(product_id)).custom_title or self.default_title(product_id)
+
+    def set_custom_title(self, product_id: str, title: str) -> str:
+        """Eigenen Titel setzen; leer oder gleich dem automatischen Titel = zurück auf automatisch."""
+        pid = str(product_id)
+        title = " ".join((title or "").split())
+        if title == self.default_title(pid):
+            title = ""
+        self.game_settings.update(pid, custom_title=title)
+        log.info("Eigener Titel für %s: %s", pid, title or "(automatisch)")
+        return title or self.default_title(pid)
+
+    def custom_cover_dir(self) -> Path:
+        return paths.DATA_DIR / "custom-covers"
+
+    def set_custom_cover(self, product_id: str, source: str | Path | None) -> str:
+        """Eigenes Cover aus einer Bilddatei übernehmen (Kopie im Datenordner, damit es bleibt, auch wenn die Datei
+        verschwindet); ``None`` = zurück auf automatisch. Gibt den gespeicherten Pfad zurück."""
+        import hashlib
+        import shutil
+        pid = str(product_id)
+        old = self.game_settings.get(pid).custom_cover
+        dest = ""
+        if source:
+            src = Path(os.path.expanduser(str(source)))
+            data = src.read_bytes()
+            if not data:
+                raise InstallError(tr('Die Bilddatei ist leer.'))
+            ext = src.suffix.lower() if src.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp") else ".img"
+            d = self.custom_cover_dir()
+            d.mkdir(parents=True, exist_ok=True)
+            safe = "".join(c if c.isalnum() or c in "-_" else "_" for c in pid)
+            target = d / f"{safe}-{hashlib.sha1(data).hexdigest()[:10]}{ext}"
+            if not target.exists():
+                tmp = target.with_name(target.name + ".tmp")
+                shutil.copyfile(src, tmp)
+                os.replace(tmp, target)
+            dest = str(target)
+        self.game_settings.update(pid, custom_cover=dest)
+        if old and old != dest:
+            try:
+                p = Path(old)
+                if p.parent == self.custom_cover_dir():
+                    p.unlink()
+            except OSError:
+                pass
+        with self._meta_lock:
+            self._covers.pop(pid, None)
+        log.info("Eigenes Cover für %s: %s", pid, dest or "(automatisch)")
+        return dest
+
+    def copy_of(self, product_id: str) -> InstalledGame | None:
+        """Original, wenn das Spiel eine Kopie (gleicher Inhalt) eines anderen externen Spiels ist."""
+        g = self.registry.get(str(product_id))
+        if g is None or not g.duplicate_of:
+            return None
+        return self.registry.get(g.duplicate_of)
+
+    def meta(self, product_id: str) -> GameMeta | None:
+        """Metadaten der Spielansicht; ein eigener Titel/ein eigenes Cover („Bearbeiten …“) wird eingesetzt."""
+        m = self._meta_raw(str(product_id))
+        if m is None:
+            return None
+        gs = self.game_settings.get(str(product_id))
+        if gs.custom_title or gs.custom_cover:
+            m = dataclasses.replace(m, title=gs.custom_title or m.title,
+                                    vertical_cover=_file_url(gs.custom_cover) if gs.custom_cover else m.vertical_cover)
+        return m
+
+    def _meta_raw(self, pid: str) -> GameMeta | None:
         with self._meta_lock:
             if pid in self._meta:
                 return self._meta[pid]
@@ -658,7 +752,13 @@ class Backend:
             with self._meta_lock:
                 self._meta[pid] = m
             return m
-        entry = self.entry(pid)
+        entry = None
+        for e in self.library:
+            if e.id == pid:
+                entry = e
+                break
+        if entry is None and g is not None:
+            entry = LibraryEntry(id=pid, title=g.title, works_on={g.platform if g.platform != "osx" else "mac": True})
         if entry is None:
             return None
         try:
@@ -675,6 +775,9 @@ class Backend:
         """Echte Hochkant-Boxart. Die Bibliotheksbilder von GOG sind Querformat-Kacheln; deren
         „_glx_vertical_cover“-Variante ist nur ein Ausschnitt (Titel abgeschnitten). Deshalb GamesDB."""
         pid = str(product_id)
+        custom = self.game_settings.get(pid).custom_cover
+        if custom and os.path.isfile(custom):
+            return _file_url(custom)
         if self.is_external(pid):
             m = self.meta(pid)
             return m.vertical_cover if m else ""
@@ -694,11 +797,21 @@ class Backend:
         return url
 
     def _external_meta(self, g: InstalledGame) -> GameMeta:
+        """Metadaten eines externen Spiels aus seiner Erkennung (content/identity.py): GOG-Spiel desselben Namens,
+        sonst GOG-Katalog/Steam zum offiziellen Titel; Cover aus der Erkennung (auch Wikipedia)."""
         from .api import covers
         title = g.title
-        queries = [external.search_title(title)]
+        base = g.base_title or title
+        if g.gog_match and g.gog_match != g.product_id:
+            src = self._meta_raw(g.gog_match)
+            if src is not None:
+                m = dataclasses.replace(src, id=g.product_id, title=title, os_list=["windows"], dlc_ids=[],
+                                        logo="" if g.variant else src.logo)   # Variante: Titel mit Zusatz statt Logo
+                m.vertical_cover = g.cover_url or m.vertical_cover
+                return m
+        queries = [external.search_title(base) or base]
         stem = Path(g.executable or "").stem
-        if len(stem) >= 4 and external._norm(title).startswith(external._norm(stem)):
+        if not g.identity and len(stem) >= 4 and external._norm(title).startswith(external._norm(stem)):
             queries.append(stem)
         data = None
         try:
@@ -710,7 +823,9 @@ class Backend:
                 stub = LibraryEntry(id=data["id"], title=data["title"])
                 m = GameMeta.from_sources(stub, self.api.gamesdb(data["id"]), self.api.product(data["id"]))
                 m.id, m.title, m.os_list, m.dlc_ids = g.product_id, title, ["windows"], []
-                m.vertical_cover = m.vertical_cover or data.get("cover", "")
+                m.vertical_cover = g.cover_url or m.vertical_cover or data.get("cover", "")
+                if g.variant:
+                    m.logo = ""
                 return m
             except Exception as exc:  # pragma: no cover
                 log.debug("GOG-Metadaten für %s fehlgeschlagen: %s", title, exc)
@@ -720,7 +835,102 @@ class Backend:
             m.summary, m.genres = data.get("summary", ""), data.get("genres", [])
             m.developers, m.publishers = data.get("developers", []), data.get("publishers", [])
             m.release_date = data.get("release_date", "")
+        m.vertical_cover = g.cover_url or m.vertical_cover
+        if g.variant:
+            m.logo = ""                               # Variante: Titel mit Zusatz statt Logo des Grundspiels
         return m
+
+    # ------------------------------------------------------------------ Externe Spiele erkennen (Kopien, Namen, Cover)
+    def resolve_externals(self, network: bool = True, force: bool = False) -> list[str]:
+        """Kopien (lokal, immer) und Namen/Cover (``identity``) der externen Spiele bestimmen und im Datensatz
+        speichern. Erkannt wird nur, was noch nicht (oder in einer anderen Sprache) erkannt ist, außer ``force``.
+        Läuft im Hintergrund; gibt die geänderten Produkt-IDs zurück."""
+        if not self._identity_lock.acquire(blocking=False):
+            return []
+        try:
+            return self._resolve_externals(network, force)
+        finally:
+            self._identity_lock.release()
+
+    def _resolve_externals(self, network: bool, force: bool) -> list[str]:
+        from . import i18n
+        from .api import covers, wikidata
+        from .content import identity
+        games = [g for g in self.registry.all() if g.method == "external"]
+        if not games:
+            return []
+        infos = [identity.FolderInfo(g.product_id, Path(g.install_path), g.installed_at) for g in games
+                 if os.path.isdir(g.install_path)]
+        cache = identity.FingerprintCache()
+        prints = {f.pid: cache.get(f.path) for f in infos}
+        cache.prune([f.path for f in infos])
+        try:
+            cache.save()
+        except OSError as exc:
+            log.debug("Fingerabdrücke nicht gespeichert: %s", exc)
+        copies = identity.find_copies(infos, prints)
+        installed = {g.product_id for g in self.registry.all()}
+        gog_titles = [(g.product_id, g.title) for g in self.registry.all() if g.method != "external"]
+        gog_titles += [(e.id, e.title) for e in self.library if e.id not in installed and e.is_game]
+        # Grundnamen der Ordner: ein „… - Kopie“ mit anderem Inhalt ist eine Variante, wenn es das Original gibt
+        plain = {identity.name_parts(Path(g.install_path).name)[:2] for g in games
+                 if not identity.has_copy_marker(Path(g.install_path).name)}
+        lang = i18n.current()
+        session = self.api.session
+        lookup = (lambda qs, company, errors: covers.lookup(session, qs, company, errors)) if network else None
+        wiki = (lambda qs, errors: wikidata.find_game(session, qs, errors)) if network else None
+        changed: list[str] = []
+        for g in games:
+            pid = g.product_id
+            dup = copies.get(pid, "")
+            upd: dict[str, object] = {}
+            if g.duplicate_of != dup:
+                upd["duplicate_of"] = dup
+            if force or g.identity < identity.IDENTITY_VERSION or (g.identity_lang or lang) != lang:
+                folder = Path(g.install_path).name
+                if not g.identity:
+                    self._keep_manual_title(g)
+                clean, label, _marker = identity.name_parts(folder)
+                exe = Path(g.install_path) / g.executable if g.executable else None
+                try:
+                    ident = identity.resolve(folder, exe, gog_titles, lookup, wiki, lang,
+                                             copy_label=not dup and (clean, label) in plain)
+                except Exception:
+                    log.exception("Erkennung von %s fehlgeschlagen", g.install_path)
+                    continue
+                cover = ident.cover
+                if ident.gog_match:
+                    try:
+                        cover = self.cover_url(ident.gog_match) or cover
+                    except Exception as exc:  # pragma: no cover
+                        log.debug("Cover von %s nicht ermittelbar: %s", ident.gog_match, exc)
+                upd.update(title=ident.title, base_title=ident.base_title, variant=ident.label,
+                           title_source=ident.source, gog_match=ident.gog_match, cover_url=cover, wikidata=ident.wikidata)
+                if ident.complete and network:
+                    upd.update(identity=identity.IDENTITY_VERSION, identity_lang=lang)
+                if cover and network and not cover.startswith("file://"):
+                    try:
+                        self.api.cached_image(cover)          # für GOverlay-Cover (ohne Netz) schon im Bild-Cache
+                    except Exception as exc:  # pragma: no cover
+                        log.debug("Cover %s nicht geladen: %s", cover, exc)
+                log.info("Externes Spiel %s: „%s“ (%s%s%s)", folder, ident.title, ident.source,
+                         f", Kopie von {dup}" if dup else "", "" if ident.complete else ", unvollständig")
+            upd = {k: v for k, v in upd.items() if getattr(g, k) != v}
+            if upd:
+                self.registry.update(pid, **upd)
+                with self._meta_lock:
+                    self._meta.pop(pid, None)
+                changed.append(pid)
+        return changed
+
+    def _keep_manual_title(self, g: InstalledGame) -> None:
+        """Vor 0.3.1 von Hand vergebener Name eines externen Spiels → eigener Titel (wird nicht überschrieben)."""
+        folder = Path(g.install_path).name
+        if g.title and g.title not in (external.display_title(folder), folder):
+            gs = self.game_settings.get(g.product_id)
+            if not gs.custom_title:
+                self.game_settings.update(g.product_id, custom_title=g.title)
+                log.info("Von Hand vergebener Name „%s“ bleibt als eigener Titel", g.title)
 
     def state(self, product_id: str) -> str:
         pid = str(product_id)
@@ -1127,7 +1337,9 @@ class Backend:
             exe = exe or (info["candidates"][0] if info["candidates"] else "")
             if not exe or not (d / exe).is_file():
                 raise InstallError(tr('Keine startbare .exe gefunden – bitte die Startdatei angeben.'))
-            game = self._register_external(d, (title or info["title"]).strip(), exe, size, lib.id)
+            game = self._register_external(d, info["title"], exe, size, lib.id)
+            if title.strip() and title.strip() != info["title"]:
+                self.game_settings.update(game.product_id, custom_title=" ".join(title.split()))
         self._unignore(d)
         if (self.settings.auto_create_prefixes if create_prefix is None else create_prefix) and game.platform == "windows":
             self.queue_prefix(game.product_id)
@@ -1200,13 +1412,9 @@ class Backend:
                 log.exception("Rückruf vor „%s“ für %s fehlgeschlagen", action, product_id)
 
     def rename_external(self, product_id: str, title: str) -> None:
-        g = self.registry.get(product_id)
-        if g is None or not title.strip():
-            return
-        g.title = title.strip()
-        self.registry.set(g)
-        with self._meta_lock:
-            self._meta.pop(product_id, None)
+        """Ältere Aufrufe: Name eines externen Spiels = eigener Titel („Bearbeiten …“), der Datensatz bleibt."""
+        if self.registry.get(product_id) is not None:
+            self.set_custom_title(product_id, title)
 
     def set_external_exe(self, product_id: str, exe: str) -> None:
         g = self.registry.get(product_id)

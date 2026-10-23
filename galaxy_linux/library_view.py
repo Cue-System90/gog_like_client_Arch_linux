@@ -68,6 +68,7 @@ class GameFacts:
     size: int = 0
     added: float = 0.0
     developers: list[str] = field(default_factory=list)
+    copy_of: str = ""                   # Kopie (gleicher Inhalt) eines anderen externen Spiels: dessen Titel
 
     @property
     def installed(self) -> bool:
@@ -130,13 +131,18 @@ def facts(backend: Any, entry: Any, state: str | None = None) -> GameFacts:
     if not added and inst is not None and inst.method == "external":
         added = float(inst.installed_at or 0)
     os_list = list(entry.platforms) if getattr(entry, "works_on", None) else ([inst.platform] if inst else [])
+    copy_of = ""
+    if inst is not None and getattr(inst, "duplicate_of", ""):
+        orig = backend.registry.get(inst.duplicate_of)
+        copy_of = (backend.game_settings.get(orig.product_id).custom_title or orig.title) if orig is not None else inst.duplicate_of
     return GameFacts(
         id=pid, title=entry.title, state=state or backend.state(pid), os=os_list,
         source=f"lib:{lib.id}" if lib is not None else "gog", source_name=lib.name if lib is not None else "GOG.com",
         tags=list(gs.tags), rating=int(gs.rating or 0), favorite=gs.favorite,
         hidden=is_hidden(entry, gs), genres=genres, critics=critics,
         release_date=release or str(getattr(entry, "release_date", "") or "")[:10],
-        playtime=minutes, last_played=last, size=inst.install_size if inst else 0, added=added, developers=devs)
+        playtime=minutes, last_played=last, size=inst.install_size if inst else 0, added=added, developers=devs,
+        copy_of=copy_of)
 
 
 def is_hidden(entry: Any, gs: Any) -> bool:
@@ -290,14 +296,15 @@ class LibraryFilter:
     ratings: list[int] = field(default_factory=list)    # 0 = Keine Bewertung
     favorites: bool = False
     hidden: str = ""                                    # "" = wie „Versteckte Spiele anzeigen“, hidden, visible
+    copies: bool = False                                # „Kopien anzeigen“ (Kopien externer Spiele, sonst gestapelt)
 
     def is_empty(self) -> bool:
         return not (self.status or self.os or self.sources or self.genres or self.tags or self.ratings or self.favorites
-                    or self.hidden)
+                    or self.hidden or self.copies)
 
     def count(self) -> int:
         return (len(self.status) + len(self.os) + len(self.sources) + len(self.genres) + len(self.tags)
-                + len(self.ratings) + int(self.favorites) + int(bool(self.hidden)))
+                + len(self.ratings) + int(self.favorites) + int(bool(self.hidden)) + int(self.copies))
 
     def toggle(self, category: str, value: Any, on: bool) -> None:
         lst = getattr(self, category)
@@ -307,6 +314,8 @@ class LibraryFilter:
             lst.remove(value)
 
     def matches(self, f: GameFacts, show_hidden: bool = False) -> bool:
+        if f.copy_of and not self.copies:
+            return False                                # wie Galaxys gestapelte Duplikate: einmal sichtbar
         if self.hidden == "hidden" and not f.hidden:
             return False
         if self.hidden == "visible" and f.hidden:
@@ -346,6 +355,7 @@ class LibraryFilter:
         if isinstance(d.get("ratings"), list):
             out.ratings = [int(x) for x in d["ratings"] if str(x).lstrip("-").isdigit() and 0 <= int(x) <= MAX_RATING]
         out.favorites = bool(d.get("favorites", False))
+        out.copies = bool(d.get("copies", False))
         out.hidden = str(d.get("hidden") or "") if d.get("hidden") in ("hidden", "visible") else ""
         return out
 

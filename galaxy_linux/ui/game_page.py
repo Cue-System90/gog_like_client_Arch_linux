@@ -499,7 +499,8 @@ class GamePage(Gtk.Box):
                                   "offline-installer": tr('Installiert · Offline-Installer'),
                                   "imported": tr('Installiert · aus Spiele-Ordner übernommen'),
                                   "external": tr('Extern · Bibliothek „{0}“').format(lib.name if lib else tr('unbekannt'))}.get(inst.method, tr('Installiert'))
-                                 + (tr(' · Update verfügbar') if state == "update" else ""))
+                                 + (tr(' · Update verfügbar') if state == "update" else "")
+                                 + self._copy_note(inst))
             ver = (inst.version_name or "–") + (tr('  (Build {0})').format(inst.build_id) if inst.build_id else "")
             if inst.branch:
                 ver += f" · {inst.branch}"
@@ -523,6 +524,13 @@ class GamePage(Gtk.Box):
         self.gov_lbl.set_visible(bool(gov))
         self._update_preview()
         ui_registry.notify_sections(self._ext_sections, "refresh_state", self.pid)
+
+    def _copy_note(self, inst) -> str:
+        """„ · Kopie von „Titel““ für Kopien (gleicher Inhalt wie ein anderes externes Spiel)."""
+        orig = self.backend.copy_of(inst.product_id) if getattr(inst, "duplicate_of", "") else None
+        if orig is None:
+            return ""
+        return " · " + tr('Kopie von „{0}“').format(self.backend.display_title(orig.product_id))
 
     def on_job(self, job) -> None:
         if job.product_id != self.pid:

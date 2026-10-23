@@ -64,6 +64,8 @@ def local_results(backend: Any, query: str, limit: int = 12, entries: list | Non
     out: list[Result] = []
     for e in entries:
         f = lv.facts(backend, e)
+        if f.copy_of:
+            continue                      # Kopie eines externen Spiels: das Original genügt
         score = _score(f.title, q)
         why = ""
         if not score:
