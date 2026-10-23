@@ -153,7 +153,8 @@ class DownloadsView(Gtk.ScrolledWindow):
         updates = [pid for pid in self.backend.updates if not jobs.active_for(pid)]
         if not (queue or finished or updates):
             st = Adw.StatusPage(title=tr('Deine Warteschlange ist leer'),
-                                description=tr('Hier siehst du alle deine abgeschlossenen und aktiven Spiele-Installationen & -Updates.'))
+                                # Beschreibung ist Markup – „&“ sonst ein Fehler und leerer Text
+                                description=GLib.markup_escape_text(tr('Hier siehst du alle deine abgeschlossenen und aktiven Spiele-Installationen & -Updates.')))
             st.set_icon_name(pick_icon("folder-download-symbolic", "go-down-symbolic"))
             self.sections.append(st)
         self._section(tr('Warteschlange'), queue, self._job_row)
