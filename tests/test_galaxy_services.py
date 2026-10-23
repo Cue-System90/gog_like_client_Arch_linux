@@ -10,6 +10,7 @@ import logging
 import os
 import socket
 import stat
+import subprocess
 import sys
 import tempfile
 import threading
@@ -18,6 +19,8 @@ import types
 import unittest
 from pathlib import Path
 from unittest import mock
+
+import requests
 
 from galaxy_linux.api.auth import AuthError, Credentials
 from galaxy_linux.launch import galaxy_services as gsvc
@@ -287,6 +290,19 @@ class DownloadTest(TempDataBase):
         with mock.patch.object(gsvc, "port_in_use", return_value=True):
             self.assertIn("9977", gsvc.status_text(gsvc.status_info("", enabled=True)))
 
+    def test_stream_error_becomes_comet_error_with_backoff(self):
+        class Broken(FakeResponse):
+            def iter_content(self, size):
+                yield b"x" * 10
+                raise requests.ConnectionError("Verbindung abgerissen")
+        session = mock.Mock()
+        session.get.return_value = Broken(b"")
+        with self.assertRaises(gsvc.CometError):
+            gsvc.download_tools(("comet",), session=session)
+        self.assertGreater(gsvc._last_failure, 0)
+        self.assertFalse(gsvc._may_auto_download())
+        self.assertEqual([p.name for p in gsvc.download_dir().iterdir() if p.name.endswith(".part")], [])
+
     def test_auto_download_on_first_need_only_once_after_failure(self):
         settings = GlobalSettings()
         with mock.patch("shutil.which", return_value=None), \
@@ -525,7 +541,7 @@ def ctx_ns(**kw):
     return types.SimpleNamespace(**base)
 
 
-class WantedAndHookTest(unittest.TestCase):
+class WantedAndHookTest(TempDataBase):
     def test_wanted(self):
         self.assertTrue(gsvc.wanted(ctx_ns()))
         self.assertFalse(gsvc.wanted(ctx_ns(is_windows=False)))
@@ -582,7 +598,8 @@ class WantedAndHookTest(unittest.TestCase):
              mock.patch.object(gsvc, "ensure_comet", side_effect=AssertionError("kein Download")):
             self.assertEqual(gsvc.start_comet(ctx2, svc), "foreign")
         svc.acquire.assert_not_called()
-        self.assertNotIn("comet", ctx2.data)
+        self.assertEqual(ctx2.data["comet"], {"state": "foreign"})          # Mitbenutzer → after_exit trägt aus
+        self.assertEqual(gsvc._holders(gsvc.auth_root()), {f"{os.getpid()}:1": mock.ANY})
         # comet fehlt und lässt sich nicht laden → Spiel startet trotzdem
         with mock.patch.object(gsvc, "port_in_use", return_value=False), \
              mock.patch.object(gsvc, "ensure_comet", return_value=None):
@@ -693,6 +710,67 @@ class CometServiceTest(TempDataBase):
                 time.sleep(0.1)
         self.assertFalse(self.svc.running())
         self.assertFalse(gsvc.auth_file().exists())
+
+    def test_comet_kept_while_another_process_uses_it(self):
+        """Oberfläche startet comet für Spiel A, die Kommandozeile nutzt ihn für Spiel B mit („foreign“): endet A,
+        darf comet nicht unter B beendet werden."""
+        other = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"])
+        try:
+            with mock.patch.object(gsvc, "WATCH_INTERVAL", 0.2):
+                self.assertEqual(self.svc.acquire("A", self.fake, self.creds, "spieler", is_running=lambda p: False),
+                                 "started")
+                root = gsvc.auth_root()
+                with mock.patch.object(os, "getpid", return_value=other.pid):
+                    gsvc.register_holder("B", root)                     # so trägt sich der andere Prozess ein
+                self.assertEqual(gsvc.foreign_holders(root), [f"{other.pid}:B"])
+                self.svc.release("A")
+                time.sleep(0.5)                                         # auch der Wächter beendet ihn nicht
+                self.assertTrue(self.svc.running())
+                with mock.patch.object(os, "getpid", return_value=other.pid):
+                    gsvc.unregister_holder("B", root)
+                deadline = time.monotonic() + 10
+                while self.svc.running() and time.monotonic() < deadline:
+                    time.sleep(0.1)
+            self.assertFalse(self.svc.running())
+            self.assertFalse((root / gsvc.PID_FILE).exists())
+        finally:
+            other.kill()
+            other.wait()
+
+    def test_sweep_stale_after_crash(self):
+        """Abgestürzte Sitzung: Zugangsdatei, Rohprotokoll und verwaister comet (Besitzer tot) werden aufgeräumt."""
+        root = gsvc.auth_root()
+        gsvc.write_auth_file(self.creds, root)
+        (root / "comet-raw.log").write_text("Loading Heroic credentials " + self.creds.access_token + "\n")
+        orphan = subprocess.Popen([str(self.fake), "--from-heroic", "--username", "x", "--quit"],
+                                  env={**os.environ, "XDG_CONFIG_PATH": str(root)}, stdout=subprocess.DEVNULL)
+        dead = subprocess.Popen([sys.executable, "-c", "pass"])
+        dead.wait()
+        gsvc.write_json(root / gsvc.PID_FILE, {"pid": orphan.pid, "owner": dead.pid})
+        try:
+            with mock.patch.object(gsvc, "is_comet_process", return_value=True):
+                self.assertTrue(gsvc.sweep_stale(self.svc))
+            self.assertIsNotNone(orphan.wait(5))
+        finally:
+            if orphan.poll() is None:
+                orphan.kill()
+                orphan.wait()
+        self.assertFalse(gsvc.auth_file().exists())
+        self.assertFalse((root / gsvc.PID_FILE).exists())
+        self.assertFalse((root / "comet-raw.log").exists())
+        self.assertNotIn(self.creds.access_token, gsvc.comet_log_file().read_text())
+        # gehört der comet einem noch laufenden anderen Prozess: nichts anfassen
+        gsvc.write_auth_file(self.creds, root)
+        gsvc.write_json(root / gsvc.PID_FILE, {"pid": 999999, "owner": os.getppid()})
+        self.assertFalse(gsvc.sweep_stale(self.svc))
+        self.assertTrue(gsvc.auth_file().exists())
+
+    def test_auth_file_removed_when_start_fails_early(self):
+        with mock.patch.object(gsvc.os, "open", side_effect=OSError(28, "No space left on device")):
+            with self.assertRaises(gsvc.CometError):
+                self.svc.acquire("1", self.fake, self.creds, "spieler")
+        self.assertFalse(gsvc.auth_file().exists())
+        self.assertIsNone(self.svc.proc)
 
     def test_shutdown_keeps_comet_for_running_game_but_removes_auth(self):
         self.assertEqual(self.svc.acquire("1", self.fake, self.creds, "spieler", is_running=lambda p: True), "started")

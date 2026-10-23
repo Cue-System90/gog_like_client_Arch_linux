@@ -5,6 +5,7 @@ from ..i18n import tr
 
 import logging
 import sys
+import threading
 from pathlib import Path
 
 from .. import APP_ID, APP_NAME, __version__
@@ -12,6 +13,14 @@ from ..backend import Backend
 from .util import Adw, Gdk, Gio, GLib, Gtk, idle
 
 log = logging.getLogger(__name__)
+
+
+def _sweep_comet() -> None:
+    try:
+        from ..launch import galaxy_services
+        galaxy_services.sweep_stale()
+    except Exception:
+        log.exception("comet-Reste nicht aufgeräumt")
 
 
 class GalaxyApp(Adw.Application):
@@ -30,6 +39,8 @@ class GalaxyApp(Adw.Application):
         css.load_from_path(str(Path(__file__).parent / "style.css"))
         Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         self.backend = Backend()
+        # Reste einer abgestürzten Sitzung: verwaister comet mit alten Tokens, Zugangsdatei, Rohprotokoll
+        threading.Thread(target=_sweep_comet, name="gl-comet-sweep", daemon=True).start()
         from .menus import install_actions
         install_actions(self)      # Zahnrad-/Avatar-Menü, F5/Strg+R, Strg+Q …
 

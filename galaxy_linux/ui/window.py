@@ -1206,7 +1206,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.request_library_refresh("login", force=True)
 
     def do_logout(self) -> None:
-        self.backend.api.logout()
+        self.backend.logout()
         store.on_logout(self)           # auch die Store-Sitzung (Cookies) abmelden
         self.backend.library = []
         self.avatar.set_custom_image(None)

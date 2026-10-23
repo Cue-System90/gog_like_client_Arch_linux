@@ -1087,6 +1087,16 @@ class Backend:
                 n += 1
         return n
 
+    def logout(self) -> None:
+        """Abmelden: Zugangsdaten und Cache weg, dazu comet (läuft mit den Tokens) beenden und dessen Zugangsdatei
+        löschen."""
+        self.api.logout()
+        try:
+            from .launch import galaxy_services
+            galaxy_services.on_logout()
+        except Exception:  # pragma: no cover
+            log.exception("comet nach dem Abmelden nicht aufgeräumt")
+
     def save_settings(self) -> None:
         self.settings.save()
         self.api.store = CredentialStore(self.settings.use_keyring)

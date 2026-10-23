@@ -92,7 +92,7 @@ def cmd_login(b: Backend, a) -> int:
 
 
 def cmd_logout(b: Backend, a) -> int:
-    b.api.logout()
+    b.logout()
     print(tr('Abgemeldet.'))
     return 0
 

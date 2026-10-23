@@ -43,7 +43,7 @@ import requests
 
 from .. import USER_AGENT, paths
 from ..clientinfo import is_newer
-from ..jsonstore import read_json, write_json
+from ..jsonstore import file_lock, read_json, write_json
 from ..logsetup import mask_text
 
 log = logging.getLogger(__name__)
@@ -67,6 +67,8 @@ REG_ADD_CLIENT = ["reg", "add", "HKLM\\SOFTWARE\\WOW6432Node\\GOG.com\\GalaxyCli
 SC_CREATE_SERVICE = ["sc", "create", "GalaxyCommunication", "binpath=" + DUMMY_WIN_PATH]
 
 WATCH_INTERVAL = 15.0          # Sekunden zwischen zwei Prüfungen, ob noch ein Spiel comet braucht
+PID_FILE = "comet.pid"         # {"pid": comet, "owner": galaxy-linux-Prozess} – verwaisten comet erkennen
+HOLDERS_FILE = "holders.json"  # Spiele anderer galaxy-linux-Prozesse, die diesen comet mitbenutzen
 RETRY_AFTER_FAILURE = 600.0    # nach einem fehlgeschlagenen automatischen Download so lange nicht erneut versuchen
 LOG_ROTATE_BYTES = 2_000_000
 
@@ -271,27 +273,33 @@ def download_asset(asset: Asset, dest_dir: Path, session: Any = None,
         limit = max(total, asset.size) * 2 + (1 << 20)
         h = hashlib.sha256()
         done = 0
-        with os.fdopen(fd, "wb") as fh:
-            fd = -1
-            for chunk in r.iter_content(1 << 16):
-                if cancel is not None and cancel.is_set():
-                    raise CometError(tr('Download abgebrochen.'))
-                if not chunk:
-                    continue
-                done += len(chunk)
-                if done > limit:
-                    raise CometError(tr('Unerwartete Dateigröße bei {0}.').format(asset.remote))
-                h.update(chunk)
-                fh.write(chunk)
-                if progress is not None:
-                    progress(done, total)
-            fh.flush()
-            os.fsync(fh.fileno())
+        try:
+            with os.fdopen(fd, "wb") as fh:
+                fd = -1
+                for chunk in r.iter_content(1 << 16):
+                    if cancel is not None and cancel.is_set():
+                        raise CometError(tr('Download abgebrochen.'))
+                    if not chunk:
+                        continue
+                    done += len(chunk)
+                    if done > limit:
+                        raise CometError(tr('Unerwartete Dateigröße bei {0}.').format(asset.remote))
+                    h.update(chunk)
+                    fh.write(chunk)
+                    if progress is not None:
+                        progress(done, total)
+                fh.flush()
+                os.fsync(fh.fileno())
+        except (requests.RequestException, OSError) as exc:      # Verbindung abgerissen, Platte voll …
+            raise CometError(tr('Download von {0} fehlgeschlagen: {1}').format(asset.remote, exc)) from exc
         if h.hexdigest() != asset.sha256:
             log.warning("Prüfsumme von %s stimmt nicht (erwartet %s, erhalten %s)", asset.remote, asset.sha256, h.hexdigest())
             raise CometError(tr('Prüfsumme von {0} stimmt nicht – Datei verworfen.').format(asset.remote))
-        os.chmod(tmp, asset.mode)
-        os.replace(tmp, final)
+        try:
+            os.chmod(tmp, asset.mode)
+            os.replace(tmp, final)
+        except OSError as exc:
+            raise CometError(tr('Download von {0} fehlgeschlagen: {1}').format(asset.remote, exc)) from exc
     except BaseException:
         if fd >= 0:
             os.close(fd)
@@ -593,6 +601,117 @@ class _LogPump(threading.Thread):
             self.join(timeout)
 
 
+def pid_alive(pid: Any) -> bool:
+    try:
+        pid = int(pid)
+    except (TypeError, ValueError):
+        return False
+    if pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def is_comet_process(pid: Any) -> bool:
+    """Läuft unter ``pid`` ein comet, wie galaxy-linux ihn startet (``comet --from-heroic …``)?"""
+    try:
+        args = Path(f"/proc/{int(pid)}/cmdline").read_bytes().split(b"\0")
+    except (OSError, TypeError, ValueError):
+        return False
+    return bool(args) and os.path.basename(args[0].decode("utf-8", "replace")).startswith("comet") \
+        and b"--from-heroic" in args
+
+
+def _holders(root: Path) -> dict[str, float]:
+    data = read_json(root / HOLDERS_FILE, {})
+    return {k: v for k, v in data.items() if pid_alive(str(k).split(":", 1)[0])} if isinstance(data, dict) else {}
+
+
+def register_holder(product_id: str, root: Path | None = None) -> None:
+    """Dieses Spiel (dieses Prozesses) nutzt einen comet, den ein anderer Prozess gestartet hat – der darf ihn dann
+    nicht beenden, solange das Spiel läuft."""
+    root = root or auth_root()
+    _private_dirs(root)
+    with file_lock(root / HOLDERS_FILE):
+        data = _holders(root)
+        data[f"{os.getpid()}:{product_id}"] = time.time()
+        write_json(root / HOLDERS_FILE, data, mode=0o600)
+
+
+def unregister_holder(product_id: str, root: Path | None = None) -> None:
+    root = root or auth_root()
+    if not (root / HOLDERS_FILE).exists():
+        return
+    with file_lock(root / HOLDERS_FILE):
+        data = _holders(root)
+        data.pop(f"{os.getpid()}:{product_id}", None)
+        write_json(root / HOLDERS_FILE, data, mode=0o600)
+
+
+def foreign_holders(root: Path | None = None) -> list[str]:
+    """Spiele anderer, noch laufender galaxy-linux-Prozesse, die comet mitbenutzen (``<pid>:<produkt>``)."""
+    root = root or auth_root()
+    own = f"{os.getpid()}:"
+    return sorted(k for k in _holders(root) if not k.startswith(own))
+
+
+def sweep_stale(service: "CometService | None" = None, root: Path | None = None) -> bool:
+    """Reste einer abgestürzten oder beendeten Sitzung aufräumen, wenn kein eigener comet läuft: verwaisten comet
+    (Besitzer-Prozess beendet, kein anderes Spiel nutzt ihn) beenden, Zugangsdatei löschen, Rohprotokoll maskiert
+    übernehmen. False, wenn comet gerade benutzt wird (eigener oder der eines anderen galaxy-linux-Prozesses)."""
+    service = service or COMET
+    root = root or auth_root()
+    if service.running():
+        return False
+    if not root.is_dir():
+        return True
+    info = read_json(root / PID_FILE, None)
+    if isinstance(info, dict):
+        owner, pid = info.get("owner"), info.get("pid")
+        if str(owner) != str(os.getpid()) and pid_alive(owner):
+            return False                                  # gehört einem anderen laufenden galaxy-linux
+        if pid_alive(pid) and is_comet_process(pid):
+            if foreign_holders(root):
+                return False                              # verwaist, aber ein Spiel nutzt ihn noch
+            log.info("Verwaisten comet (PID %s) aus einer früheren Sitzung beenden", pid)
+            try:
+                os.kill(int(pid), 15)
+                for _ in range(30):
+                    if not pid_alive(pid):
+                        break
+                    time.sleep(0.1)
+                else:
+                    os.kill(int(pid), 9)
+            except (OSError, ValueError):
+                pass
+        try:
+            (root / PID_FILE).unlink()
+        except OSError:
+            pass
+    raw = root / "comet-raw.log"
+    if raw.exists():
+        entry = read_json(auth_file(root), {})
+        entry = entry.get(GALAXY_CLIENT_ID) if isinstance(entry, dict) else None
+        secrets = [str(entry.get(k) or "") for k in ("access_token", "refresh_token")] if isinstance(entry, dict) else []
+        out = comet_log_file()
+        out.parent.mkdir(parents=True, exist_ok=True)
+        _LogPump(raw, out, secrets, None).run()
+    remove_auth_file(root)
+    return True
+
+
+def on_logout(service: "CometService | None" = None) -> None:
+    """Abmeldung: eigenen comet beenden und Zugangsdaten für comet entfernen."""
+    service = service or COMET
+    service.stop()
+    sweep_stale(service)
+
+
 def _rotate_log(path: Path) -> None:
     try:
         if path.stat().st_size > LOG_ROTATE_BYTES:
@@ -664,21 +783,29 @@ class CometService:
                 _LogPump(raw, out, [], None).run()
             _rotate_log(out)
             self.root = root
-            path, self.written = write_auth_file(creds, root)
             argv = comet_command(comet, username)
-            with open(out, "ab") as fh:
-                fh.write(f"\n===== {time.strftime('%Y-%m-%d %H:%M:%S')} comet für {product_id}: {shlex.join(argv)} =====\n".encode())
-            fd = os.open(raw, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
             try:
-                self.proc = subprocess.Popen(argv, env=comet_env(root), cwd=str(root), stdout=fd, stderr=subprocess.STDOUT,
-                                             stdin=subprocess.DEVNULL, start_new_session=True)
-            except OSError as exc:
+                path, self.written = write_auth_file(creds, root)
+                with open(out, "ab") as fh:
+                    fh.write(f"\n===== {time.strftime('%Y-%m-%d %H:%M:%S')} comet für {product_id}: {shlex.join(argv)} =====\n".encode())
+                fd = os.open(raw, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+                try:
+                    self.proc = subprocess.Popen(argv, env=comet_env(root), cwd=str(root), stdout=fd,
+                                                 stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, start_new_session=True)
+                finally:
+                    os.close(fd)
+            except BaseException as exc:
+                # keine Zugangsdatei ohne comet zurücklassen (Platte voll, Protokollordner nicht beschreibbar …)
                 self.proc = None
                 remove_auth_file(root)
                 self.written = None
-                raise CometError(tr('comet konnte nicht gestartet werden: {0}').format(exc)) from exc
-            finally:
-                os.close(fd)
+                if isinstance(exc, OSError):
+                    raise CometError(tr('comet konnte nicht gestartet werden: {0}').format(exc)) from exc
+                raise
+            try:
+                write_json(root / PID_FILE, {"pid": self.proc.pid, "owner": os.getpid()}, mode=0o600)
+            except OSError as exc:
+                log.warning("comet-PID-Datei nicht geschrieben: %s", exc)
             log.info("comet gestartet (PID %d) für %s: %s", self.proc.pid, product_id, shlex.join(argv))
             self.holders = {product_id}
             self.api, self.is_running = api, is_running
@@ -704,18 +831,29 @@ class CometService:
         return "started"
 
     def release(self, product_id: str) -> None:
-        """Spiel beendet: abmelden; ohne weitere Spiele comet beenden (SIGTERM, nach 5 s SIGKILL) und aufräumen."""
+        """Spiel beendet: abmelden; ohne weitere Spiele – auch keine anderer galaxy-linux-Prozesse, die diesen comet
+        mitbenutzen – comet beenden (SIGTERM, nach 5 s SIGKILL) und aufräumen."""
+        try:
+            unregister_holder(str(product_id), self.root)
+        except OSError as exc:
+            log.debug("comet-Mitbenutzer nicht ausgetragen: %s", exc)
         with self._lock:
             self.holders.discard(str(product_id))
             if self.proc is None:
                 return
             self._prune_locked()
-            if not self.holders:
+            if not self.holders and not self._shared_with_others():
                 self._stop_locked()
 
     def stop(self) -> None:
         with self._lock:
             self._stop_locked()
+
+    def _shared_with_others(self) -> bool:
+        others = foreign_holders(self.root) if self.root is not None else []
+        if others:
+            log.info("comet bleibt für Spiele anderer galaxy-linux-Prozesse: %s", ", ".join(others))
+        return bool(others)
 
     def _prune_locked(self) -> None:
         if self.is_running is None:
@@ -751,6 +889,12 @@ class CometService:
             self.pump = None
         if self.proc is not None:
             log.info("comet beendet (Exit-Code %s)", self.proc.returncode)
+            info = read_json(self.root / PID_FILE, None) if self.root is not None else None
+            if isinstance(info, dict) and info.get("pid") == self.proc.pid:
+                try:
+                    (self.root / PID_FILE).unlink()
+                except OSError:
+                    pass
         self.proc = None
         self.holders = set()
         self._stop_evt.set()
@@ -764,7 +908,7 @@ class CometService:
                     self._cleanup_locked()
                     return
                 self._prune_locked()
-                if not self.holders:
+                if not self.holders and not self._shared_with_others():
                     log.info("Kein laufendes Spiel nutzt comet mehr")
                     self._stop_locked()
                     return
@@ -776,7 +920,7 @@ class CometService:
             if self.proc is None:
                 return
             self._prune_locked()
-            if not self.holders or self.proc.poll() is not None:
+            if (not self.holders and not self._shared_with_others()) or self.proc.poll() is not None:
                 self._stop_locked()
                 return
             if self.root is not None and self.written is not None:
@@ -918,8 +1062,15 @@ def start_comet(ctx: Any, service: CometService | None = None) -> str:
         if state == "shared":
             ctx.data["comet"] = {"state": state}
             return state
+    if not service.running():
+        sweep_stale(service)                    # verwaister comet einer abgestürzten Sitzung, alte Zugangsdatei
     if not service.running() and port_in_use(service.port, service.host):
         log.info("Port %d ist belegt (z. B. comet von Heroic) – nutze den laufenden Dienst", service.port)
+        try:
+            register_holder(ctx.product_id)     # gehört er einem anderen galaxy-linux, beendet der ihn nicht unter uns
+            ctx.data["comet"] = {"state": "foreign"}
+        except OSError as exc:
+            log.debug("comet-Mitbenutzer nicht eingetragen: %s", exc)
         return "foreign"
     tool = ensure_comet(ctx.settings, ctx.status)
     if tool is None:
