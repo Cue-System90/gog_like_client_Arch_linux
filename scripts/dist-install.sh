@@ -12,7 +12,7 @@ for a in "$@"; do case "$a" in --keep) KEEP=1;; --purge) PURGE="--purge";; esac;
 if [ -f "$HERE/SHA256SUMS" ]; then (cd "$HERE" && sha256sum -c --ignore-missing SHA256SUMS) || { echo "Prüfsumme stimmt nicht – Abbruch."; exit 1; }; fi
 if [ "$KEEP" = 0 ]; then
   echo "Entferne vorhandene Version …"
-  bash "$HERE/uninstall.sh" --quiet $PURGE
+  bash "$HERE/uninstall.sh" --quiet --keep-deps $PURGE
 fi
 echo "Installiere $(basename "$PKG") …"
 sudo pacman -U --noconfirm "$PKG"

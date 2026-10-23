@@ -3,9 +3,10 @@
 #   ./uninstall.sh            → Programm + Cache entfernen; Einstellungen, Zugangsdaten, Spielzeit, Logs bleiben
 #   ./uninstall.sh --purge    → zusätzlich Einstellungen/Zugangsdaten/Daten/Logs löschen (Spiele & Prefixe bleiben)
 #   ./uninstall.sh --games    → zusätzlich installierte Spiele und Wine-Prefixe (Spiele-Ordner aus den Einstellungen) löschen
+#   ./uninstall.sh --keep-deps → Abhängigkeiten (webkitgtk-6.0 …) nicht mit entfernen – für Upgrades (install.sh)
 set -uo pipefail
-PURGE=0; GAMES=0; QUIET=0
-for a in "$@"; do case "$a" in --purge) PURGE=1;; --games) GAMES=1; PURGE=1;; --quiet|-q) QUIET=1;; esac; done
+PURGE=0; GAMES=0; QUIET=0; KEEPDEPS=0
+for a in "$@"; do case "$a" in --purge) PURGE=1;; --games) GAMES=1; PURGE=1;; --quiet|-q) QUIET=1;; --keep-deps) KEEPDEPS=1;; esac; done
 say() { [ "$QUIET" = 1 ] || echo "$@"; }
 CFG="${XDG_CONFIG_HOME:-$HOME/.config}/galaxy-linux"
 DATA="${XDG_DATA_HOME:-$HOME/.local/share}/galaxy-linux"
@@ -18,7 +19,12 @@ pkill -f -- '(-m galaxy_linux|/bin/galaxy-linux)( |$)' 2>/dev/null && sleep 1 ||
 # 1) pacman-Paket
 if pacman -Qq galaxy-linux >/dev/null 2>&1; then
   say "Entferne pacman-Paket galaxy-linux $(pacman -Q galaxy-linux | awk '{print $2}') …"
-  sudo pacman -Rns --noconfirm galaxy-linux || sudo pacman -R --noconfirm galaxy-linux
+  if [ "$KEEPDEPS" = 1 ]; then
+    # Upgrade: -s würde webkitgtk-6.0 samt Abhängigkeiten entfernen, die pacman -U gleich wieder lädt
+    sudo pacman -Rn --noconfirm galaxy-linux || sudo pacman -R --noconfirm galaxy-linux
+  else
+    sudo pacman -Rns --noconfirm galaxy-linux || sudo pacman -R --noconfirm galaxy-linux
+  fi
 fi
 # 2) Nutzer-Installation (install.sh --user) und Reste früherer Varianten
 rm -rf "$HOME/.local/lib/galaxy-linux"

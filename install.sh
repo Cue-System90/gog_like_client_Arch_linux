@@ -64,7 +64,7 @@ case "${1:-}" in
     fi
     if pacman -Qq galaxy-linux >/dev/null 2>&1 || [ -d "$HOME/.local/lib/galaxy-linux" ]; then
       echo "Entferne vorhandene Version restlos (Einstellungen bleiben; --purge löscht sie) …"
-      bash "$HERE/scripts/uninstall.sh" --quiet $( [ "${1:-}" = "--purge" ] && echo --purge )
+      bash "$HERE/scripts/uninstall.sh" --quiet --keep-deps $( [ "${1:-}" = "--purge" ] && echo --purge )
     fi
     echo "Installiere $PKG"
     sudo pacman -U --noconfirm "$PKG"
