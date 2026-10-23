@@ -31,7 +31,8 @@ import weakref
 from pathlib import Path
 from typing import Any, Callable
 
-from ..api.client import ApiError, NotLoggedIn
+from ..api.auth import AuthError
+from ..api.client import ApiError
 from ..backend import Job, on_job_finished, register_job_kind
 from ..content import build_records, redist
 from ..content.downloader import DownloadCancelled
@@ -127,7 +128,7 @@ def redist_update_needed(backend: Any) -> bool:
         return False
     try:
         info = redist.repository_info(backend.api)
-    except (ApiError, NotLoggedIn, OSError, ValueError) as exc:
+    except (ApiError, AuthError, OSError, ValueError) as exc:
         log.info("Abhängigkeits-Repository nicht erreichbar: %s", exc)
         return False
     if redist.missing_ids(redist.required_ids(recs, redist.cached_repository())):
@@ -230,7 +231,7 @@ def ensure_redists(ctx: LaunchContext, ids: list[str]) -> bool:
                 log.warning("Galaxy-Redistributables nicht geladen: %s", job.error or job.state)
         else:
             redist.download_global_redists(ctx.api, ids, workers=ctx.settings.max_workers, status=ctx.status)
-    except (ApiError, NotLoggedIn, DownloadCancelled, OSError, ValueError) as exc:
+    except (ApiError, AuthError, DownloadCancelled, OSError, ValueError) as exc:
         log.warning("Galaxy-Redistributables nicht geladen: %s", exc)
         ctx.log_line(f"--- Galaxy-Redistributables nicht geladen: {exc}")
     return not redist.missing_ids(ids)
@@ -246,7 +247,8 @@ def ensure_support(ctx: LaunchContext, record: dict, build_id: str) -> bool:
     try:
         redist.download_support_files(ctx.api, ctx.product_id, record, workers=ctx.settings.max_workers,
                                       status=ctx.status)
-    except (ApiError, NotLoggedIn, DownloadCancelled, OSError, ValueError) as exc:
+    except (ApiError, AuthError, DownloadCancelled, OSError, ValueError) as exc:
+        # abgelaufene Anmeldung offline (auth.refresh) o. Ä.: nur dieser Schritt bleibt offen
         log.warning("Support-Dateien für %s nicht geladen: %s", ctx.product_id, exc)
         ctx.log_line(f"--- Support-Dateien nicht geladen: {exc}")
         return False
@@ -308,10 +310,14 @@ def setup_prefix(ctx: LaunchContext) -> dict[str, Any]:
     build_id = str(record["build_id"])
     state = redist.load_setup_state(ctx.prefix)
     dirty = False
-    if not redist.has_setup_state(ctx.prefix) and ctx.gs.redist_done and redist.prefix_initialized(ctx.prefix):
-        n = redist.migrate_redist_done(state, ctx.gs.redist_done)
-        dirty = dirty or bool(n)
-        log.info("Einrichtung %s: %d Redistributables aus 0.1.x übernommen", pid, n)
+    if ctx.gs.redist_done:
+        # 0.1.x-Merker gilt nur für den Prefix, in dem damals installiert wurde (noch ohne 0.2.0-Einrichtung) – einmal
+        # übernehmen, dann löschen, sonst gälten die Redistributables auch in jedem später neu angelegten Prefix
+        if not redist.has_setup_state(ctx.prefix) and not ctx.gs.setup_done and redist.prefix_initialized(ctx.prefix):
+            n = redist.migrate_redist_done(state, ctx.gs.redist_done)
+            dirty = dirty or bool(n)
+            log.info("Einrichtung %s: %d Redistributables aus 0.1.x übernommen", pid, n)
+        ctx.update_game_settings(redist_done=[])
     mode = redist.decide_force(state, pid, build_id, ctx.gs.setup_done, ctx.install_dir, ctx.prepare_only)
     out["mode"] = mode
     with_redist = bool(ctx.settings.install_redist and ctx.gs.install_redist)

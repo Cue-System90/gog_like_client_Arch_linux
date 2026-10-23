@@ -667,6 +667,32 @@ class SetupHookTest(Base):
         self.gs.update("100", redist_done=["MSVC2017"])
         hook_redist.setup_prefix(self.ctx())
         self.assertEqual(self.ran(), ["scriptinterpreter.exe", "scriptinterpreter.exe"])
+        self.assertEqual(self.gs.get("100").redist_done, [])                      # einmal übernommen, dann weg
+
+    def test_legacy_redist_done_not_applied_to_new_prefix(self):
+        """Merker aus 0.1.x gilt nicht für einen später neu angelegten Prefix (anderer Prefix-Ordner o. Ä.)."""
+        self.put_cache(["ISI", "MSVC2017"])
+        (self.prefix / "pfx").mkdir(parents=True)
+        (self.prefix / "pfx" / "system.reg").write_text("WINE REGISTRY")
+        self.gs.update("100", redist_done=["MSVC2017"], setup_done=["100:4444"])  # Einrichtung lief schon (alter Prefix)
+        hook_redist.setup_prefix(self.ctx())
+        self.assertIn("VC_redist.x86.exe", self.ran())
+        self.assertEqual(self.gs.get("100").redist_done, [])
+
+    def test_expired_login_offline_keeps_other_steps(self):
+        """Abgelaufenes Token ohne Netz: AuthError aus builds()/secure_link() lässt nur die betroffenen Schritte offen."""
+        from galaxy_linux.api.auth import AuthError
+        self.put_cache(["ISI", "MSVC2017"])
+        self.record.pop("script_interpreter")                                    # Datensatz von 0.1.6
+        self.write_record()
+        redist.write_support_marker("100", "5555", [], 0)
+        (redist.support_dir("100") / ".galaxy-linux-support.json").unlink(missing_ok=True)
+        api = types.SimpleNamespace(logged_in=True, builds=mock.Mock(side_effect=AuthError("offline")),
+                                    zlib_json=mock.Mock(side_effect=AuthError("offline")))
+        with self.assertLogs("galaxy_linux", "WARNING"):
+            out = hook_redist.setup_prefix(self.ctx(api=api))
+        self.assertIn("VC_redist.x86.exe", self.ran())
+        self.assertEqual(out["failed"], [])
 
     def test_redists_switched_off_scripts_still_run(self):
         self.put_cache(["ISI", "MSVC2017"])

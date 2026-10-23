@@ -40,6 +40,7 @@ from pathlib import Path
 from typing import Any, Callable, Iterable
 
 from .. import paths
+from ..api.auth import AuthError
 from ..api.client import CONTENT_SYSTEM, ApiError
 from ..jsonstore import read_json, write_json
 from .downloader import ChunkDownloader, DownloadCancelled, DownloadError, FileJob, Progress, SfcSource
@@ -447,7 +448,7 @@ def upgrade_record(api, game, record: dict) -> dict | None:
         if build is None:
             return None
         manifest = BuildManifest.parse(api.zlib_json(build.link))
-    except (ApiError, ManifestError, ValueError, KeyError, OSError) as exc:
+    except (ApiError, AuthError, ManifestError, ValueError, KeyError, OSError) as exc:
         log.warning("Installations-Datensatz %s nicht ergänzbar: %s", pid, exc)
         return None
     rec = dict(record)
