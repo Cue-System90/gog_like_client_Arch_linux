@@ -1,19 +1,27 @@
-"""GOverlay 1.9.4 pro Spiel: Spiele-Ordner eintragen, Cover vorbelegen, Profil-``bgmod`` beim Start voranstellen.
+"""GOverlay 1.9.4 pro Spiel: Spiele in GOverlay anzeigen, Cover vorbelegen, Profil-``bgmod`` beim Start voranstellen.
 
 Grundlage: reference/overhaul-2026-10-22/goverlay.md §3–§7 („Rang 1 – A + W“).
 
-* **A – Sichtbarkeit:** GOverlay kennt außer Steam nur die Ordnerliste ``${XDG_CONFIG_HOME:-~/.config}/goverlay/
-  nonsteam_folders.txt`` – eine Bibliotheks-Wurzel pro Zeile, jeder direkte Unterordner wird eine Spielkarte (Name =
-  Ordnername). Eingetragen werden nur Wurzeln (GOG-Spiele-Ordner, weitere Installationsorte, Spiele-Ordner der eigenen
-  Bibliotheken), nie einzelne Spielordner. Zeilen des Nutzers bleiben unangetastet; entfernt werden nur Zeilen, die
-  galaxy-linux selbst eingetragen hat (``GlobalSettings.goverlay_added_folders``).
-  Cover: ``~/.cache/goverlay/nonsteam_covers/<SanitizeFileName(Ordnername)>.jpg`` als echtes JPEG, nie ``.fallback``.
+* **A – Sichtbarkeit (ab 0.3.1 eigene Spieleansicht):** GOverlay kennt außer Steam nur die Ordnerliste
+  ``${XDG_CONFIG_HOME:-~/.config}/goverlay/nonsteam_folders.txt``; jeder *direkte* Eintrag eines eingetragenen Ordners
+  wird eine Spielkarte (Name = Eintrag). GOverlays ``FindFirst`` folgt Symlinks – deshalb legt galaxy-linux einen
+  eigenen Ordner ``~/.local/share/galaxy-linux/goverlay-library/`` an, mit genau einem Symlink pro installiertem Spiel
+  (GOG und extern, auch Linux-Spiele), benannt nach dem Spieltitel, Ziel = Spielordner. Kopien (gleicher Inhalt wie ein
+  anderes externes Spiel) und ausgeblendete Spiele fehlen. Nur dieser Ordner steht in ``nonsteam_folders.txt``; früher
+  eingetragene Bibliotheks-Wurzeln (``GlobalSettings.goverlay_added_folders``) werden entfernt, Zeilen des Nutzers
+  bleiben unangetastet.
+  Cover: ``~/.cache/goverlay/nonsteam_covers/<SanitizeFileName(Kartenname)>.jpg`` als echtes JPEG aus dem Cover von
+  galaxy-linux (ohne Cover: dunkle Titelkarte), damit GOverlay nie bei Steam/Bing nach dem Namen sucht. Ein Verzeichnis
+  der selbst geschriebenen Cover (Name → SHA-1) unterscheidet sie von einem Cover, das der Nutzer später in GOverlay
+  setzt – das bleibt, solange es kein GOverlay-Platzhalter ist (``.fallback`` bzw. 150×215).
 * **W – Anwendung:** Klickt man das Spiel in GOverlay an, entsteht ``${XDG_DATA_HOME:-~/.local/share}/goverlay/
-  gameconfig/<SanitizeFileName(Ordnername)>/`` mit ``bgmod``. Dieses ``bgmod`` (echte Datei, kein Symlink – bgmod
-  erkennt sein Profil über ``/proc/self/exe``) kommt beim Start in ``LaunchPlan.tool_wrappers``. ``bgmod.conf``
-  ``[Config] gamemode=1`` → ``-- env gamemoderun`` dahinter, ``winedetectionenable=0`` → ``/WineDetectionEnabled:False``
-  ans Ende (beides liest bgmod nicht selbst). Eigene MangoHud-/vkBasalt-Schalter entfallen dann (außer MangoHud bei
-  Linux-Spielen: bgmod setzt kein LD_PRELOAD, der ``mangohud``-Wrapper beachtet das ``MANGOHUD_CONFIGFILE`` des Profils).
+  gameconfig/<SanitizeFileName(Kartenname)>/`` mit ``bgmod``. Gesucht wird: Profil aus den Eigenschaften →
+  Kartenname → Name des Spielordners (Profile aus 0.3.0). Das globale Profil gilt nur auf ausdrücklichen Wunsch.
+  Dieses ``bgmod`` (echte Datei, kein Symlink – bgmod erkennt sein Profil über ``/proc/self/exe``) kommt beim Start in
+  ``LaunchPlan.tool_wrappers``. ``bgmod.conf`` ``[Config] gamemode=1`` → ``-- env gamemoderun`` dahinter,
+  ``winedetectionenable=0`` → ``/WineDetectionEnabled:False`` ans Ende (beides liest bgmod nicht selbst). Eigene
+  MangoHud-/vkBasalt-Schalter entfallen dann (außer MangoHud bei Linux-Spielen: bgmod setzt kein LD_PRELOAD, der
+  ``mangohud``-Wrapper beachtet das ``MANGOHUD_CONFIGFILE`` des Profils).
 * Vor Prüfen/Reparieren, Aktualisieren, Verschieben und Deinstallieren nimmt ``bgmod-uninstaller`` die Änderungen von
   bgmod im Spielordner zurück (wie GOverlays „Uninstall changes“, §5.5).
 
@@ -25,8 +33,10 @@ from ..i18n import tr
 
 import hashlib
 import io
+import json
 import logging
 import os
+import re
 import shutil
 import subprocess
 import threading
@@ -38,6 +48,12 @@ log = logging.getLogger(__name__)
 
 FOLDERS_FILE = "nonsteam_folders.txt"
 SKIP_NAMES = ("prefixes", "common", "compatdata", "shadercache", "downloads", "tmp", "temp")   # überspringt GOverlay
+VIEW_DIR = "goverlay-library"        # Spieleansicht im Datenordner von galaxy-linux
+VIEW_STATE = "goverlay-library.json" # Produkt-ID → Kartenname (für die Profilsuche beim Start)
+COVER_MANIFEST = "goverlay-covers.json"   # Cover-Schlüssel → SHA-1 der von galaxy-linux geschriebenen Datei
+NAME_MAX = 120
+PLACEHOLDER_SIZE = (150, 215)        # GOverlays Platzhalter-Cover (CARD_W × CARD_H)
+COVER_SIZE = (600, 900)
 GLOBAL_PROFILE = "global"
 OFF = "none"                         # GameSettings.goverlay_profile: Profil aus
 PROFILE_PATH_MAX = 255               # bgmod: ParamStr(0) ist ein FPC-shortstring (255 Byte)
@@ -46,6 +62,9 @@ GAME_PERFORMANCE = "game-performance"
 WINE_DETECTION_OFF = "/WineDetectionEnabled:False"
 GOVERLAY_WRAPPERS = ("bgmod", "fgmod")
 _SAFE = frozenset(b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_- .+()[]")
+FONTS = ("/usr/share/fonts/TTF/DejaVuSans-Bold.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+         "/usr/share/fonts/noto/NotoSans-Bold.ttf", "/usr/share/fonts/liberation/LiberationSans-Bold.ttf",
+         "/usr/share/fonts/TTF/LiberationSans-Bold.ttf")
 
 
 # --------------------------------------------------------------------------- Namen und Pfade
@@ -109,7 +128,18 @@ def _safe_profile_name(name: str) -> bool:
     return bool(name) and name not in (".", "..") and "/" not in name and "\0" not in name
 
 
-# --------------------------------------------------------------------------- A: nonsteam_folders.txt
+# --------------------------------------------------------------------------- A: Spieleansicht (Symlinks)
+def view_dir() -> Path:
+    """Ordner mit einem Symlink pro Spiel – der einzige Eintrag von galaxy-linux in nonsteam_folders.txt."""
+    from .. import paths
+    return paths.DATA_DIR / VIEW_DIR
+
+
+def _state_file() -> Path:
+    from .. import paths
+    return paths.DATA_DIR / VIEW_STATE
+
+
 def normalize_folder(text: str) -> str:
     """Absoluter Pfad ohne abschließenden „/“ ("" für leere Angaben)."""
     t = str(text or "").strip()
@@ -118,23 +148,211 @@ def normalize_folder(text: str) -> str:
     return os.path.normpath(os.path.abspath(os.path.expanduser(t)))
 
 
+def card_name(title: str) -> str:
+    """Kartenname (= Name des Symlinks) aus dem Spieltitel: ohne ™/®/©, „/“ ersetzt, ohne Steuerzeichen und
+    führenden Punkt, Leerzeichen zusammengefasst, höchstens 120 Zeichen."""
+    t = re.sub(r"[™®©]", "", str(title or ""))
+    t = t.replace("/", "-").replace("\\", "-")
+    t = "".join(ch for ch in t if ch >= " " and ch != "\x7f")
+    t = " ".join(t.split()).lstrip(".").strip()
+    if len(t) > NAME_MAX:
+        t = t[:NAME_MAX].rstrip(" .-")
+    return t or "game"
+
+
+def _key(name: str) -> str:
+    """Kollisionsschlüssel: gleicher Profil- und Cover-Name in GOverlay."""
+    return goverlay_sanitize(name)
+
+
+@dataclass
+class ViewGame:
+    pid: str
+    title: str                 # Anzeigetitel (eigener Titel, sonst Spieltitel)
+    target: str                # Spielordner (Ziel des Symlinks)
+    custom_cover: str = ""     # eigenes Cover („Bearbeiten …“)
+    name: str = ""             # vergebener Kartenname
+
+
+def view_games(backend: Any) -> list[ViewGame]:
+    """Spiele, die in GOverlay erscheinen sollen: installiert, Ordner vorhanden, keine Kopie, nicht ausgeblendet."""
+    try:
+        all_gs = backend.game_settings.items()
+    except AttributeError:
+        all_gs = {}
+    out = []
+    for g in backend.registry.all():
+        if getattr(g, "duplicate_of", ""):
+            continue
+        gs = all_gs.get(g.product_id)
+        if gs is not None and gs.hidden:
+            continue
+        target = normalize_folder(g.install_path)
+        if not target or not os.path.isdir(target):
+            continue
+        title = (gs.custom_title if gs is not None else "") or g.title
+        out.append(ViewGame(g.product_id, title, target, gs.custom_cover if gs is not None else ""))
+    return out
+
+
+def plan_view(games: list[ViewGame], existing: dict[str, str] | None = None,
+              reserved: Iterable[str] = ()) -> list[ViewGame]:
+    """Kartennamen vergeben. Jeder Titel ergibt seinen Namen; nur wenn zwei *verschiedene* Spiele denselben Namen
+    (bzw. denselben Profil-/Cover-Namen in GOverlay) bekämen, erhält das spätere „ (2)“, „ (3)“ … Ein vorhandener
+    Link, der schon auf das Spiel zeigt und zu seinem Titel passt, behält seinen Namen (Profile bleiben gültig).
+    ``existing``: Name → Ziel der vorhandenen Links; ``reserved``: Namen fremder Dateien im Ordner."""
+    existing = existing or {}
+    used: set[str] = {_key(n) for n in reserved}
+    by_target: dict[str, list[str]] = {}
+    for name, target in sorted(existing.items()):
+        by_target.setdefault(normalize_folder(target), []).append(name)
+    ordered = sorted(games, key=lambda x: (card_name(x.title).lower(), x.pid))
+    pending = []
+    for g in ordered:
+        base = card_name(g.title)
+        pat = re.compile(re.escape(base) + r" \(\d+\)")
+        keep = next((n for n in by_target.get(g.target, []) if (n == base or pat.fullmatch(n)) and _key(n) not in used
+                     and n.lower() not in SKIP_NAMES), None)
+        if keep:
+            g.name = keep
+            used.add(_key(keep))
+        else:
+            pending.append(g)
+    for g in pending:
+        base = card_name(g.title)
+        name, n = base, 2
+        while _key(name) in used or name.lower() in SKIP_NAMES:
+            name, n = f"{base} ({n})", n + 1
+        g.name = name
+        used.add(_key(name))
+    return sorted(ordered, key=lambda x: x.name.lower())
+
+
+def current_links(root: Path | None = None) -> tuple[dict[str, str], list[str]]:
+    """(Name → Ziel der Symlinks, Namen anderer Einträge) im Ansichtsordner."""
+    root = root or view_dir()
+    links: dict[str, str] = {}
+    other: list[str] = []
+    try:
+        entries = list(os.scandir(root))
+    except OSError:
+        return links, other
+    for e in entries:
+        if e.is_symlink():
+            try:
+                links[e.name] = os.readlink(e.path)
+            except OSError:
+                continue
+        else:
+            other.append(e.name)
+    return links, other
+
+
+@dataclass
+class ViewReport:
+    added: list[str] = field(default_factory=list)
+    removed: list[str] = field(default_factory=list)
+    games: list[ViewGame] = field(default_factory=list)
+
+    @property
+    def changed(self) -> bool:
+        return bool(self.added or self.removed)
+
+
+def apply_view(plan: list[ViewGame], root: Path | None = None) -> ViewReport:
+    """Symlinks wie geplant anlegen; veraltete, falsche und kaputte Links entfernen – nur Symlinks und nur in diesem
+    Ordner, andere Dateien bleiben."""
+    root = root or view_dir()
+    root.mkdir(parents=True, exist_ok=True)
+    want = {g.name: g.target for g in plan}
+    rep = ViewReport(games=list(plan))
+    links, _other = current_links(root)
+    for name, target in links.items():
+        path = root / name
+        if name not in want or normalize_folder(target) != want[name] or not os.path.exists(path):
+            try:
+                os.unlink(path)
+                rep.removed.append(name)
+            except OSError as exc:
+                log.warning("Veralteter Link %s nicht entfernt: %s", path, exc)
+    for name, target in want.items():
+        path = root / name
+        if path.is_symlink():
+            continue
+        if path.exists():
+            log.warning("%s ist keine Verknüpfung von galaxy-linux – bleibt unverändert", path)
+            continue
+        try:
+            os.symlink(target, path)
+            rep.added.append(name)
+        except OSError as exc:
+            log.warning("Verknüpfung %s → %s nicht angelegt: %s", path, target, exc)
+    _write_state({g.pid: g.name for g in plan})
+    if rep.changed:
+        log.info("GOverlay-Spieleansicht %s: neu %s, entfernt %s", root, rep.added or "-", rep.removed or "-")
+    return rep
+
+
+def clear_view(root: Path | None = None) -> ViewReport:
+    """Alle Symlinks der Ansicht entfernen (Schalter „Spiele in GOverlay anzeigen“ aus)."""
+    root = root or view_dir()
+    rep = ViewReport()
+    links, _other = current_links(root)
+    for name in links:
+        try:
+            os.unlink(root / name)
+            rep.removed.append(name)
+        except OSError:
+            pass
+    _write_state({})
+    return rep
+
+
+def _write_state(state: dict[str, str]) -> None:
+    f = _state_file()
+    try:
+        if f.exists() and json.loads(f.read_text(encoding="utf-8")) == state:
+            return
+    except (OSError, ValueError):
+        pass
+    try:
+        _write_atomic(f, json.dumps(state, ensure_ascii=False, indent=1, sort_keys=True).encode("utf-8"))
+    except OSError as exc:
+        log.debug("Zuordnung der GOverlay-Karten nicht gespeichert: %s", exc)
+
+
+def read_state() -> dict[str, str]:
+    try:
+        d = json.loads(_state_file().read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return {str(k): str(v) for k, v in d.items()} if isinstance(d, dict) else {}
+
+
+def view_name(game: Any, gs: Any = None) -> str:
+    """Kartenname eines Spiels in GOverlay: wie zuletzt vergeben, sonst aus dem Titel."""
+    name = read_state().get(str(game.product_id))
+    if name:
+        return name
+    return card_name((getattr(gs, "custom_title", "") if gs is not None else "") or game.title)
+
+
+def in_view(product_id: str) -> bool:
+    """Erscheint das Spiel in GOverlay (Link vorhanden, Ansichtsordner in nonsteam_folders.txt)?"""
+    name = read_state().get(str(product_id))
+    return bool(name) and (view_dir() / name).is_symlink() and normalize_folder(str(view_dir())) in registered_roots()
+
+
+def dry_run(backend: Any) -> list[ViewGame]:
+    """Geplante Spielkarten, ohne etwas zu schreiben (auch nicht den Ansichtsordner)."""
+    links, other = current_links()
+    return plan_view(view_games(backend), links, other)
+
+
+# --------------------------------------------------------------------------- A: nonsteam_folders.txt
 def _line_key(line: str) -> str:
     t = line.strip()
     return os.path.normpath(t) if t.startswith("/") else t
-
-
-def configured_roots(settings: Any) -> list[str]:
-    """Spiele-Wurzeln aus den Einstellungen: GOG-Spiele-Ordner, weitere Installationsorte, Spiele-Ordner der eigenen
-    Bibliotheken – nie „/“ oder der Persönliche Ordner (dann würde jeder Unterordner zur Spielkarte)."""
-    raw = [getattr(settings, "install_dir", ""), *getattr(settings, "install_locations", []),
-           *(getattr(lib, "games_dir", "") for lib in getattr(settings, "libraries", []))]
-    home = normalize_folder(str(Path.home()))
-    out: list[str] = []
-    for r in raw:
-        p = normalize_folder(r)
-        if p and p not in out and p not in ("/", home):
-            out.append(p)
-    return out
 
 
 @dataclass
@@ -151,9 +369,10 @@ class FolderPlan:
 
 def plan_folder_lines(lines: list[str], roots: Iterable[str], ours: Iterable[str], enabled: bool = True,
                       exists: Callable[[str], bool] = os.path.isdir) -> FolderPlan:
-    """Reine Logik des Abgleichs: fehlende, vorhandene Wurzeln anhängen; eigene, nicht mehr gewünschte Zeilen
-    entfernen; alle anderen Zeilen (auch leere und die des Nutzers) bleiben unverändert und in ihrer Reihenfolge.
-    Eine Wurzel, die der Nutzer schon selbst eingetragen hat, gilt nicht als eigene (wird also nie entfernt)."""
+    """Reine Logik des Abgleichs: fehlende, vorhandene Ordner anhängen; eigene, nicht mehr gewünschte Zeilen
+    entfernen (z. B. die Bibliotheks-Wurzeln aus 0.3.0); alle anderen Zeilen (auch leere und die des Nutzers) bleiben
+    unverändert und in ihrer Reihenfolge. Ein Ordner, den der Nutzer schon selbst eingetragen hat, gilt nicht als
+    eigener (wird also nie entfernt)."""
     target = [t for t in dict.fromkeys(normalize_folder(r) for r in roots) if t] if enabled else []
     ours_keys = [k for k in dict.fromkeys(normalize_folder(o) for o in ours) if k]
     drop = {o for o in ours_keys if o not in target}
@@ -198,19 +417,21 @@ def _write_atomic(path: Path, data: bytes) -> None:
 
 
 def sync_folders(settings: Any, enabled: bool | None = None) -> FolderPlan | None:
-    """``nonsteam_folders.txt`` abgleichen. ``None``, wenn GOverlay nicht installiert ist. Die Datei wird nur
-    geschrieben, wenn sich etwas ändert; ``plan.ours`` gehört danach nach ``settings.goverlay_added_folders``."""
+    """``nonsteam_folders.txt`` abgleichen: nur der Ansichtsordner gehört galaxy-linux. ``None``, wenn GOverlay nicht
+    installiert ist. Die Datei wird nur geschrieben, wenn sich etwas ändert; ``plan.ours`` gehört danach nach
+    ``settings.goverlay_added_folders``."""
     if not goverlay_installed():
         return None
     if enabled is None:
         enabled = bool(settings.goverlay_register_folders)
     path = folders_file()
+    roots = [str(view_dir())]
     lines = read_lines(path)
-    plan = plan_folder_lines(lines, configured_roots(settings), settings.goverlay_added_folders, enabled)
+    plan = plan_folder_lines(lines, roots, settings.goverlay_added_folders, enabled)
     if plan.changed:
         current = read_lines(path)
         if current != lines:            # inzwischen von GOverlay geändert: auf dem neuen Stand planen
-            plan = plan_folder_lines(current, configured_roots(settings), settings.goverlay_added_folders, enabled)
+            plan = plan_folder_lines(current, roots, settings.goverlay_added_folders, enabled)
     if plan.changed:
         _write_atomic(path, "".join(f"{x}\n" for x in plan.lines).encode("utf-8", "surrogateescape"))
         log.info("GOverlay-Ordnerliste %s: eingetragen %s, entfernt %s", path, plan.added or "-", plan.removed or "-")
@@ -218,19 +439,13 @@ def sync_folders(settings: Any, enabled: bool | None = None) -> FolderPlan | Non
 
 
 def registered_roots() -> set[str]:
-    """Alle Wurzeln, die in nonsteam_folders.txt stehen (eigene und vom Nutzer)."""
+    """Alle Ordner, die in nonsteam_folders.txt stehen (eigene und vom Nutzer)."""
     return {_line_key(x) for x in read_lines(folders_file()) if x.strip()}
-
-
-def folder_registered(install_path: str) -> bool:
-    """Erscheint der Spielordner in GOverlay (Elternordner in nonsteam_folders.txt eingetragen)?"""
-    folder = Path(normalize_folder(install_path))
-    return folder.name.lower() not in SKIP_NAMES and str(folder.parent) in registered_roots()
 
 
 # --------------------------------------------------------------------------- A: Cover
 def _jpeg_bytes(source: Path) -> bytes | None:
-    """Echtes JPEG aus dem Cover-Cache: mit Pillow umwandeln (höchstens 600×900), sonst nur kopieren, wenn es schon
+    """Echtes JPEG aus einer Bilddatei: mit Pillow umwandeln (höchstens 600×900), sonst nur kopieren, wenn es schon
     ein JPEG ist."""
     try:
         from PIL import Image  # optional
@@ -240,7 +455,7 @@ def _jpeg_bytes(source: Path) -> bytes | None:
         try:
             with Image.open(source) as im:
                 im = im.convert("RGB")
-                im.thumbnail((600, 900))
+                im.thumbnail(COVER_SIZE)
                 buf = io.BytesIO()
                 im.save(buf, "JPEG", quality=90)
                 return buf.getvalue()
@@ -253,41 +468,98 @@ def _jpeg_bytes(source: Path) -> bytes | None:
     return data if data[:3] == b"\xff\xd8\xff" else None
 
 
-def cover_path(folder_name: str) -> Path:
-    return cover_dir() / f"{goverlay_sanitize(folder_name)}.jpg"
+def jpeg_size(data: bytes) -> tuple[int, int] | None:
+    """Breite × Höhe eines JPEG aus dem SOF-Segment (ohne Pillow)."""
+    if data[:2] != b"\xff\xd8":
+        return None
+    i = 2
+    while i + 4 <= len(data):
+        if data[i] != 0xFF:
+            i += 1
+            continue
+        marker = data[i + 1]
+        if marker == 0xFF:
+            i += 1
+            continue
+        if marker in (0x01, 0xD8) or 0xD0 <= marker <= 0xD7:
+            i += 2
+            continue
+        seg = int.from_bytes(data[i + 2:i + 4], "big")
+        if marker in (0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF) and i + 9 <= len(data):
+            h = int.from_bytes(data[i + 5:i + 7], "big")
+            w = int.from_bytes(data[i + 7:i + 9], "big")
+            return w, h
+        if seg < 2:
+            return None
+        i += 2 + seg
+    return None
 
 
-def cover_needed(folder_name: str) -> bool:
-    """Kein Cover oder nur GOverlays Platzhalter (``.jpg.fallback``)."""
-    dest = cover_path(folder_name)
-    marker = dest.with_name(dest.name + ".fallback")
+def is_placeholder(data: bytes) -> bool:
+    """GOverlays eigenes Ersatzbild (150×215 mit GOverlay-Symbol)."""
+    return jpeg_size(data) == PLACEHOLDER_SIZE
+
+
+def _font(size: int):
+    from PIL import ImageFont
+    for f in FONTS:
+        if os.path.isfile(f):
+            try:
+                return ImageFont.truetype(f, size)
+            except OSError:
+                continue
     try:
-        return marker.exists() or dest.stat().st_size == 0
-    except OSError:
-        return True
+        return ImageFont.load_default(size=size)
+    except TypeError:                      # Pillow < 10.1
+        return ImageFont.load_default()
 
 
-def seed_cover(folder_name: str, source: Path | None) -> bool:
-    """Cover für die GOverlay-Karte ablegen; vorhandene echte Cover bleiben, Platzhalter werden ersetzt.
-    Eine ``.fallback``-Datei wird nie angelegt (GOverlay würde das Cover sonst bei jedem Laden ersetzen)."""
-    if not cover_needed(folder_name) or source is None or not Path(source).is_file():
-        return False
-    data = _jpeg_bytes(Path(source))
-    if not data:
-        return False
-    dest = cover_path(folder_name)
-    _write_atomic(dest, data)
-    marker = dest.with_name(dest.name + ".fallback")
-    if marker.exists():
-        marker.unlink()                        # Platzhalter ersetzt – GOverlay soll unser Cover behalten
-    log.info("GOverlay-Cover angelegt: %s", dest)
-    return True
+def title_card(title: str) -> bytes | None:
+    """Dunkle Titelkarte (600×900, JPEG) für Spiele ohne Cover; ``None`` ohne Pillow."""
+    try:
+        from PIL import Image, ImageDraw
+    except ImportError:
+        return None
+    w, h = COVER_SIZE
+    im = Image.new("RGB", (w, h), (32, 36, 44))
+    draw = ImageDraw.Draw(im)
+    words = (title or "").split() or ["?"]
+    for size in (64, 56, 48, 40, 34, 28):
+        font = _font(size)
+        lines, cur = [], ""
+        for word in words:
+            test = f"{cur} {word}".strip()
+            if cur and draw.textlength(test, font=font) > w - 90:
+                lines.append(cur)
+                cur = word
+            else:
+                cur = test
+        lines.append(cur)
+        if len(lines) <= 7 and all(draw.textlength(x, font=font) <= w - 60 for x in lines):
+            break
+    line_h = int(size * 1.25)
+    y = (h - line_h * len(lines)) // 2 - 20
+    for line in lines:
+        draw.text(((w - draw.textlength(line, font=font)) / 2, y), line, fill=(236, 236, 240), font=font)
+        y += line_h
+    draw.rectangle([w // 2 - 60, y + 24, w // 2 + 60, y + 30], fill=(138, 92, 200))
+    buf = io.BytesIO()
+    im.save(buf, "JPEG", quality=90)
+    return buf.getvalue()
+
+
+def cover_path(name: str) -> Path:
+    return cover_dir() / f"{goverlay_sanitize(name)}.jpg"
 
 
 def cached_image(url: str) -> Path | None:
-    """Bild aus dem Bild-Cache von galaxy-linux (gleiche Benennung wie ``GogApi.cached_image``), ohne Download."""
+    """Bild aus dem Bild-Cache von galaxy-linux (gleiche Benennung wie ``GogApi.cached_image``), ohne Download;
+    ``file://``-Adressen (eigenes Cover) direkt."""
     if not url:
         return None
+    if url.startswith("file://"):
+        p = Path(url[7:])
+        return p if p.is_file() else None
     from .. import paths
     ext = os.path.splitext(url.split("?")[0])[1] or ".img"
     p = paths.IMAGE_CACHE_DIR / (hashlib.sha1(url.encode()).hexdigest() + ext)
@@ -298,14 +570,20 @@ def cached_image(url: str) -> Path | None:
 
 
 def cached_cover_url(backend: Any, product_id: str) -> str:
-    """Hochkant-Cover-URL nur aus vorhandenen Daten (kein Netz): Speicher der Oberfläche, sonst GamesDB-Cache."""
+    """Hochkant-Cover-URL nur aus vorhandenen Daten (kein Netz): Erkennung externer Spiele, Speicher der Oberfläche,
+    sonst GamesDB-Cache."""
     pid = str(product_id)
+    g = backend.registry.get(pid) if hasattr(backend, "registry") else None
+    if g is not None and getattr(g, "cover_url", ""):
+        return g.cover_url
     url = (getattr(backend, "_covers", None) or {}).get(pid) or ""
     if url:
         return url
     meta = (getattr(backend, "_meta", None) or {}).get(pid)
     if meta is not None and getattr(meta, "vertical_cover", ""):
         return meta.vertical_cover
+    if g is not None and getattr(g, "gog_match", ""):
+        pid = g.gog_match
     from .. import paths
     from ..api.models import _img
     from ..jsonstore import read_json
@@ -313,6 +591,110 @@ def cached_cover_url(backend: Any, product_id: str) -> str:
     if isinstance(gdb, dict):
         return _img(gdb.get("vertical_cover") or (gdb.get("game") or {}).get("vertical_cover"), "_glx_vertical_cover")
     return ""
+
+
+def cover_source(backend: Any, game: ViewGame) -> Path | None:
+    """Bilddatei für die Karte: eigenes Cover, sonst das Cover aus dem Bild-Cache (None: keins vorhanden)."""
+    if game.custom_cover and os.path.isfile(game.custom_cover):
+        return Path(game.custom_cover)
+    try:
+        return cached_image(cached_cover_url(backend, game.pid))
+    except Exception as exc:
+        log.debug("Cover für %s nicht ermittelbar: %s", game.pid, exc)
+        return None
+
+
+def _manifest_file() -> Path:
+    from .. import paths
+    return paths.DATA_DIR / COVER_MANIFEST
+
+
+def read_manifest() -> dict[str, dict]:
+    try:
+        d = json.loads(_manifest_file().read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return {k: v for k, v in d.items() if isinstance(v, dict)} if isinstance(d, dict) else {}
+
+
+def _sha1(data: bytes) -> str:
+    return hashlib.sha1(data).hexdigest()
+
+
+def cover_decision(current: bytes | None, fallback_marker: bool, entry: dict | None, source_sig: str) -> str:
+    """Was mit einem vorhandenen GOverlay-Cover geschieht: ``write`` (fehlt, Platzhalter, nicht von galaxy-linux,
+    von galaxy-linux aber Quelle geändert), ``keep`` (vom Nutzer in GOverlay gesetzt) oder ``same`` (aktuell)."""
+    if not current:
+        return "write"
+    if fallback_marker or is_placeholder(current):
+        return "write"
+    if entry is None:
+        return "write"                     # GOverlays Steam/Bing-Treffer oder Cover aus 0.3.0
+    if _sha1(current) != entry.get("sha1"):
+        return "keep"                      # inzwischen in GOverlay geändert: Wahl des Nutzers
+    return "same" if entry.get("src") == source_sig else "write"
+
+
+def sync_covers(backend: Any, games: list[ViewGame]) -> int:
+    """Cover aller Karten schreiben bzw. aktuell halten (nur aus dem Bild-Cache, kein Netz). Gibt die Zahl der
+    geschriebenen Cover zurück. Eigene, nicht mehr gebrauchte Cover werden entfernt, fremde bleiben."""
+    manifest = read_manifest()
+    before = json.dumps(manifest, sort_keys=True)
+    written = 0
+    keys = set()
+    for g in games:
+        key = goverlay_sanitize(g.name)
+        keys.add(key)
+        dest = cover_dir() / f"{key}.jpg"
+        marker = dest.with_name(dest.name + ".fallback")
+        src = cover_source(backend, g)
+        if src is not None:
+            try:
+                st = src.stat()
+                sig = f"{src}|{st.st_mtime_ns}|{st.st_size}"
+            except OSError:
+                src, sig = None, ""
+        if src is None:
+            sig = f"card:{g.name}"
+        try:
+            current = dest.read_bytes()
+        except OSError:
+            current = None
+        decision = cover_decision(current, marker.exists(), manifest.get(key), sig)
+        if decision != "write":
+            continue
+        data = _jpeg_bytes(src) if src is not None else title_card(g.name)
+        if data is None and src is not None:
+            data, sig = title_card(g.name), f"card:{g.name}"
+            if current and manifest.get(key, {}).get("src") == sig and _sha1(current) == manifest[key].get("sha1"):
+                continue
+        if not data:
+            continue
+        try:
+            _write_atomic(dest, data)
+            if marker.exists():
+                marker.unlink()                # Platzhalter ersetzt – GOverlay soll unser Cover behalten
+        except OSError as exc:
+            log.warning("GOverlay-Cover %s nicht geschrieben: %s", dest, exc)
+            continue
+        manifest[key] = {"sha1": _sha1(data), "src": sig}
+        written += 1
+    for key in [k for k in manifest if k not in keys]:
+        dest = cover_dir() / f"{key}.jpg"
+        try:
+            if _sha1(dest.read_bytes()) == manifest[key].get("sha1"):
+                dest.unlink()                  # eigenes Cover einer verschwundenen Karte
+        except OSError:
+            pass
+        del manifest[key]
+    if json.dumps(manifest, sort_keys=True) != before:
+        try:
+            _write_atomic(_manifest_file(), json.dumps(manifest, ensure_ascii=False, indent=1, sort_keys=True).encode())
+        except OSError as exc:
+            log.debug("Cover-Verzeichnis nicht gespeichert: %s", exc)
+    if written:
+        log.info("GOverlay-Cover geschrieben: %d", written)
+    return written
 
 
 # --------------------------------------------------------------------------- W: bgmod.conf
@@ -424,27 +806,38 @@ def _profile_at(kind: str, name: str, pdir: Path) -> Profile:
 
 
 def auto_profile_name(install_path: str) -> str:
+    """Profilname nach dem Spielordner (so hieß die GOverlay-Karte bis 0.3.0)."""
     return goverlay_sanitize(Path(str(install_path)).name)
 
 
-def resolve_profile(install_path: str, choice: str, settings: Any) -> Profile:
-    """Profil eines Spiels: ``choice`` = GameSettings.goverlay_profile ("" automatisch nach Ordnername, "none" aus,
-    sonst Profilname – gilt auch, wenn die automatische Zuordnung global abgeschaltet ist). Ohne fertiges Profil und
-    mit ``goverlay_global_fallback`` gilt das globale GOverlay-Profil."""
+def auto_profile_names(game: Any, gs: Any = None) -> list[str]:
+    """Automatische Profilnamen in Suchreihenfolge: Kartenname in GOverlay, danach der Spielordner (0.3.0)."""
+    return [n for n in dict.fromkeys((goverlay_sanitize(view_name(game, gs)), auto_profile_name(game.install_path))) if n]
+
+
+def resolve_profile(install_path: str, choice: str, settings: Any, names: Iterable[str] | None = None) -> Profile:
+    """Profil eines Spiels: ``choice`` = GameSettings.goverlay_profile ("" automatisch, "none" aus, sonst Profilname –
+    gilt auch, wenn die automatische Zuordnung global abgeschaltet ist). Automatisch: das erste fertige Profil unter
+    ``names`` (Kartenname, dann Spielordner). Das globale GOverlay-Profil gilt nur ausdrücklich oder mit
+    ``goverlay_global_fallback`` (Vorgabe aus)."""
     choice = (choice or "").strip()
     if choice == OFF:
         return Profile("off", reason="für dieses Spiel abgeschaltet")
     explicit = bool(choice)
     if not explicit and not settings.goverlay_use_profiles:
         return Profile("off", reason="GOverlay-Profile pro Spiel abgeschaltet")
-    name = choice if explicit else auto_profile_name(install_path)
-    if not _safe_profile_name(name):
-        return Profile("none", name, reason="ungültiger Profilname")
-    pdir = gameconfig_dir() / name
-    prof = _profile_at(GLOBAL_PROFILE if name == GLOBAL_PROFILE else "game", name, pdir)
-    if prof.active:
-        return prof
-    if settings.goverlay_use_profiles and settings.goverlay_global_fallback and name != GLOBAL_PROFILE:
+    candidates = [choice] if explicit else [n for n in dict.fromkeys(names or [auto_profile_name(install_path)]) if n]
+    first: Profile | None = None
+    for name in candidates:
+        if not _safe_profile_name(name):
+            prof = Profile("none", name, reason="ungültiger Profilname")
+        else:
+            prof = _profile_at(GLOBAL_PROFILE if name == GLOBAL_PROFILE else "game", name, gameconfig_dir() / name)
+        if prof.active:
+            return prof
+        first = first or prof
+    prof = first or Profile("none", reason="kein Profilname")
+    if settings.goverlay_use_profiles and settings.goverlay_global_fallback and GLOBAL_PROFILE not in candidates:
         glob = _profile_at(GLOBAL_PROFILE, GLOBAL_PROFILE, gameconfig_dir() / GLOBAL_PROFILE)
         if glob.active and not glob.needs_copy:
             return glob
@@ -452,7 +845,7 @@ def resolve_profile(install_path: str, choice: str, settings: Any) -> Profile:
 
 
 def describe(prof: Profile, registered: bool = True) -> str:
-    """Kurztext für Spielseite und Eigenschaften. ``registered`` = Spielordner erscheint in GOverlay."""
+    """Kurztext für Spielseite und Eigenschaften. ``registered`` = Spiel erscheint in GOverlay."""
     if prof.from_options and prof.active:
         name = tr('globales GOverlay-Profil') if prof.kind == "global" else prof.name
         return tr('GOverlay-Profil: {0} (aus den Startoptionen, wird einmal vorangestellt)').format(name)
@@ -463,8 +856,8 @@ def describe(prof: Profile, registered: bool = True) -> str:
     if prof.kind == "off":
         return tr('GOverlay-Profil: aus')
     if not registered:
-        return tr('kein Profil – Spiele-Ordner ist nicht in GOverlay eingetragen')
-    return tr('kein Profil – in GOverlay das Spiel anklicken')
+        return tr('kein Profil – das Spiel erscheint nicht in GOverlay (Einstellungen → Kompatibilität → GOverlay)')
+    return tr('kein Profil – Spiel in GOverlay anklicken, um sein Profil anzulegen')
 
 
 def install_bgmod(pdir: Path) -> Path:
@@ -665,7 +1058,7 @@ def profile_for_context(ctx: Any) -> Profile:
     from_options = ""
     if not choice and ctx.plan is not None:
         from_options = wrapper_profile(ctx.plan.user_wrappers)
-    prof = resolve_profile(ctx.game.install_path, from_options or choice, ctx.settings)
+    prof = resolve_profile(ctx.game.install_path, from_options or choice, ctx.settings, auto_profile_names(ctx.game, ctx.gs))
     prof.from_options = bool(from_options)
     return prof
 
@@ -771,7 +1164,7 @@ def undo_bgmod_changes(backend: Any, product_id: str, action: str, status: Calla
     gs = backend.game_settings.get(str(product_id))
     from_options = wrapper_profile(option_wrappers(backend.settings, gs, _library(getattr(backend, "launcher", None), g)))
     n = 0
-    for pdir in uninstall_candidates(g.install_path, gs.goverlay_profile, [from_options]):
+    for pdir in uninstall_candidates(g.install_path, gs.goverlay_profile, [from_options, *auto_profile_names(g, gs)]):
         if status:
             status(tr('GOverlay-Änderungen werden zurückgenommen …'))
         from .. import paths
@@ -782,26 +1175,18 @@ def undo_bgmod_changes(backend: Any, product_id: str, action: str, status: Calla
     return n
 
 
-# --------------------------------------------------------------------------- Abgleich (Ordner + Cover)
+# --------------------------------------------------------------------------- Abgleich (Ansicht, Ordnerliste, Cover)
 @dataclass
 class SyncReport:
     installed: bool = True
     folders: FolderPlan | None = None
+    view: ViewReport | None = None
     covers: int = 0
 
 
-def cover_source(backend: Any, product_id: str) -> Path | None:
-    try:
-        return cached_image(cached_cover_url(backend, product_id))
-    except Exception as exc:
-        log.debug("Cover für %s nicht ermittelbar: %s", product_id, exc)
-        return None
-
-
 def sync_all(backend: Any, covers: bool = True) -> SyncReport:
-    """Ordnerliste abgleichen (und ``goverlay_added_folders`` speichern), danach Cover der Spiele in eingetragenen
-    Wurzeln vorbelegen (nur aus dem Bild-Cache, kein Netz). Läuft im Hintergrund oder auf der Kommandozeile – nie im
-    GTK-Hauptthread."""
+    """Spieleansicht, Ordnerliste (und ``goverlay_added_folders``) und Cover abgleichen (Cover nur aus dem Bild-Cache,
+    kein Netz). Läuft im Hintergrund oder auf der Kommandozeile – nie im GTK-Hauptthread."""
     with _sync_lock:
         return _sync_all(backend, covers)
 
@@ -813,27 +1198,34 @@ def _sync_all(backend: Any, covers: bool) -> SyncReport:
     s = backend.settings
     if not goverlay_installed():
         return SyncReport(installed=False)
-    rep = SyncReport(folders=sync_folders(s))
+    enabled = bool(s.goverlay_register_folders)
+    rep = SyncReport()
+    if enabled:
+        links, other = current_links()
+        rep.view = apply_view(plan_view(view_games(backend), links, other))
+    else:
+        rep.view = clear_view()
+    rep.folders = sync_folders(s, enabled)
     if rep.folders is not None and rep.folders.ours != list(s.goverlay_added_folders):
         s.goverlay_added_folders = list(rep.folders.ours)
         s.save()
-    if covers and s.goverlay_register_folders:
-        roots = registered_roots()
-        for g in backend.registry.all():
-            folder = Path(normalize_folder(g.install_path))
-            if str(folder.parent) not in roots or folder.name.lower() in SKIP_NAMES or not cover_needed(folder.name):
-                continue
-            try:
-                rep.covers += int(seed_cover(folder.name, cover_source(backend, g.product_id)))
-            except OSError as exc:
-                log.warning("GOverlay-Cover für %s nicht geschrieben: %s", g.title, exc)
+    if covers and enabled and rep.view is not None:
+        rep.covers = sync_covers(backend, rep.view.games)
     return rep
 
 
+def _cache_mtime() -> int:
+    from .. import paths
+    try:
+        return os.stat(paths.IMAGE_CACHE_DIR).st_mtime_ns
+    except OSError:
+        return 0
+
+
 class AutoSync:
-    """Hält nonsteam_folders.txt und die Cover im Hintergrund aktuell – nur in der Oberfläche angelegt (Start,
-    Timer, fertige Aufträge). ``request()`` läuft nur, wenn sich Ordner, Spiele oder Schalter geändert haben (oder
-    ``force``); mehrere Anfragen während eines Laufs ergeben einen Nachlauf."""
+    """Hält Spieleansicht, nonsteam_folders.txt und Cover im Hintergrund aktuell – nur in der Oberfläche angelegt
+    (Start, Timer, fertige Aufträge, geänderte Titel). ``request()`` läuft nur, wenn sich Spiele, Titel, Cover oder
+    Schalter geändert haben (oder ``force``); mehrere Anfragen während eines Laufs ergeben einen Nachlauf."""
 
     def __init__(self, backend: Any) -> None:
         self.backend = backend
@@ -844,9 +1236,11 @@ class AutoSync:
         self.runs = 0
 
     def signature(self) -> tuple:
-        s = self.backend.settings
-        games = tuple(sorted(normalize_folder(g.install_path) for g in self.backend.registry.all()))
-        return goverlay_installed(), bool(s.goverlay_register_folders), tuple(configured_roots(s)), games
+        b = self.backend
+        s = b.settings
+        games = tuple(sorted((g.pid, g.title, g.target, g.custom_cover) for g in view_games(b)))
+        covers = (len(getattr(b, "_covers", None) or {}), len(getattr(b, "_meta", None) or {}), _cache_mtime())
+        return goverlay_installed(), bool(s.goverlay_register_folders), games, covers
 
     def request(self, force: bool = False) -> bool:
         sig = self.signature()
@@ -894,6 +1288,10 @@ def auto_sync(backend: Any, create: bool = True) -> AutoSync | None:
 
 
 # --------------------------------------------------------------------------- Anzeige
+def _profile_names(backend: Any, g: Any, gs: Any) -> list[str]:
+    return auto_profile_names(g, gs)
+
+
 def profile_for_game(backend: Any, product_id: str) -> Profile | None:
     g = backend.registry.get(str(product_id))
     if g is None:
@@ -904,7 +1302,7 @@ def profile_for_game(backend: Any, product_id: str) -> Profile | None:
     if not choice:
         lib = _library(getattr(backend, "launcher", None), g)
         from_options = wrapper_profile(option_wrappers(backend.settings, gs, lib))
-    prof = resolve_profile(g.install_path, from_options or choice, backend.settings)
+    prof = resolve_profile(g.install_path, from_options or choice, backend.settings, _profile_names(backend, g, gs))
     prof.from_options = bool(from_options)
     return prof
 
@@ -917,4 +1315,4 @@ def status_for(backend: Any, product_id: str) -> str | None:
     prof = profile_for_game(backend, product_id)
     if g is None or prof is None:
         return None
-    return describe(prof, registered=folder_registered(g.install_path))
+    return describe(prof, registered=in_view(str(product_id)))

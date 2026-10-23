@@ -60,7 +60,8 @@ class TempEnv(unittest.TestCase):
         self.paths = mock.patch.multiple(
             "galaxy_linux.paths", SETTINGS_FILE=gl / "settings.json", GAME_SETTINGS_FILE=gl / "games.json",
             INSTALLED_FILE=gl / "installed.json", PLAYTIME_FILE=gl / "playtime.json", MANIFEST_DIR=gl / "manifests",
-            LOG_DIR=gl / "logs", IMAGE_CACHE_DIR=gl / "images", API_CACHE_DIR=gl / "api")
+            LOG_DIR=gl / "logs", IMAGE_CACHE_DIR=gl / "images", API_CACHE_DIR=gl / "api", DATA_DIR=gl / "data",
+            CONFIG_DIR=gl / "cfg", CACHE_DIR=gl / "cache")
         self.paths.start()
         for d in ("logs", "images", "api", "manifests"):
             (gl / d).mkdir(parents=True)
@@ -132,66 +133,139 @@ class FolderPlanTest(unittest.TestCase):
         self.assertEqual((p.lines, p.ours), ([], []))
 
 
-class FolderSyncTest(TempEnv):
+class ViewPlanTest(unittest.TestCase):
+    def test_card_names(self):
+        for raw, want in (("LEGO® City Undercover", "LEGO City Undercover"), ("AC/DC: Rock", "AC-DC: Rock"),
+                          ("  .Versteckt  ", "Versteckt"), ("Star Trek Voyager™: Elite Force", "Star Trek Voyager: Elite Force"),
+                          ("a\tb\nc", "abc"), ("", "game"), ("x" * 200, "x" * gp.NAME_MAX)):
+            self.assertEqual(gp.card_name(raw), want, raw)
+
+    def test_unique_only_for_different_games(self):
+        games = [gp.ViewGame("1", "Freelancer", "/g/Freelancer"), gp.ViewGame("2", "Freelancer", "/e/Freelancer"),
+                 gp.ViewGame("3", "Metro: X", "/g/MetroX"), gp.ViewGame("4", "Metro_ X", "/g/Metro_X"),
+                 gp.ViewGame("5", "Downloads", "/g/dl"), gp.ViewGame("6", "Zeus and Poseidon", "/g/Zeus and Poseidon_bck")]
+        plan = {g.pid: g.name for g in gp.plan_view(games)}
+        self.assertEqual(plan["1"], "Freelancer")
+        self.assertEqual(plan["2"], "Freelancer (2)")
+        self.assertEqual({plan["3"], plan["4"]}, {"Metro: X", "Metro_ X (2)"})   # gleicher Profilname in GOverlay
+        self.assertEqual(plan["5"], "Downloads (2)")                            # GOverlay überspringt „downloads“
+        self.assertEqual(plan["6"], "Zeus and Poseidon")                         # Titel, nie der Ordnername
+
+    def test_existing_names_stay_stable(self):
+        games = [gp.ViewGame("1", "Freelancer", "/g/a"), gp.ViewGame("2", "Freelancer", "/g/b")]
+        plan = {g.pid: g.name for g in gp.plan_view(games, {"Freelancer (2)": "/g/a", "Freelancer": "/g/b"})}
+        self.assertEqual(plan, {"1": "Freelancer (2)", "2": "Freelancer"})
+        plan = {g.pid: g.name for g in gp.plan_view([gp.ViewGame("1", "Neuer Titel", "/g/a")], {"Freelancer": "/g/a"})}
+        self.assertEqual(plan, {"1": "Neuer Titel"})                             # Titel geändert → neuer Name
+        plan = {g.pid: g.name for g in gp.plan_view([gp.ViewGame("1", "Spiel", "/g/a")], {}, reserved=["Spiel"])}
+        self.assertEqual(plan, {"1": "Spiel (2)"})                               # fremde Datei im Ordner
+
+
+class ViewSyncTest(TempEnv):
+    def setUp(self):
+        super().setUp()
+        self.ext = self.root / "Repack" / "02.Games"
+        self.reg = InstalledRegistry()
+        self.gs = GameSettingsStore()
+        self.reg.set(InstalledGame("1", "LEGO® City Undercover", "windows", str(self.game_dir)))
+        for pid, folder, extra in (("ext-freelancer", "Freelancer", {}),
+                                   ("ext-freelancer-kopie", "Freelancer - Kopie", {"duplicate_of": "ext-freelancer"}),
+                                   ("ext-freelancer-hd", "Freelancer HD Edition", {}),
+                                   ("ext-hidden", "Verstecktes Spiel", {})):
+            (self.ext / folder).mkdir(parents=True)
+            g = InstalledGame(pid, {"ext-freelancer-hd": "Freelancer (HD Edition)"}.get(pid, folder), "windows",
+                              str(self.ext / folder), method="external", library="external")
+            for k, v in extra.items():
+                setattr(g, k, v)
+            self.reg.set(g)
+        self.reg.set(InstalledGame("2", "Weg", "windows", str(self.root / "fehlt")))
+        self.gs.update("ext-hidden", hidden=True)
+        self.backend = types.SimpleNamespace(settings=self.settings, registry=self.reg, game_settings=self.gs,
+                                             _covers={}, _meta={})
+        self.view = self.data_dir() / gp.VIEW_DIR
+
+    def data_dir(self) -> Path:
+        from galaxy_linux import paths
+        return paths.DATA_DIR
+
+    def links(self) -> dict[str, str]:
+        return {p.name: os.readlink(p) for p in self.view.iterdir() if p.is_symlink()}
+
     def test_not_installed_writes_nothing(self):
         self.assertIsNone(gp.sync_folders(self.settings))
+        self.assertFalse(gp.sync_all(self.backend).installed)
         self.assertFalse((self.cfg / "goverlay").exists())
+        self.assertFalse(self.view.exists())
 
-    def test_roots_and_file(self):
-        extra = self.root / "Extra"
-        lib_games = self.root / "Lib" / "games"
-        extra.mkdir()
-        lib_games.mkdir(parents=True)
-        self.settings.install_locations = [str(extra) + "/", str(self.home), "/"]
-        self.settings.libraries = [CustomLibrary(id="x", name="X", games_dir=str(lib_games), prefix_dir=str(self.root / "p"))]
-        self.assertEqual(gp.configured_roots(self.settings), [str(self.games), str(extra), str(lib_games)])
+    def test_view_links_and_folder_migration(self):
         d = self.install_goverlay()
-        (d / gp.FOLDERS_FILE).write_text("/eigene/Spiele\n")
-        plan = gp.sync_folders(self.settings)
-        text = (d / gp.FOLDERS_FILE).read_text()
-        self.assertEqual(text, f"/eigene/Spiele\n{self.games}\n{extra}\n{lib_games}\n")
-        self.assertEqual(plan.ours, [str(self.games), str(extra), str(lib_games)])
+        old_roots = [str(self.games), str(self.ext)]
+        (d / gp.FOLDERS_FILE).write_text(f"/eigene/Spiele\n{old_roots[0]}\n\n{old_roots[1]}\n")
+        self.settings.goverlay_added_folders = list(old_roots)
+        rep = gp.sync_all(self.backend, covers=False)
+        self.assertEqual(self.links(), {"LEGO City Undercover": str(self.game_dir), "Freelancer": str(self.ext / "Freelancer"),
+                                        "Freelancer (HD Edition)": str(self.ext / "Freelancer HD Edition")})
+        self.assertEqual((d / gp.FOLDERS_FILE).read_text(), f"/eigene/Spiele\n\n{self.view}\n")
+        self.assertEqual(sorted(rep.folders.removed), sorted(old_roots))
+        self.assertEqual(self.settings.goverlay_added_folders, [str(self.view)])
+        self.assertEqual(GlobalSettings.load().goverlay_added_folders, [str(self.view)])
         self.assertEqual(sorted(p.name for p in d.iterdir()), [gp.FOLDERS_FILE])   # keine Temp-Datei übrig
+        self.assertEqual(gp.read_state()["ext-freelancer-hd"], "Freelancer (HD Edition)")
+        self.assertTrue(gp.in_view("1"))
+        self.assertFalse(gp.in_view("ext-freelancer-kopie"))
+        # GOverlay folgt dem Symlink: ein Spielordner pro Karte
+        self.assertTrue((self.view / "Freelancer").is_dir())
         mtime = (d / gp.FOLDERS_FILE).stat().st_mtime_ns
-        self.settings.goverlay_added_folders = plan.ours
-        self.assertFalse(gp.sync_folders(self.settings).changed)
-        self.assertEqual((d / gp.FOLDERS_FILE).stat().st_mtime_ns, mtime)      # unverändert → nicht geschrieben
-        self.assertTrue(gp.folder_registered(str(self.game_dir)))
-        self.assertFalse(gp.folder_registered(str(self.games / "prefixes")))
-        # abschalten: nur die eigenen Zeilen verschwinden
+        again = gp.sync_all(self.backend, covers=False)
+        self.assertFalse(again.view.changed or again.folders.changed)
+        self.assertEqual((d / gp.FOLDERS_FILE).stat().st_mtime_ns, mtime)          # unverändert → nicht geschrieben
+        # Titel geändert, Spiel entfernt, kaputter Link, fremde Datei: nur eigene Links werden angepasst
+        self.gs.update("1", custom_title="LEGO City")
+        self.reg.remove("ext-freelancer")
+        os.symlink(str(self.root / "gibt-es-nicht"), self.view / "Kaputt")
+        (self.view / "notiz.txt").write_text("vom Nutzer")
+        rep = gp.sync_all(self.backend, covers=False)
+        self.assertEqual(sorted(rep.view.removed), ["Freelancer", "Kaputt", "LEGO City Undercover"])
+        self.assertEqual(sorted(self.links()), ["Freelancer (HD Edition)", "LEGO City"])
+        self.assertTrue((self.view / "notiz.txt").exists())
+        # abschalten: Links weg, nur die eigene Zeile verschwindet
         self.settings.goverlay_register_folders = False
-        plan = gp.sync_folders(self.settings)
-        self.assertEqual((d / gp.FOLDERS_FILE).read_text(), "/eigene/Spiele\n")
-        self.assertEqual(plan.ours, [])
+        gp.sync_all(self.backend)
+        self.assertEqual((d / gp.FOLDERS_FILE).read_text(), "/eigene/Spiele\n\n")
+        self.assertEqual(self.links(), {})
+        self.assertEqual(self.settings.goverlay_added_folders, [])
+
+    def test_user_line_for_view_is_not_ours(self):
+        d = self.install_goverlay()
+        self.view.mkdir(parents=True)
+        (d / gp.FOLDERS_FILE).write_text(f"{self.view}\n")
+        rep = gp.sync_all(self.backend, covers=False)
+        self.assertEqual(rep.folders.ours, [])
+        self.settings.goverlay_register_folders = False
+        gp.sync_all(self.backend, covers=False)
+        self.assertEqual((d / gp.FOLDERS_FILE).read_text(), f"{self.view}\n")       # Zeile des Nutzers bleibt
 
     def test_symlinked_folder_file_stays_a_symlink(self):
         self.install_goverlay()
-        self.games.mkdir(parents=True, exist_ok=True)
         dotfiles = self.root / "dotfiles"
         dotfiles.mkdir()
         target = dotfiles / gp.FOLDERS_FILE
         target.write_text("/eigene/Spiele\n")
         link = self.cfg / "goverlay" / gp.FOLDERS_FILE
         link.symlink_to(target)
-        gp.sync_folders(self.settings)
+        gp.sync_all(self.backend, covers=False)
         self.assertTrue(link.is_symlink())
-        self.assertEqual(target.read_text(), f"/eigene/Spiele\n{self.games}\n")
+        self.assertEqual(target.read_text(), f"/eigene/Spiele\n{self.view}\n")
 
-    def test_sync_all_saves_added_folders(self):
-        self.install_goverlay()
-        backend = types.SimpleNamespace(settings=self.settings, registry=InstalledRegistry(), _covers={}, _meta={})
-        rep = gp.sync_all(backend)
-        self.assertEqual(rep.folders.added, [str(self.games)])
-        self.assertEqual(self.settings.goverlay_added_folders, [str(self.games)])
-        self.assertEqual(GlobalSettings.load().goverlay_added_folders, [str(self.games)])
-        (self.cfg / "goverlay" / gp.FOLDERS_FILE).unlink()
-        (self.cfg / "goverlay").rmdir()
-        self.assertFalse(gp.sync_all(backend).installed)                # GOverlay weg → nichts tun
+    def test_dry_run_writes_nothing(self):
+        names = [v.name for v in gp.dry_run(self.backend)]
+        self.assertEqual(names, ["Freelancer", "Freelancer (HD Edition)", "LEGO City Undercover"])
+        self.assertFalse(self.view.exists())
+        self.assertFalse(self.data_dir().exists() and any(self.data_dir().iterdir()))
 
     def test_auto_sync_runs_on_change(self):
         self.install_goverlay()
-        backend = types.SimpleNamespace(settings=self.settings, registry=InstalledRegistry(), _covers={}, _meta={})
-        sync = gp.AutoSync(backend)
+        sync = gp.AutoSync(self.backend)
 
         def wait(n):
             end = time.time() + 5
@@ -201,72 +275,124 @@ class FolderSyncTest(TempEnv):
         self.assertTrue(sync.request())
         wait(1)
         self.assertFalse(sync.request())                     # nichts geändert
-        extra = self.root / "Neu"
-        extra.mkdir()
-        self.settings.install_locations.append(str(extra))
+        (self.ext / "Neu").mkdir()
+        self.reg.set(InstalledGame("ext-neu", "Neues Spiel", "windows", str(self.ext / "Neu"), method="external"))
         self.assertTrue(sync.request())
         wait(2)
-        self.assertIn(str(extra), (self.cfg / "goverlay" / gp.FOLDERS_FILE).read_text())
-        self.assertIs(gp.auto_sync(backend), gp.auto_sync(backend))
+        self.assertIn("Neues Spiel", self.links())
+        self.assertIs(gp.auto_sync(self.backend), gp.auto_sync(self.backend))
         self.assertIsNone(gp.auto_sync(types.SimpleNamespace(), create=False))
 
 
 # ----------------------------------------------------------------------------- Cover
-class CoverTest(TempEnv):
-    def png(self) -> Path:
-        from PIL import Image
-        p = self.root / "cover.png"
-        Image.new("RGB", (1200, 1800), (120, 60, 200)).save(p)
-        return p
+def jpeg(size=(600, 900), color=(120, 60, 200)) -> bytes:
+    import io
+    from PIL import Image
+    buf = io.BytesIO()
+    Image.new("RGB", size, color).save(buf, "JPEG")
+    return buf.getvalue()
 
-    def test_seed_real_jpeg_with_pillow(self):
-        self.assertTrue(gp.seed_cover(GAME, self.png()))
-        dest = self.home / ".cache" / "goverlay" / "nonsteam_covers" / f"{PROFILE}.jpg"
-        data = dest.read_bytes()
-        self.assertEqual(data[:3], b"\xff\xd8\xff")
-        from PIL import Image
-        with Image.open(dest) as im:
-            self.assertEqual(im.size, (600, 900))
-        self.assertFalse(dest.with_name(dest.name + ".fallback").exists())
-        self.assertFalse(gp.seed_cover(GAME, self.png()))            # vorhandenes echtes Cover bleibt
 
-    def test_fallback_is_replaced_and_marker_removed(self):
-        dest = gp.cover_path(GAME)
-        dest.parent.mkdir(parents=True)
-        dest.write_bytes(b"platzhalter")
-        marker = dest.with_name(dest.name + ".fallback")
-        marker.write_text("")
-        self.assertTrue(gp.seed_cover(GAME, self.png()))
-        self.assertEqual(dest.read_bytes()[:3], b"\xff\xd8\xff")
-        self.assertFalse(marker.exists())
+class CoverRulesTest(unittest.TestCase):
+    def test_jpeg_size_and_placeholder(self):
+        self.assertEqual(gp.jpeg_size(jpeg((150, 215))), (150, 215))
+        self.assertTrue(gp.is_placeholder(jpeg((150, 215))))
+        self.assertFalse(gp.is_placeholder(jpeg((600, 900))))
+        self.assertIsNone(gp.jpeg_size(b"kein jpeg"))
 
-    def test_without_pillow_only_jpeg_is_copied(self):
-        jpg = self.root / "c.jpg"
-        jpg.write_bytes(b"\xff\xd8\xff\xe0echtes-jpeg")
-        png = self.png()
-        with mock.patch.dict(sys.modules, {"PIL": None}):
-            self.assertFalse(gp.seed_cover("A", png))
-            self.assertFalse(gp.cover_path("A").exists())
-            self.assertTrue(gp.seed_cover("B", jpg))
-        self.assertEqual(gp.cover_path("B").read_bytes(), jpg.read_bytes())
+    def test_decision(self):
+        ours = jpeg()
+        entry = {"sha1": gp._sha1(ours), "src": "/a|1|2"}
+        self.assertEqual(gp.cover_decision(None, False, None, "x"), "write")               # fehlt
+        self.assertEqual(gp.cover_decision(b"", False, entry, "x"), "write")
+        self.assertEqual(gp.cover_decision(jpeg(color=(1, 2, 3)), False, None, "x"), "write")  # GOverlays Steam/Bing-Treffer
+        self.assertEqual(gp.cover_decision(ours, True, entry, "/a|1|2"), "write")          # .fallback
+        self.assertEqual(gp.cover_decision(jpeg((150, 215)), False, entry, "/a|1|2"), "write")  # Platzhalter ohne Marker
+        self.assertEqual(gp.cover_decision(ours, False, entry, "/a|1|2"), "same")
+        self.assertEqual(gp.cover_decision(ours, False, entry, "/b|1|2"), "write")         # eigenes Cover, neue Quelle
+        self.assertEqual(gp.cover_decision(jpeg(color=(9, 9, 9)), False, entry, "/b|1|2"), "keep")  # Wahl des Nutzers
 
-    def test_sync_seeds_from_image_cache(self):
+
+class CoverSyncTest(TempEnv):
+    def setUp(self):
+        super().setUp()
         from galaxy_linux import paths
         import hashlib
         self.install_goverlay()
-        url = "https://images.gog.com/abc_glx_vertical_cover.jpg"
+        self.url = "https://images.gog.com/abc_glx_vertical_cover.jpg"
         (paths.API_CACHE_DIR / "gamesdb-1.json").write_text(json.dumps(
             {"game": {"vertical_cover": {"url_format": "https://images.gog.com/abc{formatter}.{ext}"}}}))
-        cached = paths.IMAGE_CACHE_DIR / (hashlib.sha1(url.encode()).hexdigest() + ".jpg")
-        cached.write_bytes(self.png().read_bytes())
-        reg = InstalledRegistry()
-        reg.set(InstalledGame("1", GAME, "windows", str(self.game_dir)))
-        backend = types.SimpleNamespace(settings=self.settings, registry=reg, _covers={}, _meta={})
-        self.assertEqual(gp.cached_cover_url(backend, "1"), url)
-        rep = gp.sync_all(backend)
-        self.assertEqual(rep.covers, 1)
-        self.assertTrue(gp.cover_path(GAME).is_file())
-        self.assertEqual(gp.sync_all(backend).covers, 0)
+        self.cached = paths.IMAGE_CACHE_DIR / (hashlib.sha1(self.url.encode()).hexdigest() + ".jpg")
+        from PIL import Image
+        Image.new("RGB", (1200, 1800), (120, 60, 200)).save(self.cached, "JPEG")
+        self.reg = InstalledRegistry()
+        self.reg.set(InstalledGame("1", GAME, "windows", str(self.game_dir)))
+        ext = self.root / "ext" / "Ohne Cover"
+        ext.mkdir(parents=True)
+        self.reg.set(InstalledGame("ext-x", "Ohne Cover", "windows", str(ext), method="external"))
+        self.gs = GameSettingsStore()
+        self.backend = types.SimpleNamespace(settings=self.settings, registry=self.reg, game_settings=self.gs,
+                                             _covers={}, _meta={})
+
+    def test_covers_from_cache_and_title_card(self):
+        self.assertEqual(gp.cached_cover_url(self.backend, "1"), self.url)
+        dest = gp.cover_path(GAME)
+        dest.parent.mkdir(parents=True)
+        dest.write_bytes(jpeg(color=(0, 255, 0)))                     # GOverlays falscher Steam-Treffer
+        card = gp.cover_path("Ohne Cover")
+        rep = gp.sync_all(self.backend)
+        self.assertEqual(rep.covers, 2)
+        from PIL import Image
+        with Image.open(dest) as im:
+            self.assertEqual(im.size, (600, 900))
+            self.assertEqual(im.getpixel((300, 450))[0] > 100, True)   # unser Cover (violett), nicht grün
+        with Image.open(card) as im:
+            self.assertEqual(im.size, (600, 900))                      # Titelkarte – GOverlay sucht nicht bei Steam/Bing
+        self.assertFalse(card.with_name(card.name + ".fallback").exists())
+        self.assertEqual(gp.sync_all(self.backend).covers, 0)          # aktuell → nichts geschrieben
+        manifest = gp.read_manifest()
+        self.assertEqual(set(manifest), {gp.goverlay_sanitize(GAME), "Ohne Cover"})
+
+    def test_user_cover_kept_fallback_replaced(self):
+        gp.sync_all(self.backend)
+        dest = gp.cover_path(GAME)
+        mine = jpeg(color=(9, 9, 9))
+        dest.write_bytes(mine)                                         # in GOverlay selbst gesetzt
+        self.assertEqual(gp.sync_all(self.backend).covers, 0)
+        self.assertEqual(dest.read_bytes(), mine)
+        dest.write_bytes(jpeg((150, 215)))                             # GOverlays Platzhalter
+        dest.with_name(dest.name + ".fallback").write_text("")
+        self.assertEqual(gp.sync_all(self.backend).covers, 1)
+        self.assertFalse(dest.with_name(dest.name + ".fallback").exists())
+        self.assertNotEqual(gp.jpeg_size(dest.read_bytes()), (150, 215))
+
+    def test_custom_cover_and_stale_cleanup(self):
+        gp.sync_all(self.backend)
+        custom = self.root / "eigen.png"
+        from PIL import Image
+        Image.new("RGB", (342, 482), (200, 10, 10)).save(custom)
+        self.gs.update("ext-x", custom_cover=str(custom))
+        self.assertEqual(gp.sync_all(self.backend).covers, 1)          # unsere Titelkarte → eigenes Cover
+        with Image.open(gp.cover_path("Ohne Cover")) as im:
+            self.assertGreater(im.getpixel((10, 10))[0], 150)
+        foreign = gp.cover_path("Fremd")
+        foreign.write_bytes(jpeg())
+        self.gs.update("ext-x", hidden=True)                           # Karte verschwindet
+        gp.sync_all(self.backend)
+        self.assertFalse(gp.cover_path("Ohne Cover").exists())         # eigenes Cover der Karte weg
+        self.assertTrue(foreign.exists())                              # fremdes bleibt
+        self.assertNotIn("Ohne Cover", gp.read_manifest())
+
+    def test_without_pillow(self):
+        jpg = self.root / "c.jpg"
+        jpg.write_bytes(b"\xff\xd8\xff\xe0echtes-jpeg")
+        self.gs.update("1", custom_cover=str(jpg))
+        with mock.patch.dict(sys.modules, {"PIL": None}):
+            self.assertIsNone(gp.title_card("x"))
+            rep = gp.sync_all(self.backend)
+        self.assertEqual(rep.covers, 1)                                # JPEG kopiert, Titelkarte übersprungen
+        self.assertEqual(gp.cover_path(GAME).read_bytes(), jpg.read_bytes())
+        self.assertFalse(gp.cover_path("Ohne Cover").exists())
 
 
 # ----------------------------------------------------------------------------- bgmod.conf
@@ -332,6 +458,31 @@ class ProfileTest(TempEnv):
         self.assertEqual(gp.resolve_profile(str(self.game_dir), "", self.settings).kind, "game")
         self.assertEqual(gp.resolve_profile(str(self.game_dir), "global", self.settings).kind, "global")
 
+    def test_lookup_order_card_name_then_folder(self):
+        """Profil aus den Eigenschaften → Kartenname (Titel) → Spielordner (Profile aus 0.3.0)."""
+        game = InstalledGame("1", "LEGO® City Undercover", "windows", str(self.game_dir))
+        gs = GameSettings()
+        self.assertEqual(gp.auto_profile_names(game, gs), ["LEGO City Undercover", PROFILE])
+        names = gp.auto_profile_names(game, gs)
+        self.assertEqual(gp.resolve_profile(str(self.game_dir), "", self.settings, names).name, "LEGO City Undercover")
+        self.profile()                                               # nur das alte Ordner-Profil (0.3.0)
+        self.assertEqual(gp.resolve_profile(str(self.game_dir), "", self.settings, names).name, PROFILE)
+        self.profile("LEGO City Undercover")                         # Profil der neuen Karte geht vor
+        self.assertEqual(gp.resolve_profile(str(self.game_dir), "", self.settings, names).name, "LEGO City Undercover")
+        gs.custom_title = "Eigener Name"
+        self.assertEqual(gp.auto_profile_names(game, gs)[0], "Eigener Name")
+        self.assertEqual(gp.resolve_profile(str(self.game_dir), PROFILE, self.settings, names).name, PROFILE)   # ausdrücklich
+
+    def test_global_profile_only_on_request(self):
+        """Das globale Profil gilt nie von selbst – auch nicht, wenn kein Spielprofil existiert."""
+        self.profile(gp.GLOBAL_PROFILE)
+        game = InstalledGame("1", GAME, "windows", str(self.game_dir))
+        names = gp.auto_profile_names(game)
+        self.assertFalse(self.settings.goverlay_global_fallback)
+        prof = gp.resolve_profile(str(self.game_dir), "", self.settings, names)
+        self.assertEqual(prof.kind, "none")
+        self.assertNotEqual(prof.name, gp.GLOBAL_PROFILE)
+
     def test_symlink_outside_and_long_path(self):
         pdir = self.profile(conf=None, bgmod=False)
         outside = make_exe(self.root / "usr" / "lib" / "bgmod")
@@ -348,13 +499,14 @@ class ProfileTest(TempEnv):
         self.assertIn("255", gp.resolve_profile("/spiele/" + long_name, "", self.settings).reason)
 
     def test_describe_and_status(self):
-        backend = types.SimpleNamespace(settings=self.settings, registry=InstalledRegistry(), game_settings=GameSettingsStore())
+        backend = types.SimpleNamespace(settings=self.settings, registry=InstalledRegistry(), game_settings=GameSettingsStore(),
+                                        _covers={}, _meta={})
         backend.registry.set(InstalledGame("1", GAME, "windows", str(self.game_dir)))
         self.assertIsNone(gp.status_for(backend, "1"))               # GOverlay nicht installiert
         self.install_goverlay()
-        self.assertEqual(gp.status_for(backend, "1"), gp.tr('kein Profil – Spiele-Ordner ist nicht in GOverlay eingetragen'))
-        (self.cfg / "goverlay" / gp.FOLDERS_FILE).write_text(f"{self.games}\n")
-        self.assertEqual(gp.status_for(backend, "1"), gp.tr('kein Profil – in GOverlay das Spiel anklicken'))
+        self.assertEqual(gp.status_for(backend, "1"), gp.tr('kein Profil – das Spiel erscheint nicht in GOverlay (Einstellungen → Kompatibilität → GOverlay)'))
+        gp.sync_all(backend, covers=False)
+        self.assertEqual(gp.status_for(backend, "1"), gp.tr('kein Profil – Spiel in GOverlay anklicken, um sein Profil anzulegen'))
         self.profile()
         self.assertEqual(gp.status_for(backend, "1"), gp.tr('GOverlay-Profil: {0} (pro Spiel)').format(PROFILE))
         backend.game_settings.update("1", goverlay_profile="none")

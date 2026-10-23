@@ -470,6 +470,9 @@ class BackendIdentityTest(unittest.TestCase):
         self.assertEqual((z.title, z.gog_match, z.variant), ("Zeus and Poseidon (1360 x 768)", "1207659039", "1360 x 768"))
         self.assertEqual(z.identity, 0)                                   # ohne Netz: später vollständig erkennen
         self.assertEqual(self.b.copy_of("ext-freelancer-kopie").product_id, "ext-freelancer")
+        from galaxy_linux.launch import goverlay_profiles as gp
+        self.assertEqual([v.name for v in gp.dry_run(self.b)],
+                         ["Freelancer", "Freelancer (HD Edition)", "Zeus and Poseidon", "Zeus and Poseidon (1360 x 768)"])
         from galaxy_linux import library_view as lv
         f = lv.facts(self.b, self.b.entry("ext-freelancer-kopie"))
         self.assertEqual(f.copy_of, "Freelancer")

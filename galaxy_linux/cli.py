@@ -432,16 +432,21 @@ def cmd_goverlay(b: Backend, a) -> int:
 
 
 def cmd_goverlay_status(b: Backend, a) -> int:
-    """GOverlay: eingetragene Ordner und Profil pro Spiel; ``--sync`` gleicht die Ordnerliste ab und legt Cover an."""
+    """GOverlay: Spielkarten, eingetragene Ordner und Profil pro Spiel; ``--sync`` gleicht Ansicht, Ordnerliste und
+    Cover ab, ``--plan`` zeigt die geplanten Karten, ohne etwas zu schreiben."""
     gp = goverlay_profiles
+    if a.plan:
+        for v in gp.dry_run(b):
+            print(f"{v.name}  →  {v.target}")
+        return 0
     if not gp.goverlay_installed():
         print(tr('GOverlay nicht gefunden ({0} fehlt).').format(gp.config_dir()))
         return 1
     if a.sync:
         rep = gp.sync_all(b)
-        f = rep.folders
-        print(tr('Ordnerliste abgeglichen: {0} eingetragen, {1} entfernt, {2} Cover angelegt').format(
-            len(f.added) if f else 0, len(f.removed) if f else 0, rep.covers))
+        v = rep.view
+        print(tr('Spiele in GOverlay: {0} ({1} neu, {2} entfernt), {3} Cover geschrieben').format(
+            len(v.games) if v else 0, len(v.added) if v else 0, len(v.removed) if v else 0, rep.covers))
     ours = {gp.normalize_folder(x) for x in b.settings.goverlay_added_folders}
     print(f"{gp.folders_file()}:")
     for line in gp.read_lines(gp.folders_file()):
@@ -753,7 +758,7 @@ def build_parser() -> argparse.ArgumentParser:
     c = cs.add_parser("locations", help=tr('Installationsorte anzeigen/ergänzen')); c.add_argument("--add"); c.add_argument("--remove")
     s.set_defaults(fn=cmd_config)
     s = sub.add_parser("goverlay-import", help=tr('Startoptionen aus GOverlay/MangoHud ableiten')); s.add_argument("game", nargs="?"); s.set_defaults(fn=cmd_goverlay)
-    s = sub.add_parser("goverlay", help=tr('GOverlay: eingetragene Spiele-Ordner und Profil pro Spiel anzeigen')); s.add_argument("game", nargs="?"); s.add_argument("--sync", action="store_true", help=tr('Spiele-Ordner in GOverlay eintragen (bzw. austragen) und Cover anlegen')); s.set_defaults(fn=cmd_goverlay_status)
+    s = sub.add_parser("goverlay", help=tr('GOverlay: Spielkarten, eingetragene Ordner und Profil pro Spiel anzeigen')); s.add_argument("game", nargs="?"); s.add_argument("--sync", action="store_true", help=tr('Spiele in GOverlay anzeigen (bzw. entfernen) und Cover anlegen')); s.add_argument("--plan", action="store_true", help=tr('Geplante Spielkarten zeigen, ohne etwas zu schreiben')); s.set_defaults(fn=cmd_goverlay_status)
     s = sub.add_parser("updates", help=tr('nach Spiel-Updates suchen')); s.add_argument("--install", action="store_true"); s.set_defaults(fn=cmd_updates)
     s = sub.add_parser("log", help=tr('Protokoll anzeigen (für die Auswertung)')); s.add_argument("--tail", type=int, default=200); s.add_argument("--path", action="store_true"); s.add_argument("--clear", action="store_true"); s.set_defaults(fn=cmd_log)
     s = sub.add_parser("library", help=tr('eigene Bibliotheken anlegen, umbenennen, ändern, löschen')); ls = s.add_subparsers(dest="action", required=True)
