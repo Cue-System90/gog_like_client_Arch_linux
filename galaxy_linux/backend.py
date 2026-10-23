@@ -1056,6 +1056,19 @@ class Backend:
         return self.jobs.add(Job(kind="update", product_id=str(product_id), title=entry.title if entry else str(product_id),
                                  build_id=build_id, **cbs))
 
+    def auto_update(self, found: dict[str, Build]) -> list[str]:
+        """„Spiele automatisch aktualisieren“: Updates der gefundenen Spiele einreihen – nicht für laufende Spiele oder
+        solche, die gerade bearbeitet werden (die kommen bei der nächsten Suche dran)."""
+        queued = []
+        for pid, build in found.items():
+            if self.launcher.is_running(pid) or self.jobs.active_for(pid) or not self.registry.is_installed(pid):
+                continue
+            self.update(pid, build_id=getattr(build, "build_id", "") or "")
+            queued.append(pid)
+        if queued:
+            log.info("Automatische Updates eingereiht: %s", ", ".join(queued))
+        return queued
+
     def verify(self, product_id: str, **cbs) -> Job:
         entry = self.entry(product_id)
         return self.jobs.add(Job(kind="verify", product_id=str(product_id), title=entry.title if entry else str(product_id), **cbs))

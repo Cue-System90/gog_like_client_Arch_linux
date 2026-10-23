@@ -38,10 +38,7 @@ def open_properties(page, pid: str | None) -> None:
     """Eigenschaften des Spiels auf der Seite „Spielfunktionen“ öffnen."""
     if not pid:
         return
-    from .dialogs import GameSettingsDialog
-    dlg = GameSettingsDialog(page.backend, pid, on_changed=page.refresh_state)
-    dlg.set_visible_page_name("features")
-    dlg.present(page.win)
+    page.open_settings("features")
 
 
 # --------------------------------------------------------------------------- Spielansicht

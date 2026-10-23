@@ -126,7 +126,8 @@ class LibrarySyncController:
         elif reason == "manual":
             w.toast(tr('Bibliothek ist aktuell'))
         self._after_purchase_sync(reason, bool(res.new_ids))
-        if reason == "manual" or (s.auto_check_updates and (reason in ("startup", "login") or res.new_ids)):
+        check = s.auto_check_updates or s.feature_auto_update      # automatische Updates brauchen die Suche
+        if reason == "manual" or (check and (reason in ("startup", "login") or res.new_ids)):
             w.check_updates_async(quiet=True)
         self._next()
 
@@ -149,7 +150,7 @@ class LibrarySyncController:
             if reason in ("manual", "login", "purchase"):
                 w.toast(tr('Bibliothek konnte nicht geladen werden: {0}').format(exc))
             self._after_purchase_sync(reason, False)
-        if reason == "startup" and s.auto_check_updates and self.backend.registry.all():
+        if reason == "startup" and (s.auto_check_updates or s.feature_auto_update) and self.backend.registry.all():
             w.check_updates_async(quiet=True)
         self._next()
 

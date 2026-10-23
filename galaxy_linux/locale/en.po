@@ -1037,7 +1037,7 @@ msgstr "{0} games in the library."
 msgid "{0} Spiele installiert, {1} Prefix(e) werden angelegt."
 msgstr "{0} games installed, {1} prefix(es) will be created."
 
-#: galaxy_linux/cli.py
+#: galaxy_linux/cli.py galaxy_linux/ui/window.py
 msgid "{0} abgeschlossen"
 msgstr "{0} finished"
 
@@ -2230,8 +2230,8 @@ msgid "Erfolge"
 msgstr "Achievements"
 
 #: galaxy_linux/ui/dialogs.py
-msgid "Erfolge werden bei unterstützten Spielen im Spiel freigeschaltet, hochgeladen und in galaxy-linux angezeigt."
-msgstr "Achievements are unlocked when playing supported games, then uploaded and displayed in galaxy-linux."
+msgid "Erfolge unterstützter Spiele auf der Spielseite anzeigen. Freigeschaltet werden sie im Spiel über die Galaxy-Dienste (comet)."
+msgstr "Show achievements of supported games on the game page. They are unlocked in-game through the Galaxy services (comet)."
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Erfolge, Statistiken und Bestenlisten für Spiele mit GOG Galaxy-SDK – comet ersetzt den Galaxy-Dienst im Prefix."
@@ -2272,10 +2272,6 @@ msgstr "In-game features"
 #: galaxy_linux/ui/dialogs.py
 msgid "Für Spiele, die nicht von GOG stammen: Jeder Unterordner des Spiele-Ordners wird ein Spiel mit eigenem Prefix im Prefix-Ordner. Jede Bibliothek erscheint in der Seitenleiste unter BIBLIOTHEKEN. Die Vorgaben gelten für ihre Spiele, solange ein Spiel nichts Eigenes eingestellt hat."
 msgstr "For games not from GOG: every subfolder of the games folder becomes a game with its own prefix in the prefix folder. Each library appears in the sidebar under LIBRARIES. The defaults apply to its games as long as a game has no settings of its own."
-
-#: galaxy_linux/ui/dialogs.py
-msgid "GOG Galaxy-Funktionen im Spiel nutzen"
-msgstr "Access GOG Galaxy features in-game"
 
 #: galaxy_linux/ui/dialogs.py
 msgid "GOG hat keinen Anmeldecode übergeben – bitte erneut versuchen."
@@ -2504,6 +2500,10 @@ msgstr "Recreate"
 #: galaxy_linux/ui/dialogs.py
 msgid "Neuer Basisordner für die Installation"
 msgstr "New base folder for the installation"
+
+#: galaxy_linux/ui/dialogs.py
+msgid "Nur für die Windows-Version des Spiels."
+msgstr "Only for the Windows version of the game."
 
 #: galaxy_linux/ui/dialogs.py
 msgid "Oberfläche"
@@ -4146,8 +4146,8 @@ msgid "Noch keine Spiele in „{0}“. Spielordner nach {1} kopieren – sie wer
 msgstr "No games in “{0}” yet. Copy game folders to {1} – they are added automatically once copying is finished – or add any folder with “Add game…”."
 
 #: galaxy_linux/ui/window.py
-msgid "Noch nichts gespielt – installiere ein Spiel aus „Alle Spiele“."
-msgstr "Nothing played yet – install a game from “All games”."
+msgid "Noch nichts gespielt – installiere ein Spiel aus „Spiele im Besitz“."
+msgstr "Nothing played yet – install a game from “Owned games”."
 
 #: galaxy_linux/ui/window.py
 msgid "Ordner durchsuchen"
@@ -4200,6 +4200,10 @@ msgstr "Add game…"
 #: galaxy_linux/ui/window.py
 msgid "Spiel(e) in „{0}“"
 msgstr "game(s) in “{0}”"
+
+#: galaxy_linux/ui/window.py
+msgid "Spiele im Besitz"
+msgstr "Owned games"
 
 #: galaxy_linux/ui/window.py
 msgid "Spiele suchen"
@@ -4256,6 +4260,10 @@ msgstr "Update available"
 #: galaxy_linux/ui/window.py
 msgid "Updates verfügbar für {0} Spiel(e)"
 msgstr "Updates available for {0} game(s)"
+
+#: galaxy_linux/ui/window.py
+msgid "Updates werden installiert: {0} Spiel(e)"
+msgstr "Installing updates: {0} game(s)"
 
 #: galaxy_linux/ui/window.py
 msgid "VERLAUF"

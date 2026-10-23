@@ -7,6 +7,7 @@ import io
 import json
 import tempfile
 import threading
+import types
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -114,6 +115,18 @@ class SettingsFieldsTest(TempPaths):
         gui.library_sync_interval = 30                         # eigene Änderung gewinnt
         gui.save()
         self.assertEqual(json.loads((self.cfg / "settings.json").read_text())["library_sync_interval"], 30)
+
+    def test_auto_update_skips_running_and_busy_games(self):
+        from galaxy_linux.backend import Backend
+        queued = []
+        fake = types.SimpleNamespace(
+            launcher=types.SimpleNamespace(is_running=lambda pid: pid == "laeuft"),
+            jobs=types.SimpleNamespace(active_for=lambda pid: object() if pid == "busy" else None),
+            registry=types.SimpleNamespace(is_installed=lambda pid: pid != "weg"),
+            update=lambda pid, build_id="": queued.append((pid, build_id)))
+        found = {k: types.SimpleNamespace(build_id=f"b-{k}") for k in ("ok", "laeuft", "busy", "weg")}
+        self.assertEqual(Backend.auto_update(fake, found), ["ok"])
+        self.assertEqual(queued, [("ok", "b-ok")])
 
     def test_concurrent_updates_keep_all_fields(self):
         store = GameSettingsStore()

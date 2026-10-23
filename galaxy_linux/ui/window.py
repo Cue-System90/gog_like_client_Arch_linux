@@ -530,7 +530,7 @@ class MainWindow(Adw.ApplicationWindow):
         box.append(store.build_sidebar_group(self, NavItem))
         section(tr('SPIELE'))
         item("recent", tr('Zuletzt gespielt'), pick_icon("document-open-recent-symbolic", "alarm-symbolic"))
-        item("all", tr('Alle Spiele'), pick_icon("view-grid-symbolic", "view-app-grid-symbolic"))
+        item("all", tr('Spiele im Besitz'), pick_icon("view-grid-symbolic", "view-app-grid-symbolic"))
         item("installed", tr('Installiert'), pick_icon("computer-symbolic", "video-display-symbolic"))
         item("downloads", tr('Downloads'), pick_icon("folder-download-symbolic", "go-down-symbolic"))
         # BIBLIOTHEKEN: eigene Bibliotheken (wie die Plattform-Einträge in Galaxy 2.0), „+“ legt eine neue an
@@ -741,7 +741,7 @@ class MainWindow(Adw.ApplicationWindow):
             if v["sections"]:
                 add(tr('Kürzlich installiert'), [e for e in recent_inst if e])
             if not played and not inst:
-                self.lib_box.append(label(tr('Noch nichts gespielt – installiere ein Spiel aus „Alle Spiele“.'), css=["dim"]))
+                self.lib_box.append(label(tr('Noch nichts gespielt – installiere ein Spiel aus „Spiele im Besitz“.'), css=["dim"]))
         else:
             if v["sections"]:
                 add(tr('Neu in der Bibliothek'), self.library_sync.new_entries(ents))
@@ -927,7 +927,12 @@ class MainWindow(Adw.ApplicationWindow):
         name = user.get("username") or ("" if not self.backend.api.logged_in else tr('GOG'))
         self.avatar.set_text(name or tr('GOG'))
         self.avatar_btn.set_tooltip_text(name or tr('Nicht angemeldet'))
-        self.avatar_btn.set_popover(menus.avatar_popover(self))
+        # das Menü nur neu bauen, wenn sich Anmeldung oder Name ändern – ein Abgleich im Hintergrund (Timer, Fokus)
+        # würde sonst ein gerade geöffnetes Avatar-Menü schließen
+        key = (self.backend.api.logged_in, name)
+        if key != getattr(self, "_avatar_key", None) and not self.avatar_btn.get_active():
+            self._avatar_key = key
+            self.avatar_btn.set_popover(menus.avatar_popover(self))
         url = user.get("avatar") or ""
         if url and not url.lower().endswith((".jpg", ".png", ".webp")):
             url += "_avm.jpg"
@@ -968,7 +973,12 @@ class MainWindow(Adw.ApplicationWindow):
             if self.current_pid:
                 self.page.refresh_state()
             self.update_nav_badges()
-            if found:
+            queued = self.backend.auto_update(found) if found and self.backend.settings.feature_auto_update else []
+            if queued:
+                self.toast(tr('Updates werden installiert: {0} Spiel(e)').format(len(queued)))
+                if self.current_pid:
+                    self.page.refresh_state()
+            elif found:
                 self.toast(tr('Updates verfügbar für {0} Spiel(e)').format(len(found)))
             elif not quiet:
                 self.toast(tr('Alle installierten Spiele sind aktuell'))
@@ -1241,8 +1251,12 @@ class MainWindow(Adw.ApplicationWindow):
                 done, self._prefix_done = self._prefix_done, []
                 self.toast(tr('Prefix angelegt: {0}').format(done[0]) if len(done) == 1 else tr('{0} Prefixe angelegt').format(len(done)))
         elif job.state == "done":
-            self.toast(tr('{0} abgeschlossen: {1}').format(job.label, job.title))
-            if is_lib_view(self.view):
+            self.toast(tr('{0} abgeschlossen: {1}').format(job.label, job.title) if job.title != job.label
+                       else tr('{0} abgeschlossen').format(job.label))
+            # Aufträge ohne Spiel der Bibliothek (z. B. Galaxy-Redistributables) ändern keine Karte – kein Neuaufbau,
+            # der die Bibliothek nach oben springen ließe
+            if is_lib_view(self.view) and (self.backend.registry.is_installed(job.product_id)
+                                           or self.backend.entry(job.product_id) is not None):
                 self._rebuild_library()
         elif job.state == "failed":
             self.toast(tr('{0} fehlgeschlagen: {1}').format(job.label, job.error))

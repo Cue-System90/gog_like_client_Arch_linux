@@ -93,7 +93,8 @@ class StoreSidebar:
         self.widget.append(label(tr('GOG STORE'), css=["nav-section"]))
         entries = (
             ("home", tr('Startseite'), pick_icon("go-home-symbolic", "user-home-symbolic")),
-            ("games", tr('Alle Spiele'), pick_icon("view-grid-symbolic", "view-app-grid-symbolic")),
+            ("games", tr('Alle Spiele'), pick_icon("system-software-install-symbolic", "applications-games-symbolic",
+                                                    "view-app-grid-symbolic")),
             ("deals", tr('Einkaufen'), pick_icon("tag-symbolic", "emblem-favorite-symbolic")),
             ("wishlist", tr('Wunschliste'), pick_icon("starred-symbolic", "emblem-favorite-symbolic")),
             ("cart", tr('Warenkorb'), pick_icon("shopping-cart-symbolic", "amarok_cart_view-symbolic", "cart-symbolic",

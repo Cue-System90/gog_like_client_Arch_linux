@@ -596,7 +596,14 @@ class GamePage(Gtk.Box):
             self.progress_status.set_text(tr('WIRD ABGEBROCHEN …'))
 
     def _on_settings(self, *_: object) -> None:
-        GameSettingsDialog(self.backend, self.pid, on_changed=lambda: (self._fill_quick(), self.refresh_state())).present(self.win)
+        self.open_settings()
+
+    def open_settings(self, page: str = "") -> None:
+        """Eigenschaften öffnen (optional auf einer Seite); Änderungen erscheinen sofort auf der Spielseite."""
+        dlg = GameSettingsDialog(self.backend, self.pid, on_changed=lambda: (self._fill_quick(), self.refresh_state()))
+        if page:
+            dlg.set_visible_page_name(page)
+        dlg.present(self.win)
 
     def _on_tool_changed(self, *_: object) -> None:
         if self._building or not self.pid:
@@ -690,6 +697,8 @@ class GamePage(Gtk.Box):
     def _load_achievements(self) -> None:
         pid = self.pid
         self.stat_ach.set("–")
+        if not self.backend.settings.feature_achievements:     # Einstellungen → Spielfunktionen → Erfolge
+            return
         rec = read_json(paths.MANIFEST_DIR / f"{pid}.json", {})
         cid, secret = rec.get("client_id"), rec.get("client_secret")
         if not (cid and secret and self.backend.api.logged_in):

@@ -664,15 +664,19 @@ class GameSettingsDialog(Adw.PreferencesDialog):
         grp = Adw.PreferencesGroup(title=tr('Funktionen'),
                                    description=tr('Abweichend von „Einstellungen → Spielfunktionen“ nur für dieses Spiel.'))
         gog = self.installed is not None and self.installed.method != "external" and not self.pid.startswith("ext-")
+        # Cloud-Spielstände und comet gibt es nur für die Windows-Versionen (Linux-Versionen haben bei GOG keine)
+        windows = gog and self.installed.platform == "windows"
         s = self.backend.settings
         modes = ["", "on", "off"]
         for key, title, glob in (("cloud_saves", tr('Lokale Spielstände mit der GOG Galaxy-Cloud synchronisieren'), s.feature_cloud_saves),
-                                 ("galaxy_services", tr('GOG Galaxy-Funktionen im Spiel nutzen'), s.feature_galaxy_services)):
+                                 ("galaxy_services", tr('Galaxy-Dienste im Spiel (comet)'), s.feature_galaxy_services)):
             row = Adw.ComboRow(title=title, model=Gtk.StringList.new(
                 [tr('Globale Vorgabe ({0})').format(tr('an') if glob else tr('aus')), tr('An'), tr('Aus')]))
             cur = getattr(self.gs, key)
             row.set_selected(modes.index(cur) if cur in modes else 0)
-            row.set_sensitive(gog)
+            row.set_sensitive(windows)
+            if gog and not windows:
+                row.set_subtitle(tr('Nur für die Windows-Version des Spiels.'))
             row.connect("notify::selected", lambda r, _, k=key: self._save(**{k: modes[r.get_selected()]}))
             grp.add(row)
         page.add(grp)
@@ -1119,7 +1123,7 @@ class PreferencesDialog(Adw.PreferencesDialog):
                  tr('Cloud-Spielstände lädt deine Spielstände herunter, wenn du ein unterstütztes GOG-Spiel installierst. Außerdem werden die Spielstände vor und nach jeder Session synchronisiert.')))),
             (tr('Funktionen im Spiel'), "", (
                 ("feature_achievements", tr('Erfolge'),
-                 tr('Erfolge werden bei unterstützten Spielen im Spiel freigeschaltet, hochgeladen und in galaxy-linux angezeigt.')),
+                 tr('Erfolge unterstützter Spiele auf der Spielseite anzeigen. Freigeschaltet werden sie im Spiel über die Galaxy-Dienste (comet).')),
                 ("feature_galaxy_services", tr('Galaxy-Dienste im Spiel (comet)'),
                  tr('Erfolge, Statistiken und Bestenlisten für Spiele mit GOG Galaxy-SDK – comet ersetzt den Galaxy-Dienst im Prefix.')),
                 ("sync_playtime", tr('Erfassung der Spielzeit'),
