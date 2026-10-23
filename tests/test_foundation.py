@@ -93,6 +93,28 @@ class SettingsFieldsTest(TempPaths):
         self.assertEqual(raw["1"]["cloud_saves"], "off")
         self.assertEqual(raw["1"]["launch_options"], "mangohud %command%")
 
+    def test_other_process_changes_survive(self):
+        """Oberfläche mit altem Stand im Speicher und Kommandozeile schreiben dieselben Dateien."""
+        gui_games = GameSettingsStore()
+        cli_games = GameSettingsStore()                        # „anderer Prozess“
+        cli_games.update("X", setup_done=["X:5"], cloud_timestamps={"saves": 3.0})
+        gui_games.update("Y", favorite=True)                  # GUI kennt X noch nicht
+        raw = json.loads((self.cfg / "games.json").read_text())
+        self.assertEqual(raw["X"]["setup_done"], ["X:5"])
+        self.assertTrue(raw["Y"]["favorite"])
+        self.assertEqual(gui_games.get("X").cloud_timestamps, {"saves": 3.0})   # liest geänderte Datei neu
+        gui = GlobalSettings.load()
+        cli = GlobalSettings.load()
+        cli.library_sync_interval = 0
+        cli.save()
+        gui.ui_language = "en"
+        gui.save()                                             # darf das Intervall nicht zurücksetzen
+        raw = json.loads((self.cfg / "settings.json").read_text())
+        self.assertEqual((raw["library_sync_interval"], raw["ui_language"]), (0, "en"))
+        gui.library_sync_interval = 30                         # eigene Änderung gewinnt
+        gui.save()
+        self.assertEqual(json.loads((self.cfg / "settings.json").read_text())["library_sync_interval"], 30)
+
     def test_concurrent_updates_keep_all_fields(self):
         store = GameSettingsStore()
         fields = [("cloud_saves", "on"), ("galaxy_services", "off"), ("goverlay_profile", "none"), ("hidden", True),

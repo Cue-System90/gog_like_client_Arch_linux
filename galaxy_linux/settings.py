@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from . import paths
-from .jsonstore import read_json, write_json
+from .jsonstore import file_lock, read_json, write_json
 
 
 def _system_language() -> str:
@@ -182,6 +182,7 @@ class GlobalSettings:
         s.libraries = libs
         if "libraries" not in raw:
             s._migrate_external(raw)
+        object.__setattr__(s, "_saved", asdict(s))
         return s
 
     def _migrate_external(self, raw: dict[str, Any]) -> None:
@@ -201,8 +202,19 @@ class GlobalSettings:
         self.save()
 
     def save(self) -> None:
-        with GlobalSettings._lock:
-            write_json(paths.SETTINGS_FILE, asdict(self))
+        """Speichern. Geladene Einstellungen schreiben nur die Felder, die dieser Prozess seit dem Laden bzw. letzten
+        Speichern geändert hat – Änderungen anderer Prozesse (``galaxy-linux config global …`` bei offener Oberfläche)
+        bleiben erhalten statt vom alten Stand im Speicher überschrieben zu werden."""
+        with GlobalSettings._lock, file_lock(paths.SETTINGS_FILE):
+            mine = asdict(self)
+            base = self.__dict__.get("_saved")
+            data = mine
+            if base is not None:
+                disk = read_json(paths.SETTINGS_FILE, None)
+                if isinstance(disk, dict):
+                    data = {k: (disk[k] if k in disk and k in base and base[k] == v else v) for k, v in mine.items()}
+            write_json(paths.SETTINGS_FILE, data)
+            object.__setattr__(self, "_saved", mine)
 
 
 @dataclass
@@ -263,26 +275,55 @@ def coerce_value(current: Any, raw: str) -> Any:
 
 
 class GameSettingsStore:
+    """games.json. Auch andere Prozesse schreiben sie (Oberfläche, ``galaxy-linux launch``/``config``): ``get`` liest
+    die Datei neu, wenn sie sich geändert hat, ``set``/``update`` ändern unter einer Datei-Sperre nur das eine Spiel
+    auf dem aktuellen Stand der Datei."""
+
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._data: dict[str, dict[str, Any]] = read_json(paths.GAME_SETTINGS_FILE, {})
+        self._mtime = self._file_mtime()
+
+    @staticmethod
+    def _file_mtime() -> int | None:
+        try:
+            return os.stat(paths.GAME_SETTINGS_FILE).st_mtime_ns
+        except OSError:
+            return None
+
+    def _reload(self, force: bool = False) -> None:
+        mtime = self._file_mtime()
+        if mtime is None or (mtime == self._mtime and not force):
+            return
+        disk = read_json(paths.GAME_SETTINGS_FILE, None)
+        if isinstance(disk, dict):
+            self._data = disk
+            self._mtime = mtime
 
     def get(self, product_id: str) -> GameSettings:
-        return _from_dict(GameSettings, self._data.get(str(product_id)))
+        with self._lock:
+            self._reload()
+            raw = self._data.get(str(product_id))
+        return _from_dict(GameSettings, raw)
 
     def set(self, product_id: str, settings: GameSettings) -> None:
-        with self._lock:
+        with self._lock, file_lock(paths.GAME_SETTINGS_FILE):
+            self._reload(force=True)
             self._data[str(product_id)] = asdict(settings)
             write_json(paths.GAME_SETTINGS_FILE, self._data)
+            self._mtime = self._file_mtime()
 
     def update(self, product_id: str, **changes: Any) -> GameSettings:
-        """Einzelne Felder ändern – Lesen und Schreiben unter einer Sperre (Hooks schreiben aus Arbeits-Threads)."""
-        with self._lock:
+        """Einzelne Felder ändern – Lesen und Schreiben unter einer Sperre (Hooks schreiben aus Arbeits-Threads,
+        andere Prozesse dieselbe Datei)."""
+        with self._lock, file_lock(paths.GAME_SETTINGS_FILE):
+            self._reload(force=True)
             s = _from_dict(GameSettings, self._data.get(str(product_id)))
             for k, v in changes.items():
                 setattr(s, k, v)
             self._data[str(product_id)] = asdict(s)
             write_json(paths.GAME_SETTINGS_FILE, self._data)
+            self._mtime = self._file_mtime()
         return s
 
 
