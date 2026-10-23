@@ -296,6 +296,63 @@ class LaunchFlowTest(TempLauncherBase):
             self.launcher.launch("2")
         self.assertFalse(self.launcher.is_running("2"))
 
+    def test_cancel_during_preparation(self):
+        """BEENDEN vor dem Spielstart: laufender Hook endet, weitere laufen nicht, kein Prozess."""
+        calls: list = []
+        entered, go_on = threading.Event(), threading.Event()
+        launcher = self.launcher
+
+        class Slow(LaunchHook):
+            name, order = "slow", 10
+
+            def prepare(self, ctx):
+                entered.set()
+                go_on.wait(5)
+
+        hooks.register_hook(Slow())
+        hooks.register_hook(Recorder("danach", 20, calls))
+        result: dict = {}
+
+        def run():
+            try:
+                launcher.launch("2")
+            except LaunchError as exc:
+                result["error"] = str(exc)
+        with mock.patch("subprocess.Popen") as popen:
+            th = threading.Thread(target=run)
+            th.start()
+            self.assertTrue(entered.wait(5))
+            self.assertEqual(launcher.phase("2"), "starting")
+            self.assertEqual(launcher.active_ids(), ["2"])
+            self.assertTrue(launcher.cancel_start("2"))
+            go_on.set()
+            th.join(5)
+            popen.assert_not_called()
+        self.assertEqual(result["error"], hooks.tr('Start abgebrochen.'))
+        self.assertEqual(calls, [("adjust", "danach")])              # prepare lief nicht mehr
+        self.assertEqual((launcher.phase("2"), launcher.active_ids()), ("", []))
+        self.assertFalse(launcher.cancel_start("2"))
+
+    def test_needs_after_exit(self):
+        calls: list = []
+
+        class Only(LaunchHook):
+            name = "nur-vorher"
+
+            def prepare(self, ctx):
+                pass
+
+        class Maybe(Recorder):
+            def wants_after_exit(self, ctx):
+                return bool(ctx.data.get("x"))
+        hooks.register_hook(Only())
+        hooks.register_hook(Recorder("cloud", 30, calls))
+        hooks.register_hook(Maybe("comet", 25, calls))
+        ctx = self.launcher.make_context("2", None)
+        self.assertEqual(hooks.needs_after_exit(ctx), ["cloud"])
+        ctx.data["x"] = True
+        self.assertEqual(hooks.needs_after_exit(ctx), ["comet", "cloud"])
+
     def test_preview_plan_only_adjusts(self):
         calls: list = []
 
@@ -395,6 +452,9 @@ class ConsoleBridgeTest(unittest.TestCase):
                 self.assertEqual(ConsoleBridge().ask("T", "B", self.OPTS, "cloud"), "cloud")
             with mock.patch("builtins.input", return_value="local"):
                 self.assertEqual(ConsoleBridge().ask("T", "B", self.OPTS, "cloud"), "local")
+            with mock.patch("builtins.input", side_effect=KeyboardInterrupt):   # Strg+C bricht ab statt Vorgabe
+                with self.assertRaises(KeyboardInterrupt):
+                    ConsoleBridge().ask("T", "B", self.OPTS, "cloud")
 
     def test_launcher_default_bridge(self):
         self.assertIsInstance(Launcher(GlobalSettings(), mock.Mock(), mock.Mock(), mock.Mock()).ui_bridge, ConsoleBridge)

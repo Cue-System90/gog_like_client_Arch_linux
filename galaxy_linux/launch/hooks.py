@@ -15,7 +15,8 @@ ausführen“); dort ist ``ctx.prepare_only`` gesetzt und ``ctx.plan`` kann ``No
 Auch das läuft in einem Arbeits-Thread (Oberfläche: ``run_async``).
 
 Ein Hook, der eine Ausnahme wirft, wird protokolliert und über ``ctx.status`` gemeldet; der Start läuft weiter.
-Nur ``LaunchError`` aus ``prepare`` bricht den Start bewusst ab.
+Nur ``LaunchError`` aus ``prepare`` bricht den Start bewusst ab – ebenso ``ctx.cancel`` (BEENDEN während der
+Vorbereitung, ``Launcher.cancel_start``): vor und nach jedem Hook geprüft; lange Schritte prüfen es selbst.
 
 Neue Hooks liegen als eigene Module ``galaxy_linux/launch/hook_<name>.py`` und rufen beim Import
 ``register_hook(MeinHook())`` auf; ``load_builtin_hooks()`` importiert alle diese Module automatisch (beim Anlegen
@@ -71,8 +72,9 @@ class ConsoleBridge:
             print(f"  {i}) {label}" + (" *" if oid == default_id else ""), file=sys.stderr)
         try:
             ans = input(tr('Auswahl [Eingabe = Vorgabe]: ')).strip()
-        except (EOFError, KeyboardInterrupt):
+        except EOFError:
             return default_id
+        # Strg+C (KeyboardInterrupt) bricht den Start ab, statt die Vorgabe zu wählen und weiterzumachen
         if ans.isdigit() and 1 <= int(ans) <= len(options):
             return ids[int(ans) - 1]
         return ans if ans in ids else default_id
@@ -102,6 +104,7 @@ class LaunchContext:
     api: Any = None
     prepare_only: bool = False     # run_prepare_only(): nur Prefix-Einrichtung, kein Spielstart
     preview: bool = False          # preview_plan(): nur adjust_plan(), nichts ausführen
+    cancel: threading.Event = field(default_factory=threading.Event)   # Start abbrechen (BEENDEN während der Vorbereitung)
 
     @property
     def is_windows(self) -> bool:
@@ -157,6 +160,10 @@ class LaunchHook:
 
     def after_exit(self, ctx: LaunchContext, exit_code: int, minutes: int) -> None:
         """Nach dem Spielende (im Überwachungs-Thread), z. B. Cloud-Upload."""
+
+    def wants_after_exit(self, ctx: LaunchContext) -> bool:
+        """Hat ``after_exit`` für diesen Start etwas zu tun? (Vorgabe: ja, wenn überschrieben)"""
+        return True
 
 
 _hooks: dict[str, LaunchHook] = {}
@@ -227,12 +234,20 @@ def run_adjust(ctx: LaunchContext, items: list[LaunchHook] | None = None) -> lis
     return ran
 
 
+def _check_cancel(ctx: LaunchContext) -> None:
+    from .launcher import LaunchError
+    if ctx.cancel.is_set():
+        raise LaunchError(tr('Start abgebrochen.'))
+
+
 def run_prepare(ctx: LaunchContext, items: list[LaunchHook] | None = None, setup_only: bool = False) -> list[str]:
     """``prepare`` aller aktiven Hooks. Gibt die Namen der ausgeführten Hooks zurück.
-    ``LaunchError`` bricht ab (wird weitergereicht), andere Fehler werden gemeldet und übergangen."""
+    ``LaunchError`` bricht ab (wird weitergereicht), andere Fehler werden gemeldet und übergangen; ist ``ctx.cancel``
+    gesetzt, endet die Vorbereitung mit ``LaunchError`` („Start abgebrochen.“)."""
     from .launcher import LaunchError
     ran: list[str] = []
     for h in _active(ctx, items, setup_only):
+        _check_cancel(ctx)
         try:
             h.prepare(ctx)
             ran.append(h.name)
@@ -240,13 +255,23 @@ def run_prepare(ctx: LaunchContext, items: list[LaunchHook] | None = None, setup
             log.warning("Hook %s bricht den Start ab", h.name)
             raise
         except Exception as exc:
+            if ctx.cancel.is_set():
+                raise LaunchError(tr('Start abgebrochen.')) from exc
             log.warning("Hook %s (Vorbereitung) fehlgeschlagen: %s", h.name, exc, exc_info=True)
             ctx.log_line(f"--- Hook {h.name} fehlgeschlagen: {exc}")
             try:
                 ctx.status(tr('Vorbereitung „{0}“ fehlgeschlagen: {1}').format(h.title or h.name, exc))
             except Exception:  # pragma: no cover
                 pass
+    _check_cancel(ctx)
     return ran
+
+
+def needs_after_exit(ctx: LaunchContext, items: list[LaunchHook] | None = None) -> list[str]:
+    """Namen der aktiven Hooks, die nach dem Spielende noch etwas tun (Cloud-Upload, comet freigeben …) – solange
+    darf der Prozess nicht enden (Oberfläche: Fenster schließen, CLI: ``launch --no-wait``)."""
+    return [h.name for h in _active(ctx, items, False)
+            if type(h).after_exit is not LaunchHook.after_exit and h.wants_after_exit(ctx)]
 
 
 def run_after_exit(ctx: LaunchContext, exit_code: int, minutes: int, items: list[LaunchHook] | None = None) -> list[str]:

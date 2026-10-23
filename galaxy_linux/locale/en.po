@@ -294,6 +294,10 @@ msgid "\nAbgebrochen."
 msgstr "\nCanceled."
 
 #: galaxy_linux/cli.py
+msgid "\nSpiel wird beendet – danach werden die Spielstände synchronisiert (erneut Strg+C: sofort beenden) …"
+msgstr "\nStopping the game – saves are synced afterwards (Ctrl+C again: quit immediately) …"
+
+#: galaxy_linux/cli.py
 msgid "\numu-run: {0} · GOverlay: {1} · MangoHud: {2} · vkBasalt: {3} · GameMode: {4} · Gamescope: {5}"
 msgstr "\numu-run: {0} · GOverlay: {1} · MangoHud: {2} · vkBasalt: {3} · GameMode: {4} · Gamescope: {5}"
 
@@ -770,6 +774,10 @@ msgid "Verknüpfung im Startmenü/auf dem Schreibtisch anlegen oder entfernen"
 msgstr "create or remove shortcut in the application menu/on the desktop"
 
 #: galaxy_linux/cli.py
+msgid "Warte trotz --no-wait auf das Spielende ({0})."
+msgstr "Waiting for the game to end despite --no-wait ({0})."
+
+#: galaxy_linux/cli.py
 msgid "Wayland-Treiber-Vorgabe"
 msgstr "Wayland driver default"
 
@@ -944,6 +952,10 @@ msgstr "no"
 #: galaxy_linux/cli.py
 msgid "neuer Basisordner (das Spiel bekommt dort seinen Unterordner)"
 msgstr "new base folder (the game gets its own subfolder there)"
+
+#: galaxy_linux/cli.py
+msgid "nicht auf das Spielende warten (außer Cloud-Spielstände oder Galaxy-Dienste brauchen es)"
+msgstr "do not wait for the game to end (unless cloud saves or Galaxy services need it)"
 
 #: galaxy_linux/cli.py
 msgid "nur Befehl anzeigen"
@@ -1888,6 +1900,10 @@ msgstr "Choice [Enter = default]: "
 #: galaxy_linux/launch/hooks.py
 msgid "Nachbereitung „{0}“ fehlgeschlagen: {1}"
 msgstr "Post-processing \"{0}\" failed: {1}"
+
+#: galaxy_linux/launch/hooks.py
+msgid "Start abgebrochen."
+msgstr "Launch cancelled."
 
 #: galaxy_linux/launch/hooks.py
 msgid "Vorbereitung „{0}“ fehlgeschlagen: {1}"
@@ -3378,12 +3394,24 @@ msgid "Schreibtisch-Verknüpfung entfernen"
 msgstr "Remove desktop shortcut"
 
 #: galaxy_linux/ui/game_page.py
+msgid "Spiel beenden"
+msgstr "Stop game"
+
+#: galaxy_linux/ui/game_page.py
 msgid "Spiel versteckt (Filter → Versteckte anzeigen)"
 msgstr "Game hidden (Filter → Show hidden games)"
 
 #: galaxy_linux/ui/game_page.py galaxy_linux/ui/window.py
 msgid "Spielzeit"
 msgstr "Playtime"
+
+#: galaxy_linux/ui/game_page.py
+msgid "Start abbrechen"
+msgstr "Cancel launch"
+
+#: galaxy_linux/ui/game_page.py
+msgid "Start wird abgebrochen …"
+msgstr "Cancelling launch …"
 
 #: galaxy_linux/ui/game_page.py
 msgid "Startmenü"

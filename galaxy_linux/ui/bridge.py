@@ -36,6 +36,8 @@ class GtkBridge:
 
         def show() -> None:
             try:
+                if not self.window.get_visible():      # Fenster während des Spielens geschlossen: wieder zeigen
+                    self.window.present()
                 dlg = Adw.AlertDialog.new(title, body)
                 for oid, text in options:
                     dlg.add_response(oid, text)

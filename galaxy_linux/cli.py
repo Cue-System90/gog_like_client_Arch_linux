@@ -16,7 +16,7 @@ from .api import auth, library_sync
 from .api.client import ApiError, NotLoggedIn
 from .backend import Backend, Job
 from .content.installer import InstallError
-from .launch import compat, goverlay, goverlay_profiles, launch_options
+from .launch import compat, goverlay, goverlay_profiles, hooks as launch_hooks, launch_options
 from .launch.launcher import LaunchError
 from .settings import InstalledGame, coerce_value, format_bytes, format_minutes
 from .ui.util import fmt_eta, fmt_speed
@@ -302,12 +302,23 @@ def cmd_launch(b: Backend, a) -> int:
     rg = b.launch(pid, task, extra, on_exit=on_exit, status_cb=lambda s: print(s, file=sys.stderr))
     print(tr('Gestartet (PID {0}, {1}); Protokoll: {2}').format(rg.process.pid, rg.plan.description, rg.log_file))
     if a.no_wait:
-        return 0
+        pending = launch_hooks.needs_after_exit(rg.ctx) if rg.ctx is not None else []
+        if not pending:
+            return 0
+        # Cloud-Upload und comet brauchen diesen Prozess bis nach dem Spielende
+        print(tr('Warte trotz --no-wait auf das Spielende ({0}).').format(", ".join(pending)), file=sys.stderr)
     try:
         while "code" not in done:
             time.sleep(0.5)
     except KeyboardInterrupt:
         rg.terminate()
+        print(tr('\nSpiel wird beendet – danach werden die Spielstände synchronisiert (erneut Strg+C: sofort beenden) …'),
+              file=sys.stderr)
+        try:
+            while "code" not in done:
+                time.sleep(0.5)
+        except KeyboardInterrupt:
+            pass
         return 130
     print(tr('Beendet mit Code {0} nach {1} Min.').format(done['code'], done['minutes']))
     return 0 if done["code"] == 0 else done["code"]
@@ -729,7 +740,7 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("prefixes", help=tr('Prefixe global verwalten')); s.add_argument("--create-missing", action="store_true"); s.add_argument("--delete-orphans", action="store_true"); s.add_argument("--library", help=tr('nur diese Bibliothek')); s.add_argument("-y", "--yes", action="store_true"); s.set_defaults(fn=cmd_prefixes)
     s = sub.add_parser("shortcut", help=tr('Verknüpfung im Startmenü/auf dem Schreibtisch anlegen oder entfernen')); s.add_argument("game"); s.add_argument("--menu", action="store_true"); s.add_argument("--desktop", action="store_true"); s.add_argument("--remove", action="store_true"); s.set_defaults(fn=cmd_shortcut)
     s = sub.add_parser("uninstall", help=tr('deinstallieren')); s.add_argument("game"); s.add_argument("--prefix", action="store_true", help=tr('Wine-Prefix mitlöschen')); s.add_argument("-y", "--yes", action="store_true"); s.set_defaults(fn=cmd_uninstall)
-    s = sub.add_parser("launch", help=tr('starten')); s.add_argument("game"); s.add_argument("--task", help=tr('Name der Startdatei (playTask)')); s.add_argument("--dry-run", action="store_true", help=tr('nur Befehl anzeigen')); s.add_argument("--no-wait", action="store_true"); s.add_argument("args", nargs="*", help=tr('zusätzliche Argumente für das Spiel (nach --)')); s.set_defaults(fn=cmd_launch)
+    s = sub.add_parser("launch", help=tr('starten')); s.add_argument("game"); s.add_argument("--task", help=tr('Name der Startdatei (playTask)')); s.add_argument("--dry-run", action="store_true", help=tr('nur Befehl anzeigen')); s.add_argument("--no-wait", action="store_true", help=tr('nicht auf das Spielende warten (außer Cloud-Spielstände oder Galaxy-Dienste brauchen es)')); s.add_argument("args", nargs="*", help=tr('zusätzliche Argumente für das Spiel (nach --)')); s.set_defaults(fn=cmd_launch)
     s = sub.add_parser("tools", help=tr('gefundene Proton-/Wine-Versionen')); s.add_argument("--json", action="store_true"); s.set_defaults(fn=cmd_tools)
     s = sub.add_parser("config", help=tr('Einstellungen anzeigen und ändern')); cs = s.add_subparsers(dest="what", required=True)
     c = cs.add_parser("show", help=tr('Pro-Spiel-Einstellungen zeigen')); c.add_argument("game")

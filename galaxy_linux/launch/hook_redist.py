@@ -143,12 +143,15 @@ def _progress_text(job: Job) -> str:
 
 
 def fetch_with_job(backend: Any, ids: list[str], status: Callable[[str], None] | None = None,
-                   poll: float = 0.25) -> Job:
-    """Fehlende Redistributables vor einem Start laden – sichtbar als Auftrag. Läuft gerade einer, wird gewartet;
-    sonst läuft ein eigener sofort in diesem Thread (nicht hinter einer Spiel-Installation in der Warteschlange)."""
+                   poll: float = 0.25, cancel: threading.Event | None = None) -> Job:
+    """Fehlende Redistributables vor einem Start laden – sichtbar als Auftrag. Läuft gerade einer, wird gewartet
+    (bis ``cancel``); sonst läuft ein eigener sofort in diesem Thread (nicht hinter einer Spiel-Installation in der
+    Warteschlange)."""
     active = next((j for j in backend.jobs.active() if j.kind == redist.JOB_KIND and j.state == "running"), None)
     if active is not None:
         while active.active:
+            if cancel is not None and cancel.is_set():
+                return active
             if status:
                 status(_progress_text(active))
             time.sleep(poll)
@@ -222,7 +225,7 @@ def ensure_redists(ctx: LaunchContext, ids: list[str]) -> bool:
     try:
         backend = attached_backend()
         if backend is not None:
-            job = fetch_with_job(backend, ids, ctx.status)
+            job = fetch_with_job(backend, ids, ctx.status, cancel=ctx.cancel)
             if job.state != "done":
                 log.warning("Galaxy-Redistributables nicht geladen: %s", job.error or job.state)
         else:
@@ -342,6 +345,9 @@ def setup_prefix(ctx: LaunchContext) -> dict[str, Any]:
     steps = make_steps(ctx, record, with_redist)       # Pfade neu auflösen (jetzt im gemeinsamen Ordner)
     due = [s for s in steps if redist.step_due(state, s.key)]
     for i, step in enumerate(due, 1):
+        if ctx.cancel.is_set():                         # Start abgebrochen: Rest bleibt für den nächsten Start offen
+            out["pending"].extend(s.key for s in due[i - 1:])
+            break
         if step.kind == "isi" and not support_ok:
             # ISI liest die Skripte aus /supportDir – ohne Support-Dateien bliebe es wirkungslos
             log.info("Einrichtung %s: %s bleibt offen (Support-Dateien fehlen)", pid, step.key)

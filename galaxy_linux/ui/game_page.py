@@ -44,6 +44,8 @@ class GamePage(Gtk.Box):
         self.meta = None
         self._tool_ids: list[str] = []
         self._building = False
+        # letzte Meldung von Start/Nachbereitung je Spiel: (Text, Ergebnis?) – Zwischenstände enden auf „…“
+        self._hook_status: dict[str, tuple[str, bool]] = {}
 
         scrolled = Gtk.ScrolledWindow(vexpand=True, hscrollbar_policy=Gtk.PolicyType.NEVER)
         content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -332,7 +334,8 @@ class GamePage(Gtk.Box):
         self._clear(self.tag_box)
         self.ach_box.set_visible(False)
         self._clear_flow(self.ach_icons)
-        self.status_lbl.set_text("")
+        self.status_lbl.set_text(self._hook_status.get(self.pid, ("", False))[0]
+                                 if self.backend.launcher.is_running(self.pid) else "")
         pid = self.pid
         run_async(lambda: self.backend.meta(pid), lambda m: pid == self.pid and self._fill_meta(m))
         self._fill_quick()
@@ -432,7 +435,10 @@ class GamePage(Gtk.Box):
         self.install_btn.set_visible(state == "not_installed")
         self.update_btn.set_visible(state == "update")
         self.cancel_btn.set_visible(state == "busy")
-        self.stop_btn.set_visible(state == "running")
+        phase = self.backend.launcher.phase(self.pid) if state == "running" else ""
+        # während der Nachbereitung (Cloud-Upload …) gibt es nichts zu beenden; vor dem Start bricht BEENDEN ab
+        self.stop_btn.set_visible(state == "running" and phase != "finishing")
+        self.stop_btn.set_tooltip_text(tr('Start abbrechen') if phase == "starting" else tr('Spiel beenden'))
         self.progress_box.set_visible(state == "busy")
         if job:
             self.on_job(job)
@@ -503,35 +509,60 @@ class GamePage(Gtk.Box):
         self.play_btn.set_sensitive(False)
         self.status_lbl.set_text(tr('Starte …'))
 
+        self._hook_status[pid] = (tr('Starte …'), False)
+
         def on_exit(p: str, code: int, minutes: int) -> None:
             idle(self._after_exit, p, code, minutes)
 
         def status(text: str) -> None:
-            idle(self.status_lbl.set_text, text)
+            # Meldungen gehören zu diesem Spiel – die Seite zeigt vielleicht schon ein anderes
+            def show() -> None:
+                self._hook_status[pid] = (text, not text.rstrip().endswith("…"))
+                if self.pid != pid:
+                    return
+                self.status_lbl.set_text(text)
+                if self.backend.launcher.phase(pid) == "starting" and not self.stop_btn.get_visible():
+                    self.play_btn.set_visible(False)
+                    self.stop_btn.set_visible(True)
+                    self.stop_btn.set_tooltip_text(tr('Start abbrechen'))
+            idle(show)
 
         def done(rg) -> None:
-            self.play_btn.set_sensitive(True)
-            self.status_lbl.set_text(tr('Läuft · {0}').format(rg.plan.description))
-            self.refresh_state()
+            text = tr('Läuft · {0}').format(rg.plan.description)
+            self._hook_status[pid] = (text, False)
+            if self.pid == pid:
+                self.play_btn.set_sensitive(True)
+                self.status_lbl.set_text(text)
+                self.refresh_state()
             self.win.refresh_game_state(pid)
 
         def fail(exc: Exception) -> None:
-            self.play_btn.set_sensitive(True)
-            self.status_lbl.set_text("")
+            self._hook_status.pop(pid, None)
+            if self.pid == pid:
+                self.play_btn.set_sensitive(True)
+                self.status_lbl.set_text("")
+                self.refresh_state()
             self.win.toast(tr('Start fehlgeschlagen: {0}').format(exc))
         run_async(lambda: self.backend.launch(pid, on_exit=on_exit, status_cb=status), done, fail)
 
     def _after_exit(self, pid: str, code: int, minutes: int) -> None:
+        last, final = self._hook_status.pop(pid, ("", False))
         if pid == self.pid:
             self.status_lbl.set_text("")
             self.refresh_state()
         self.win.refresh_game_state(pid)
         e = self.backend.entry(pid)
-        self.win.toast(tr('{0} beendet (Exit-Code {1}, {2})').format(e.title if e else pid, code, format_minutes(minutes)))
+        text = tr('{0} beendet (Exit-Code {1}, {2})').format(e.title if e else pid, code, format_minutes(minutes))
+        if final and last:                     # Ergebnis der Nachbereitung (z. B. Cloud-Upload) nicht verlieren
+            text += " · " + last
+        self.win.toast(text)
 
     def _on_stop(self, *_: object) -> None:
+        if self.backend.launcher.cancel_start(self.pid):
+            self.status_lbl.set_text(tr('Start wird abgebrochen …'))
+            return
         rg = self.backend.launcher.running(self.pid)
-        if rg:
+        if rg and rg.poll() is None:
             rg.terminate()
 
     def _on_install(self, *_: object) -> None:

@@ -55,6 +55,9 @@ class CometHook(LaunchHook):
         if ctx.data.get(self.name):
             gsvc.COMET.release(ctx.product_id)
 
+    def wants_after_exit(self, ctx: LaunchContext) -> bool:
+        return bool(ctx.data.get(self.name))
+
 
 register_hook(GalaxyServiceHook())
 register_hook(CometHook())

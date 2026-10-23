@@ -39,7 +39,7 @@ def install_actions(app) -> None:
         ("login", lambda: w() and w().do_login(), []),
         ("logout", lambda: w() and confirm_logout(w()), []),
         ("about", lambda: app._about(), []),
-        ("quit", lambda: app.quit(), ["<primary>q"]),
+        ("quit", lambda: w().request_quit() if w() else app.quit(), ["<primary>q"]),
     )
     for name, cb, accels in actions:
         a = Gio.SimpleAction.new(name, None)

@@ -550,6 +550,20 @@ class SetupHookTest(Base):
         self.assertTrue(out["finished"])
         self.run.assert_not_called()
 
+    def test_cancel_stops_before_next_step(self):
+        self.put_cache(["ISI", "MSVC2017"])
+        ctx = self.ctx()
+
+        def run_and_cancel(argv, **kw):
+            ctx.cancel.set()                                   # BEENDEN während des ersten Schritts
+            return self.fake_run(argv, **kw)
+        self.run.side_effect = run_and_cancel
+        out = hook_redist.setup_prefix(ctx)
+        self.assertEqual(self.ran(), ["scriptinterpreter.exe"])
+        self.assertFalse(out["finished"])
+        self.assertEqual(len(out["pending"]), 2)
+        self.assertEqual(self.gs.get("100").setup_done, [])
+
     def test_failed_step_retried_three_times_then_reported_once(self):
         self.put_cache(["ISI", "MSVC2017"])
         self.rc["VC_redist.x86.exe"] = 1603

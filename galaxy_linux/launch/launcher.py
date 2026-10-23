@@ -242,6 +242,7 @@ class Launcher:
         self._tools: list[CompatTool] | None = None
         self._running: dict[str, RunningGame] = {}
         self._starting: set[str] = set()      # Start vorbereitet (Hooks laufen), Prozess noch nicht gestartet
+        self._preparing: dict[str, LaunchContext] = {}   # Kontexte der laufenden Vorbereitungen (für cancel_start)
         self._lock = threading.Lock()
         # Rückfragen/Meldungen der Launch-Hooks: Terminal (CLI) bzw. ui/bridge.GtkBridge (Oberfläche)
         self.ui_bridge = ConsoleBridge()
@@ -484,6 +485,31 @@ class Launcher:
     def running(self, product_id: str) -> RunningGame | None:
         return self._running.get(str(product_id))
 
+    def phase(self, product_id: str) -> str:
+        """``starting`` (Hooks vor dem Start), ``running`` (Prozess läuft), ``finishing`` (Nachbereitung) oder ""."""
+        pid = str(product_id)
+        if pid in self._starting:
+            return "starting"
+        rg = self._running.get(pid)
+        if rg is None:
+            return ""
+        return "running" if not rg.finishing and rg.poll() is None else "finishing"
+
+    def active_ids(self) -> list[str]:
+        """Spiele, die gerade starten, laufen oder nachbereitet werden (der Client darf dann nicht enden)."""
+        with self._lock:
+            ids = set(self._starting) | set(self._running)
+        return sorted(i for i in ids if self.is_running(i))
+
+    def cancel_start(self, product_id: str) -> bool:
+        """Laufende Vorbereitung abbrechen (BEENDEN vor dem Spielstart). False, wenn keine Vorbereitung läuft."""
+        ctx = self._preparing.get(str(product_id))
+        if ctx is None:
+            return False
+        ctx.cancel.set()
+        log.info("Start von %s wird abgebrochen", product_id)
+        return True
+
     def launch(self, product_id: str, task: PlayTask | None = None, extra_args: list[str] | None = None,
                on_exit: Callable[[str, int, int], None] | None = None,
                status_cb: Callable[[str], None] | None = None) -> RunningGame:
@@ -497,6 +523,7 @@ class Launcher:
         finally:
             with self._lock:
                 self._starting.discard(product_id)
+                self._preparing.pop(product_id, None)
 
     def _launch(self, product_id: str, task: PlayTask | None, extra_args: list[str] | None,
                 on_exit: Callable[[str, int, int], None] | None, status_cb: Callable[[str], None] | None) -> RunningGame:
@@ -509,6 +536,7 @@ class Launcher:
             Path(plan.prefix).mkdir(parents=True, exist_ok=True)
         log_file = paths.game_log_file(product_id)
         ctx = self.make_context(product_id, plan, status_cb, log_file)
+        self._preparing[product_id] = ctx
         launch_hooks.load_builtin_hooks()
         launch_hooks.run_adjust(ctx)           # Startbefehl ergänzen (z. B. GOverlay-Profil)
         launch_hooks.run_prepare(ctx)          # Redistributables, Galaxy-Dienste, Cloud …
@@ -628,6 +656,7 @@ class Launcher:
                 log.info("Setup %s ohne Startbefehl: %s", product_id, exc)
                 plan = None
             ctx = self.make_context(product_id, plan, status_cb, prepare_only=True)
+            self._preparing[product_id] = ctx
             if ctx.is_windows:
                 if ctx.tool is None:
                     raise LaunchError(tr('Kein Proton/Wine verfügbar.'))
@@ -639,6 +668,7 @@ class Launcher:
         finally:
             with self._lock:
                 self._starting.discard(product_id)
+                self._preparing.pop(product_id, None)
 
     def _run_hook(self, cmd: str, plan: LaunchPlan, log_file: Path) -> None:
         with open(log_file, "ab") as lf:

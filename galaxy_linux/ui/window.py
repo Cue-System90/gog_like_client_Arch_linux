@@ -321,7 +321,8 @@ class MainWindow(Adw.ApplicationWindow):
         # Rückfragen der Launch-Hooks (z. B. Cloud-Konflikt) als Dialog über diesem Fenster
         self.bridge = GtkBridge(self)
         self.backend.launcher.ui_bridge = self.bridge
-        self.connect("close-request", lambda *_: (self.bridge.cancel_all(), False)[1])
+        self.connect("close-request", self._on_close_request)
+        self._quit_timer = 0
         self._monitors: list = []
         self._scan_timer = 0
         self._scanning = False
@@ -1155,6 +1156,45 @@ class MainWindow(Adw.ApplicationWindow):
     def toast(self, text: str) -> None:
         # Adw.Toast deutet den Text als Markup – Namen wie „Rock & Roll“ sonst leer
         self.toasts.add_toast(Adw.Toast.new(GLib.markup_escape_text(text)))
+
+    # ------------------------------------------------------------------ Schließen / Beenden
+    def _on_close_request(self, *_: object) -> bool:
+        """Fenster schließen: laufen Spiele (oder ihre Nachbereitung: Spielzeit, Cloud-Upload, comet), wird es nur
+        ausgeblendet und der Client endet erst danach – wie Galaxy, das im Infobereich weiterläuft."""
+        self.bridge.cancel_all()
+        if self.backend.launcher.active_ids():
+            self._hide_until_games_end()
+            return True
+        return False
+
+    def request_quit(self) -> None:
+        """„Beenden“ (Zahnrad, Strg+Q): wie Schließen – mit laufenden Spielen erst nach deren Ende."""
+        if self.backend.launcher.active_ids():
+            self.bridge.cancel_all()
+            self._hide_until_games_end()
+            return
+        app = self.get_application()
+        if app is not None:
+            app.quit()
+
+    def _hide_until_games_end(self) -> None:
+        log.info("Fenster geschlossen, Spiele laufen noch (%s) – Client endet nach dem Spielende",
+                 ", ".join(self.backend.launcher.active_ids()))
+        self.set_visible(False)
+        if not self._quit_timer:
+            self._quit_timer = GLib.timeout_add_seconds(2, self._quit_when_idle)
+
+    def _quit_when_idle(self) -> bool:
+        if self.get_visible():                 # wieder geöffnet (Anwendungsmenü, Verknüpfung, Rückfrage)
+            self._quit_timer = 0
+            return False
+        if self.backend.launcher.active_ids():
+            return True
+        self._quit_timer = 0
+        app = self.get_application()
+        if app is not None:
+            app.quit()
+        return False
 
     def do_login(self) -> None:
         LoginDialog(self.backend, self._after_login).present(self)
