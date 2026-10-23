@@ -1,6 +1,7 @@
 """Datenmodelle für Bibliothekseinträge und Spiel-Metadaten."""
 from __future__ import annotations
 
+import re
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
@@ -127,7 +128,7 @@ class GameMeta:
             if imgs.get("logo2x"):
                 m.logo = "https:" + imgs["logo2x"] if imgs["logo2x"].startswith("//") else imgs["logo2x"]
             desc = product.get("description") or {}
-            lead, full = _strip_html(desc.get("lead") or ""), _strip_html(desc.get("full") or "")
+            lead, full = _description(desc.get("lead") or ""), _description(desc.get("full") or "")
             m.summary = (lead + "\n\n" + full).strip() if lead and full and not full.startswith(lead[:40]) else (full or lead)
             m.content_system = {k: bool(v) for k, v in (product.get("content_system_compatibility") or {}).items()}
             rd = product.get("release_date")
@@ -150,7 +151,7 @@ class GameMeta:
             title = _localized(gamesdb.get("title"))
             if title:
                 m.title = title
-            summ = _localized(gamesdb.get("summary")) or _localized(g.get("summary"))
+            summ = _description(_localized(gamesdb.get("summary")) or _localized(g.get("summary")))
             if summ and len(summ) > len(m.summary):
                 m.summary = summ
             vc = _img(gamesdb.get("vertical_cover") or g.get("vertical_cover"), "_glx_vertical_cover")
@@ -190,6 +191,16 @@ class GameMeta:
     @classmethod
     def from_dict(cls, d: dict) -> "GameMeta":
         return cls(**{k: v for k, v in d.items() if k in cls.__dataclass_fields__})
+
+
+_FEATURE_PLACEHOLDER = re.compile(r"^[^\S\n]*product_feature_\d+[^\S\n]*$", re.M)
+
+
+def _description(text: str) -> str:
+    """Beschreibungstext ohne HTML und ohne GOGs Platzhalter ``product_feature_<id>`` (manche Produkte liefern ihn als
+    letzten Listenpunkt bzw. als ``whats_cool_about_it`` statt eines echten Texts)."""
+    text = _FEATURE_PLACEHOLDER.sub("", _strip_html(text))
+    return re.sub(r"\n{3,}", "\n\n", text).strip()
 
 
 def _strip_html(text: str) -> str:
