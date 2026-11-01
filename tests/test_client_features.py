@@ -59,6 +59,26 @@ class PresenceTest(unittest.TestCase):
         self.assertEqual(presence.Presence(api, types.SimpleNamespace()).tick(), "")
 
 
+class UserIdTest(unittest.TestCase):
+    """presence, chat und gameplay wollen die Galaxy-ID (Token bzw. galaxyUserId), nie userId der Website – mit der
+    antworten sie 403 (so geschehen ab 0.3.0, sobald userData.json geladen war)."""
+    def api(self, token_uid="", user=None):
+        from milkyway.api.auth import Credentials
+        from milkyway.api.client import GogApi
+        store = mock.Mock()
+        store.load.return_value = Credentials("a", "r", 9e9, user_id=token_uid) if token_uid is not None else None
+        api = GogApi(store)
+        api.user = user
+        return api
+
+    def test_galaxy_id(self):
+        user = {"userId": "48082765885864", "galaxyUserId": "48082762246999006"}
+        self.assertEqual(self.api("48082762246999006", user).user_id, "48082762246999006")
+        self.assertEqual(self.api("", user).user_id, "48082762246999006")          # Token ohne user_id
+        self.assertEqual(self.api("", {"userId": "48082765885864"}).user_id, "")   # nie die Website-ID
+        self.assertEqual(self.api(None).user_id, "")
+
+
 class AutostartTest(unittest.TestCase):
     def test_enable_disable(self):
         with tempfile.TemporaryDirectory() as d, mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": d}):
@@ -229,7 +249,7 @@ class ConfigureBackendTest(unittest.TestCase):
         self.assertEqual(upd.call_count, 1)
 
     def test_pull_playtime(self):
-        self.b.api.user = {"userId": "42"}
+        self.b.api.user = {"userId": "1", "galaxyUserId": "42"}
         answers = {"1": (300, 1700000000.0), "7": None}
         with mock.patch.object(self.b.api, "playtime", side_effect=lambda pid: answers.get(pid)) as pt:
             self.assertEqual(self.b.pull_playtime(["1", "7", "ext-a", "1"]), 1)

@@ -77,9 +77,11 @@ class GogApi:
 
     @property
     def user_id(self) -> str:
-        if self.user and self.user.get("userId"):
-            return str(self.user["userId"])
-        return self.creds.user_id if self.creds else ""
+        """Galaxy-Benutzer-ID: ``user_id`` des Tokens, in userData.json ``galaxyUserId``. Nur sie nehmen presence,
+        chat und gameplay an; ``userId`` aus userData.json ist die Kennung der Website (dort HTTP 403)."""
+        if self.creds and self.creds.user_id:
+            return self.creds.user_id
+        return str((self.user or {}).get("galaxyUserId") or "")
 
     @property
     def username(self) -> str:

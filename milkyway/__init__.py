@@ -6,7 +6,7 @@ Windows-Spiele wie Steam über ein frei wählbares Proton (per umu-launcher oder
 direkt), Wine oder nativ.
 """
 
-__version__ = "0.5.0"
+__version__ = "0.5.1"
 APP_ID = "io.github.cue_system90.Milkyway"
 APP_NAME = "Milkyway"
 USER_AGENT = f"milkyway/{__version__} (Linux; CachyOS)"

@@ -2,6 +2,13 @@
 
 Neueste Version zuerst. „Neu bei uns“ im Zahnrad-Menü zeigt den Abschnitt der installierten Version.
 
+## 0.5.1 (01.11.2026)
+
+- **Freunde, Online-Status und Spielzeit aller Geräte gehen wieder**: Seit 0.3.0 schickte der Client an GOGs
+  Galaxy-Dienste (Freundesliste, Einladungen, Chat, Online-Status, Spielzeit-Abgleich) die Kennung der Website
+  (`userId` aus userData.json) statt der Galaxy-Kennung des Kontos – GOG antwortete jedes Mal mit HTTP 403. Jetzt
+  geht immer die Galaxy-Kennung aus der Anmeldung mit (in userData.json `galaxyUserId`).
+
 ## 0.5.0 (01.11.2026)
 
 galaxy-linux heißt jetzt **Milkyway** – die Milchstraße ist unsere Galaxie. Der Client verweist so auf sein Vorbild,

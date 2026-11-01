@@ -5,7 +5,7 @@
 # Übergangspaket kommt so Milkyway auf den Rechner; Milkyways eigenes Update ersetzt es dann durch milkyway.
 pkgbase=milkyway
 pkgname=('milkyway' 'galaxy-linux')
-pkgver=0.5.0
+pkgver=0.5.1
 pkgrel=1
 pkgdesc="Inoffizieller nativer Client für GOG.com mit Proton-Auswahl pro Spiel und Steam-kompatiblen Startoptionen"
 arch=('any')
