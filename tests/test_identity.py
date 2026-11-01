@@ -13,9 +13,9 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from galaxy_linux.api import covers, wikidata
-from galaxy_linux.content import identity, peinfo
-from galaxy_linux.settings import CustomLibrary, InstalledGame
+from milkyway.api import covers, wikidata
+from milkyway.content import identity, peinfo
+from milkyway.settings import CustomLibrary, InstalledGame
 
 
 # ----------------------------------------------------------------------------- PE-Fixture
@@ -358,7 +358,7 @@ class FakeWiki:
 
     def get(self, url, params=None, timeout=None, headers=None):
         self.calls.append((url, dict(params or {})))
-        assert "galaxy-linux" in (headers or {}).get("User-Agent", "")
+        assert "milkyway" in (headers or {}).get("User-Agent", "")
         p = params or {}
         if p.get("action") == "wbsearchentities":
             return FakeResp(SEARCH.get((p["search"], p["language"]), {"search": []}))
@@ -373,7 +373,7 @@ class FakeWiki:
 class WikidataTest(unittest.TestCase):
     def setUp(self):
         self.td = tempfile.TemporaryDirectory()
-        self.patch = mock.patch("galaxy_linux.paths.API_CACHE_DIR", Path(self.td.name))
+        self.patch = mock.patch("milkyway.paths.API_CACHE_DIR", Path(self.td.name))
         self.patch.start()
 
     def tearDown(self):
@@ -431,12 +431,12 @@ class BackendIdentityTest(unittest.TestCase):
             d.mkdir(parents=True)
         cfg, data, cache = base / "cfg", base / "data", base / "cache"
         self.patch = mock.patch.multiple(
-            "galaxy_linux.paths", CONFIG_DIR=cfg, DATA_DIR=data, CACHE_DIR=cache, LOG_DIR=data / "logs",
+            "milkyway.paths", CONFIG_DIR=cfg, DATA_DIR=data, CACHE_DIR=cache, LOG_DIR=data / "logs",
             MANIFEST_DIR=data / "manifests", IMAGE_CACHE_DIR=cache / "images", API_CACHE_DIR=cache / "api",
             SETTINGS_FILE=cfg / "settings.json", GAME_SETTINGS_FILE=cfg / "games.json", CREDENTIALS_FILE=cfg / "credentials.json",
             INSTALLED_FILE=data / "installed.json", PLAYTIME_FILE=data / "playtime.json")
         self.patch.start()
-        from galaxy_linux.backend import Backend
+        from milkyway.backend import Backend
         self.b = Backend()
         s = self.b.settings
         s.install_dir, s.prefix_dir = str(self.gog), str(self.gog / "prefixes")
@@ -470,10 +470,10 @@ class BackendIdentityTest(unittest.TestCase):
         self.assertEqual((z.title, z.gog_match, z.variant), ("Zeus and Poseidon (1360 x 768)", "1207659039", "1360 x 768"))
         self.assertEqual(z.identity, 0)                                   # ohne Netz: später vollständig erkennen
         self.assertEqual(self.b.copy_of("ext-freelancer-kopie").product_id, "ext-freelancer")
-        from galaxy_linux.launch import goverlay_profiles as gp
+        from milkyway.launch import goverlay_profiles as gp
         self.assertEqual([v.name for v in gp.dry_run(self.b)],
                          ["Freelancer", "Freelancer (HD Edition)", "Zeus and Poseidon", "Zeus and Poseidon (1360 x 768)"])
-        from galaxy_linux import library_view as lv
+        from milkyway import library_view as lv
         f = lv.facts(self.b, self.b.entry("ext-freelancer-kopie"))
         self.assertEqual(f.copy_of, "Freelancer")
         self.assertFalse(lv.LibraryFilter().matches(f))                   # Kopien nur mit „Kopien anzeigen“
@@ -497,7 +497,7 @@ class BackendIdentityTest(unittest.TestCase):
         self.assertEqual(self.b.registry.get("ext-freelancer").title, "Freelancer")
 
     def test_custom_title_and_cover_everywhere(self):
-        from galaxy_linux.api.models import LibraryEntry
+        from milkyway.api.models import LibraryEntry
         self.b.library = [LibraryEntry(id="1207659039", title="Zeus and Poseidon")]
         self.assertEqual(self.b.set_custom_title("1207659039", "  Zeus  &  Poseidon  "), "Zeus & Poseidon")
         self.assertEqual(self.b.entry("1207659039").title, "Zeus & Poseidon")

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Übersetzungskatalog pflegen.
 
-Sammelt alle tr('…')/N_('…')-Texte aus galaxy_linux/ und schreibt galaxy_linux/locale/<sprache>.po neu:
+Sammelt alle tr('…')/N_('…')-Texte aus milkyway/ und schreibt milkyway/locale/<sprache>.po neu:
 vorhandene Übersetzungen bleiben, neue Texte kommen mit leerem msgstr dazu (erscheinen bis dahin Deutsch),
 nicht mehr verwendete fallen weg.
 
@@ -19,7 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from galaxy_linux import i18n  # noqa: E402
+from milkyway import i18n  # noqa: E402
 
 
 def main() -> int:

@@ -10,12 +10,12 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from galaxy_linux import autostart, power_search, presence
-from galaxy_linux.api.client import parse_playtime
-from galaxy_linux.api.models import LibraryEntry
-from galaxy_linux.content.installer import InstallError
-from galaxy_linux.content.manifest import Build
-from galaxy_linux.settings import GlobalSettings, InstalledGame
+from milkyway import autostart, power_search, presence
+from milkyway.api.client import parse_playtime
+from milkyway.api.models import LibraryEntry
+from milkyway.content.installer import InstallError
+from milkyway.content.manifest import Build
+from milkyway.settings import GlobalSettings, InstalledGame
 
 
 class PlaytimeParseTest(unittest.TestCase):
@@ -64,7 +64,7 @@ class AutostartTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d, mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": d}):
             self.assertFalse(autostart.is_enabled())
             f = autostart.set_enabled(True)
-            self.assertEqual(f, Path(d) / "autostart" / "org.galaxylinux.Client.desktop")
+            self.assertEqual(f, Path(d) / "autostart" / "io.github.cue_system90.Milkyway.desktop")
             text = f.read_text()
             self.assertIn("--gui --minimized", text)
             self.assertIn("Type=Application", text)
@@ -78,7 +78,7 @@ class AutostartTest(unittest.TestCase):
 
 class PowerSearchTest(unittest.TestCase):
     def backend(self):
-        from galaxy_linux import library_view as lv
+        from milkyway import library_view as lv
         settings = GlobalSettings()
         settings.bookmarks = [{"id": "b1", "name": "Witcher-Sammlung", "view": "all", "search": "witcher"}]
         states = {"1": "installed", "2": "not_installed", "ext-x": "installed"}
@@ -118,7 +118,7 @@ class PowerSearchTest(unittest.TestCase):
 
 class TasksTest(unittest.TestCase):
     def test_custom_and_additional_tasks(self):
-        from galaxy_linux.launch.launcher import Launcher
+        from milkyway.launch.launcher import Launcher
         with tempfile.TemporaryDirectory() as d:
             inst = Path(d) / "Demo"
             inst.mkdir()
@@ -155,13 +155,13 @@ class ConfigureBackendTest(unittest.TestCase):
         base = Path(self.td.name)
         cfg, data, cache = base / "cfg", base / "data", base / "cache"
         self.patch = mock.patch.multiple(
-            "galaxy_linux.paths", CONFIG_DIR=cfg, DATA_DIR=data, CACHE_DIR=cache, LOG_DIR=data / "logs",
+            "milkyway.paths", CONFIG_DIR=cfg, DATA_DIR=data, CACHE_DIR=cache, LOG_DIR=data / "logs",
             MANIFEST_DIR=data / "manifests", IMAGE_CACHE_DIR=cache / "images", API_CACHE_DIR=cache / "api",
             SETTINGS_FILE=cfg / "settings.json", GAME_SETTINGS_FILE=cfg / "games.json", CREDENTIALS_FILE=cfg / "credentials.json",
             INSTALLED_FILE=data / "installed.json", PLAYTIME_FILE=data / "playtime.json")
         self.patch.start()
-        from galaxy_linux.backend import Backend
-        with mock.patch("galaxy_linux.launch.launcher.Launcher.tools", return_value=[]):
+        from milkyway.backend import Backend
+        with mock.patch("milkyway.launch.launcher.Launcher.tools", return_value=[]):
             self.b = Backend()
         self.jobs = []
         self.p2 = mock.patch.object(self.b.jobs, "add", side_effect=lambda j: self.jobs.append(j) or j)

@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import unittest
 
-from galaxy_linux import logsetup
+from milkyway import logsetup
 
 
 class MaskTest(unittest.TestCase):
@@ -18,8 +18,8 @@ class MaskTest(unittest.TestCase):
         self.assertNotIn("SIGNED", m)
 
     def test_mask_argv(self):
-        argv = ["galaxy-linux", "login", "--code", "https://embed.gog.com/on_login_success?origin=client&code=ABC123"]
-        self.assertEqual(logsetup.mask_argv(argv), ["galaxy-linux", "login", "--code", "***"])
+        argv = ["milkyway", "login", "--code", "https://embed.gog.com/on_login_success?origin=client&code=ABC123"]
+        self.assertEqual(logsetup.mask_argv(argv), ["milkyway", "login", "--code", "***"])
         self.assertEqual(logsetup.mask_argv(["x", "--code=ABC"]), ["x", "--code=***"])
         m = logsetup.mask_argv(["x", "https://embed.gog.com/on_login_success?code=ABC"])
         self.assertNotIn("ABC", m[1])

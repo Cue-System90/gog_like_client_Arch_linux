@@ -14,8 +14,8 @@ from unittest import mock
 
 import requests
 
-from galaxy_linux import __version__, clientinfo, store_links
-from galaxy_linux.settings import GameSettings, GameSettingsStore, GlobalSettings, coerce_value, resolve_switch
+from milkyway import __version__, clientinfo, store_links
+from milkyway.settings import GameSettings, GameSettingsStore, GlobalSettings, coerce_value, resolve_switch
 
 # Ausschnitt einer settings.json/games.json aus 0.1.6 (ohne die neuen Felder)
 OLD_SETTINGS = {"install_dir": "/spiele", "prefix_dir": "/spiele/prefixes", "default_compat_tool": "auto",
@@ -38,7 +38,7 @@ class TempPaths(unittest.TestCase):
         cfg, data, cache = self.base / "cfg", self.base / "data", self.base / "cache"
         self.cfg = cfg
         self.patch = mock.patch.multiple(
-            "galaxy_linux.paths", CONFIG_DIR=cfg, DATA_DIR=data, CACHE_DIR=cache, LOG_DIR=data / "logs",
+            "milkyway.paths", CONFIG_DIR=cfg, DATA_DIR=data, CACHE_DIR=cache, LOG_DIR=data / "logs",
             MANIFEST_DIR=data / "manifests", IMAGE_CACHE_DIR=cache / "images", API_CACHE_DIR=cache / "api",
             SETTINGS_FILE=cfg / "settings.json", GAME_SETTINGS_FILE=cfg / "games.json", CREDENTIALS_FILE=cfg / "credentials.json",
             INSTALLED_FILE=data / "installed.json", PLAYTIME_FILE=data / "playtime.json")
@@ -117,7 +117,7 @@ class SettingsFieldsTest(TempPaths):
         self.assertEqual(json.loads((self.cfg / "settings.json").read_text())["library_sync_interval"], 30)
 
     def test_auto_update_skips_running_and_busy_games(self):
-        from galaxy_linux.backend import Backend
+        from milkyway.backend import Backend
         queued = []
         fake = types.SimpleNamespace(
             launcher=types.SimpleNamespace(is_running=lambda pid: pid == "laeuft"),
@@ -169,7 +169,7 @@ class SettingsFieldsTest(TempPaths):
 
 class CliConfigTest(TempPaths):
     def run_cli(self, *argv):
-        from galaxy_linux import cli
+        from milkyway import cli
         out = io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
             rc = cli.main(list(argv))
@@ -207,7 +207,7 @@ class CliConfigTest(TempPaths):
 # ----------------------------------------------------------------------------- Auftragsarten
 class JobKindTest(unittest.TestCase):
     def setUp(self):
-        from galaxy_linux import backend
+        from milkyway import backend
         self.backend_mod = backend
         self.p1 = mock.patch.dict(backend.JOB_KINDS, clear=True)
         self.p2 = mock.patch.object(backend, "_job_finished_hooks", [])
@@ -242,7 +242,7 @@ class JobKindTest(unittest.TestCase):
 
     def test_failures(self):
         b = self.backend_mod
-        from galaxy_linux.content.installer import InstallError
+        from milkyway.content.installer import InstallError
 
         def fail(*_a):
             raise InstallError("kein Platz")
@@ -251,12 +251,12 @@ class JobKindTest(unittest.TestCase):
         b.on_job_finished(lambda backend, job: seen.append(job.state))
         b.on_job_finished(lambda backend, job: 1 / 0)                 # fehlerhafter Rückruf stört nicht
         job = b.Job("setup", "1", "Demo")
-        with self.assertLogs("galaxy_linux.backend", "WARNING"):
+        with self.assertLogs("milkyway.backend", "WARNING"):
             self.q._execute(job)
         self.assertEqual((job.state, job.error), ("failed", "kein Platz"))
         self.assertEqual(seen, ["failed"])
         job = b.Job("gibt-es-nicht", "1", "Demo")
-        with self.assertLogs("galaxy_linux.backend", "WARNING"):
+        with self.assertLogs("milkyway.backend", "WARNING"):
             self.q._execute(job)
         self.assertEqual(job.state, "failed")
 
@@ -277,7 +277,7 @@ class FakeResponse:
 class ClientInfoTest(unittest.TestCase):
     def test_versions(self):
         self.assertEqual(clientinfo.parse_version("v0.2.0"), (0, 2, 0))
-        self.assertEqual(clientinfo.parse_version("galaxy-linux 0.10-1"), (0, 10))
+        self.assertEqual(clientinfo.parse_version("Milkyway 0.10-1"), (0, 10))
         self.assertEqual(clientinfo.parse_version("ohne"), ())
         self.assertTrue(clientinfo.is_newer("v0.2.1", "0.2.0"))
         self.assertTrue(clientinfo.is_newer("0.10", "0.9.9"))

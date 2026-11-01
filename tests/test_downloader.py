@@ -12,8 +12,8 @@ from pathlib import Path
 
 import requests
 
-from galaxy_linux.content.downloader import ChunkDownloader, DownloadError, FileJob, SfcSource, verify_existing_chunks
-from galaxy_linux.content.manifest import Chunk, DepotFile, DepotLink
+from milkyway.content.downloader import ChunkDownloader, DownloadError, FileJob, SfcSource, verify_existing_chunks
+from milkyway.content.manifest import Chunk, DepotFile, DepotLink
 
 
 def make_chunk(data: bytes) -> tuple[Chunk, bytes]:
@@ -135,7 +135,7 @@ class DownloaderTest(unittest.TestCase):
         ev = threading.Event()
         ev.set()
         dl = ChunkDownloader(requests.Session, workers=2, cancel=ev)
-        from galaxy_linux.content.downloader import DownloadCancelled
+        from milkyway.content.downloader import DownloadCancelled
         with self.assertRaises(DownloadCancelled):
             dl.download([FileJob(f, self.endpoint)], self.root)
 

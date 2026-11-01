@@ -15,12 +15,12 @@ import urllib.parse
 from pathlib import Path
 from unittest import mock
 
-from galaxy_linux.content import cloudsaves as cs
-from galaxy_linux.i18n import tr
-from galaxy_linux.launch import hooks
-from galaxy_linux.launch.hook_cloudsaves import CloudSavesHook
-from galaxy_linux.launch.launcher import Launcher
-from galaxy_linux.settings import GameSettingsStore, GlobalSettings, InstalledGame, InstalledRegistry, PlaytimeStore
+from milkyway.content import cloudsaves as cs
+from milkyway.i18n import tr
+from milkyway.launch import hooks
+from milkyway.launch.hook_cloudsaves import CloudSavesHook
+from milkyway.launch.launcher import Launcher
+from milkyway.settings import GameSettingsStore, GlobalSettings, InstalledGame, InstalledRegistry, PlaytimeStore
 
 SECRET = "geheim-0123456789abcdef"
 CONFIG = {"version": "1.2.37", "content": {
@@ -118,7 +118,7 @@ class CloudBase(unittest.TestCase):
         self.td = tempfile.TemporaryDirectory()
         root = self.root = Path(self.td.name)
         self.patch = mock.patch.multiple(
-            "galaxy_linux.paths", DATA_DIR=root / "data", CACHE_DIR=root / "cache", API_CACHE_DIR=root / "cache" / "api",
+            "milkyway.paths", DATA_DIR=root / "data", CACHE_DIR=root / "cache", API_CACHE_DIR=root / "cache" / "api",
             MANIFEST_DIR=root / "data" / "manifests", LOG_DIR=root / "logs", SETTINGS_FILE=root / "settings.json",
             GAME_SETTINGS_FILE=root / "games.json", INSTALLED_FILE=root / "installed.json",
             PLAYTIME_FILE=root / "playtime.json")
@@ -137,7 +137,7 @@ class CloudBase(unittest.TestCase):
         self.registry.set(InstalledGame("2", "Lin", "linux", str(root / "Games" / "Lin")))
         self.api = FakeApi()
         self.launcher = Launcher(self.settings, self.gs, self.registry, PlaytimeStore(), self.api)
-        self.rec_patch = mock.patch("galaxy_linux.content.build_records.ensure_record",
+        self.rec_patch = mock.patch("milkyway.content.build_records.ensure_record",
                                     return_value={"client_id": "c1", "client_secret": SECRET})
         self.rec_patch.start()
         self.cloud = FakeCloud()
@@ -599,7 +599,7 @@ class SyncTest(CloudBase):
 
     def test_secret_never_logged(self):
         self.write("a.sav", b"A", self.now - 10)
-        with self.assertLogs("galaxy_linux.content.cloudsaves", level="DEBUG") as logs:
+        with self.assertLogs("milkyway.content.cloudsaves", level="DEBUG") as logs:
             self.sync("auto")
         self.assertFalse(any(SECRET in line or "tok-c1" in line for line in logs.output))
 
@@ -739,7 +739,7 @@ class HookTest(CloudBase):
     def test_registered(self):
         with mock.patch.dict(hooks._hooks, clear=True), mock.patch.object(hooks, "_loaded", False):
             import importlib
-            import galaxy_linux.launch.hook_cloudsaves as mod
+            import milkyway.launch.hook_cloudsaves as mod
             importlib.reload(mod)
             self.assertIn("cloudsaves", [h.name for h in hooks.hooks()])
             self.assertEqual(hooks._hooks["cloudsaves"].order, 30)
@@ -747,7 +747,7 @@ class HookTest(CloudBase):
 
 class ExtensionPointTest(unittest.TestCase):
     def test_stats_column_and_module_loaded(self):
-        from galaxy_linux.ui import prefs_registry, ui_registry
+        from milkyway.ui import prefs_registry, ui_registry
         ui_registry.register_game_section("t-cloud", lambda page: "kennzahl", column="stats", order=1)
         try:
             self.assertIn("t-cloud", [s.key for s in ui_registry.game_sections("stats")])

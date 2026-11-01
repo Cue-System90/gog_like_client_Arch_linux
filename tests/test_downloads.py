@@ -11,13 +11,13 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from galaxy_linux import backend as bk
-from galaxy_linux.content import bandwidth, extras, installer as inst_mod
-from galaxy_linux.content.downloader import DownloadCancelled, Progress
-from galaxy_linux.content.installer import InstallManager, InstallPlan, NotEnoughSpace
-from galaxy_linux.content.manifest import Build, BuildManifest, Chunk, DepotFile
-from galaxy_linux.content.downloader import FileJob
-from galaxy_linux.settings import GlobalSettings, InstalledGame
+from milkyway import backend as bk
+from milkyway.content import bandwidth, extras, installer as inst_mod
+from milkyway.content.downloader import DownloadCancelled, Progress
+from milkyway.content.installer import InstallManager, InstallPlan, NotEnoughSpace
+from milkyway.content.manifest import Build, BuildManifest, Chunk, DepotFile
+from milkyway.content.downloader import FileJob
+from milkyway.settings import GlobalSettings, InstalledGame
 
 
 def at(hhmm: str) -> float:

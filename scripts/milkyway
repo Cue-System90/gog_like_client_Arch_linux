@@ -1,0 +1,5 @@
+#!/bin/sh
+# Startskript für die Nutzer-Installation (install.sh --user)
+PREFIX="${MILKYWAY_HOME:-$HOME/.local/lib/milkyway}"
+export PYTHONPATH="$PREFIX${PYTHONPATH:+:$PYTHONPATH}"
+exec python3 -m milkyway "$@"

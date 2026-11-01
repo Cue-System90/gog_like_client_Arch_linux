@@ -22,10 +22,10 @@ from unittest import mock
 
 import requests
 
-from galaxy_linux.api.auth import AuthError, Credentials
-from galaxy_linux.launch import galaxy_services as gsvc
-from galaxy_linux.launch import hooks
-from galaxy_linux.settings import GameSettings, GlobalSettings
+from milkyway.api.auth import AuthError, Credentials
+from milkyway.launch import galaxy_services as gsvc
+from milkyway.launch import hooks
+from milkyway.settings import GameSettings, GlobalSettings
 
 
 _LEVEL = gsvc.log.level
@@ -101,7 +101,7 @@ class TempDataBase(unittest.TestCase):
     def setUp(self):
         self.td = tempfile.TemporaryDirectory()
         self.root = Path(self.td.name)
-        self.patch = mock.patch.multiple("galaxy_linux.paths", DATA_DIR=self.root / "data", LOG_DIR=self.root / "logs",
+        self.patch = mock.patch.multiple("milkyway.paths", DATA_DIR=self.root / "data", LOG_DIR=self.root / "logs",
                                          CONFIG_DIR=self.root / "config")
         self.patch.start()
         self.heroic = self.root / "heroic" / "comet"
@@ -381,7 +381,7 @@ class AuthFileTest(TempDataBase):
         expired = FakeApi(Credentials("alt", "alt-r", time.time() - 10, "4711"), refresh_error=AuthError("offline"))
         with self.assertRaises(gsvc.CometError):
             gsvc.fresh_credentials(expired)
-        from galaxy_linux.api.client import NotLoggedIn
+        from milkyway.api.client import NotLoggedIn
         with self.assertRaises(NotLoggedIn):
             gsvc.fresh_credentials(FakeApi(None))
 
@@ -556,8 +556,8 @@ class WantedAndHookTest(TempDataBase):
 
     def test_hooks_registered(self):
         with mock.patch.dict(hooks._hooks, clear=True):
-            sys.modules.pop("galaxy_linux.launch.hook_galaxy_services", None)
-            mod = importlib.import_module("galaxy_linux.launch.hook_galaxy_services")
+            sys.modules.pop("milkyway.launch.hook_galaxy_services", None)
+            mod = importlib.import_module("milkyway.launch.hook_galaxy_services")
             by_name = {h.name: h for h in hooks.hooks()}
             self.assertEqual((by_name["galaxy_service"].order, by_name["galaxy_service"].setup), (20, True))
             self.assertEqual((by_name["comet"].order, by_name["comet"].setup), (25, False))

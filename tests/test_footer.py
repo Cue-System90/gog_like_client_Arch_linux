@@ -7,12 +7,12 @@ from unittest import mock
 
 class FooterTest(unittest.TestCase):
     def test_text(self):
-        from galaxy_linux.ui import footer
+        from milkyway.ui import footer
         self.assertEqual(footer.updates_text(0), "")
         self.assertEqual(footer.updates_text(3), footer.tr('{0} Update(s) verfügbar').format(3))
 
     def test_one_click_opens_available_updates(self):
-        from galaxy_linux.ui import footer
+        from milkyway.ui import footer
         calls = []
         win = mock.Mock()
         win.navigate.side_effect = lambda view: calls.append(("navigate", view))

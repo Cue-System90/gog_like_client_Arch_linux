@@ -11,11 +11,11 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from galaxy_linux.launch import compat, hooks
-from galaxy_linux.launch.hook_redist import RedistHook, pending_redists
-from galaxy_linux.launch.hooks import ConsoleBridge, LaunchContext, LaunchHook
-from galaxy_linux.launch.launcher import Launcher, LaunchError, LaunchPlan
-from galaxy_linux.settings import GameSettings, GameSettingsStore, GlobalSettings, InstalledGame, InstalledRegistry, PlaytimeStore
+from milkyway.launch import compat, hooks
+from milkyway.launch.hook_redist import RedistHook, pending_redists
+from milkyway.launch.hooks import ConsoleBridge, LaunchContext, LaunchHook
+from milkyway.launch.launcher import Launcher, LaunchError, LaunchPlan
+from milkyway.settings import GameSettings, GameSettingsStore, GlobalSettings, InstalledGame, InstalledRegistry, PlaytimeStore
 
 
 class Recorder(LaunchHook):
@@ -46,7 +46,7 @@ class TempLauncherBase(unittest.TestCase):
         self.td = tempfile.TemporaryDirectory()
         root = Path(self.td.name)
         self.root = root
-        self.patch = mock.patch.multiple("galaxy_linux.paths",
+        self.patch = mock.patch.multiple("milkyway.paths",
                                          SETTINGS_FILE=root / "settings.json", GAME_SETTINGS_FILE=root / "games.json",
                                          INSTALLED_FILE=root / "installed.json", PLAYTIME_FILE=root / "playtime.json",
                                          MANIFEST_DIR=root / "manifests", LOG_DIR=root / "logs")
@@ -171,7 +171,7 @@ class HookRegistryTest(TempLauncherBase):
         hooks.register_hook(Recorder("aus", 4, calls, enabled=False))
         hooks.register_hook(Recorder("enabled-kaputt", 5, calls, enabled="raise"))
         ctx = self.ctx()
-        with self.assertLogs("galaxy_linux.launch.hooks", "WARNING"):
+        with self.assertLogs("milkyway.launch.hooks", "WARNING"):
             ran = hooks.run_prepare(ctx)
         self.assertEqual(ran, ["eins", "drei"])
         self.assertEqual([c[1] for c in calls], ["eins", "kaputt", "drei"])
@@ -182,7 +182,7 @@ class HookRegistryTest(TempLauncherBase):
         calls: list = []
         hooks.register_hook(Recorder("stopp", 1, calls, fail=LaunchError("bewusst")))
         hooks.register_hook(Recorder("danach", 2, calls))
-        with self.assertLogs("galaxy_linux.launch.hooks", "WARNING"), self.assertRaises(LaunchError):
+        with self.assertLogs("milkyway.launch.hooks", "WARNING"), self.assertRaises(LaunchError):
             hooks.run_prepare(self.ctx())
         self.assertEqual([c[1] for c in calls], ["stopp"])
 
@@ -190,7 +190,7 @@ class HookRegistryTest(TempLauncherBase):
         calls: list = []
         hooks.register_hook(Recorder("a", 1, calls, fail=LaunchError("x")))
         hooks.register_hook(Recorder("b", 2, calls))
-        with self.assertLogs("galaxy_linux.launch.hooks", "WARNING"):
+        with self.assertLogs("milkyway.launch.hooks", "WARNING"):
             ran = hooks.run_after_exit(self.ctx(), 3, 7)
         self.assertEqual(ran, ["b"])
         self.assertEqual(calls, [("exit", "a", 3, 7), ("exit", "b", 3, 7)])
@@ -223,7 +223,7 @@ class HookRegistryTest(TempLauncherBase):
         self.assertEqual(ctx.gs.cloud_saves, "off")
         # ask: Vorgabe der Brücke; Fehler der Brücke → Vorgabe
         self.launcher.ui_bridge = types.SimpleNamespace(ask=mock.Mock(side_effect=RuntimeError("weg")), notify=mock.Mock())
-        with self.assertLogs("galaxy_linux.launch.launcher", "WARNING"):
+        with self.assertLogs("milkyway.launch.launcher", "WARNING"):
             self.assertEqual(ctx.ask("T", "B", [("a", "A"), ("b", "B")], "b"), "b")
         ctx.notify("Hallo")
         self.launcher.ui_bridge.notify.assert_called_once_with("Hallo")
@@ -292,7 +292,7 @@ class LaunchFlowTest(TempLauncherBase):
             def prepare(self, ctx):
                 raise LaunchError("nein")
         hooks.register_hook(Boom())
-        with self.assertLogs("galaxy_linux.launch.hooks", "WARNING"), self.assertRaises(LaunchError):
+        with self.assertLogs("milkyway.launch.hooks", "WARNING"), self.assertRaises(LaunchError):
             self.launcher.launch("2")
         self.assertFalse(self.launcher.is_running("2"))
 
@@ -412,8 +412,8 @@ class RedistHookTest(TempLauncherBase):
 
     def test_without_record_nothing_runs(self):
         ctx = self.make_ctx({})
-        with mock.patch.multiple("galaxy_linux.paths", DATA_DIR=self.root / "data"), \
-                mock.patch("galaxy_linux.launch.hook_redist.subprocess.run") as run:
+        with mock.patch.multiple("milkyway.paths", DATA_DIR=self.root / "data"), \
+                mock.patch("milkyway.launch.hook_redist.subprocess.run") as run:
             RedistHook().prepare(ctx)
         run.assert_not_called()
         self.assertEqual(self.gs.get("1").setup_done, [])
@@ -421,11 +421,11 @@ class RedistHookTest(TempLauncherBase):
     def test_registered_as_builtin(self):
         import importlib
         import sys
-        sys.modules.pop("galaxy_linux.launch.hook_redist", None)      # Modul neu laden → meldet sich selbst an
+        sys.modules.pop("milkyway.launch.hook_redist", None)      # Modul neu laden → meldet sich selbst an
         with mock.patch.object(hooks, "_loaded", False):
             hooks.load_builtin_hooks()
             self.assertTrue(hooks._loaded)
-        importlib.import_module("galaxy_linux.launch.hook_redist")
+        importlib.import_module("milkyway.launch.hook_redist")
         self.assertIn("redist", [h.name for h in hooks.hooks()])
         h = next(h for h in hooks.hooks() if h.name == "redist")
         self.assertTrue(h.setup)

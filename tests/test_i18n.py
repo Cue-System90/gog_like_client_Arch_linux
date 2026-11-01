@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from galaxy_linux import i18n
+from milkyway import i18n
 
 PLACEHOLDER = re.compile(r"\{[^{}]*\}")
 
@@ -83,14 +83,14 @@ class SetupTest(unittest.TestCase):
 
     def test_detect_order(self):
         with mock.patch.object(i18n, "_settings_language", return_value="auto"):
-            with mock.patch.dict(os.environ, {"GALAXY_LINUX_LANG": "", "LC_ALL": "", "LC_MESSAGES": "", "LANGUAGE": "", "LANG": "de_DE.UTF-8"}):
+            with mock.patch.dict(os.environ, {"MILKYWAY_LANG": "", "LC_ALL": "", "LC_MESSAGES": "", "LANGUAGE": "", "LANG": "de_DE.UTF-8"}):
                 self.assertEqual(i18n.detect(), "de")
-            with mock.patch.dict(os.environ, {"GALAXY_LINUX_LANG": "", "LC_ALL": "", "LC_MESSAGES": "", "LANGUAGE": "", "LANG": "fr_FR.UTF-8"}):
+            with mock.patch.dict(os.environ, {"MILKYWAY_LANG": "", "LC_ALL": "", "LC_MESSAGES": "", "LANGUAGE": "", "LANG": "fr_FR.UTF-8"}):
                 self.assertEqual(i18n.detect(), "en")
-            with mock.patch.dict(os.environ, {"GALAXY_LINUX_LANG": "en", "LANG": "de_DE.UTF-8"}):
+            with mock.patch.dict(os.environ, {"MILKYWAY_LANG": "en", "LANG": "de_DE.UTF-8"}):
                 self.assertEqual(i18n.detect(), "en")
         with mock.patch.object(i18n, "_settings_language", return_value="de"):
-            with mock.patch.dict(os.environ, {"GALAXY_LINUX_LANG": "", "LC_ALL": "", "LANG": "en_US.UTF-8"}):
+            with mock.patch.dict(os.environ, {"MILKYWAY_LANG": "", "LC_ALL": "", "LANG": "en_US.UTF-8"}):
                 self.assertEqual(i18n.detect(), "de")
 
 

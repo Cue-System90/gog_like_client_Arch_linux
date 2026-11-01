@@ -6,10 +6,10 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from galaxy_linux import store_links as sl
-from galaxy_linux.api import storefront
-from galaxy_linux.api.client import ApiError
-from galaxy_linux.ui import web
+from milkyway import store_links as sl
+from milkyway.api import storefront
+from milkyway.api.client import ApiError
+from milkyway.ui import web
 
 
 class LocaleUrlTest(unittest.TestCase):
@@ -81,7 +81,7 @@ class LinkClassificationTest(unittest.TestCase):
         self.assertEqual(sl.classify_new_window("https://support.gog.com/hc", True), "browser")
         self.assertEqual(sl.classify_new_window("mailto:a@example.com", True), "browser")
         self.assertEqual(sl.classify_new_window("mailto:a@example.com", False), "ignore")     # window.open ohne Klick
-        self.assertEqual(sl.classify_new_window("galaxy-linux://launch/1207658924", True), "ignore")
+        self.assertEqual(sl.classify_new_window("milkyway://launch/1207658924", True), "ignore")
         self.assertEqual(sl.classify_new_window("steam://run/1", True), "ignore")
         # window.open aus Skripten (Zahlungsanbieter) → eigenes Fenster in derselben Sitzung
         self.assertEqual(sl.classify_new_window("https://www.paypal.com/checkoutnow?token=x", False), "popup")
@@ -96,10 +96,10 @@ class LinkClassificationTest(unittest.TestCase):
         self.assertEqual(sl.classify_navigation("about:blank"), "allow")
         self.assertEqual(sl.classify_navigation("goggalaxy://openGameView/1207658924"), "galaxy")
         self.assertEqual(sl.classify_navigation("mailto:a@example.com"), "browser")
-        # Seiten im Store dürfen keine lokalen Programme auslösen (galaxy-linux://launch startet Spiele)
+        # Seiten im Store dürfen keine lokalen Programme auslösen (milkyway://launch startet Spiele)
         self.assertEqual(sl.classify_navigation("steam://run/1"), "ignore")
-        self.assertEqual(sl.classify_navigation("galaxy-linux://launch/1207658924"), "ignore")
-        self.assertEqual(sl.classify_navigation("GALAXY-LINUX://launch/ext-x"), "ignore")
+        self.assertEqual(sl.classify_navigation("milkyway://launch/1207658924"), "ignore")
+        self.assertEqual(sl.classify_navigation("MILKYWAY://launch/ext-x"), "ignore")
         self.assertEqual(sl.classify_navigation("file:///etc/passwd"), "ignore")
 
     def test_galaxy_links_and_downloads(self):

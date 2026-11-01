@@ -10,8 +10,8 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from unittest import mock
 
-from galaxy_linux import recent as rc
-from galaxy_linux.settings import GlobalSettings, PlaytimeStore
+from milkyway import recent as rc
+from milkyway.settings import GlobalSettings, PlaytimeStore
 
 UTC = timezone.utc
 
@@ -43,7 +43,7 @@ class WidgetOrderTest(unittest.TestCase):
     def test_persisted_in_settings(self):
         with tempfile.TemporaryDirectory() as d:
             cfg = Path(d) / "settings.json"
-            with mock.patch("galaxy_linux.paths.SETTINGS_FILE", cfg):
+            with mock.patch("milkyway.paths.SETTINGS_FILE", cfg):
                 s = GlobalSettings.load()
                 order = rc.move(rc.merge_order(s.recent_widgets, rc.BUILTIN_WIDGETS), "next_to_play", -3)
                 s.recent_widgets = rc.set_enabled(order, "summary", False)
@@ -92,7 +92,7 @@ class SummaryTest(unittest.TestCase):
 
     def test_playtime_store_sessions(self):
         with tempfile.TemporaryDirectory() as d:
-            with mock.patch("galaxy_linux.paths.PLAYTIME_FILE", Path(d) / "playtime.json"):
+            with mock.patch("milkyway.paths.PLAYTIME_FILE", Path(d) / "playtime.json"):
                 st = PlaytimeStore()
                 st.add_session("1", 30, ended_at=10_000.0, started_at=8_200.0)
                 st.add_session("1", 10, ended_at=20_000.0)                 # Start aus der Dauer

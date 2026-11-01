@@ -5,8 +5,8 @@ from __future__ import annotations
 import unittest
 from unittest import mock
 
-from galaxy_linux.ui import prefs_registry as pr
-from galaxy_linux.ui import ui_registry as ur
+from milkyway.ui import prefs_registry as pr
+from milkyway.ui import ui_registry as ur
 
 
 class PrefsRegistryTest(unittest.TestCase):
@@ -36,7 +36,7 @@ class PrefsRegistryTest(unittest.TestCase):
         def broken(d):
             raise RuntimeError("kaputt")
         pr.register("features", broken, order=1, key="kaputt")
-        with self.assertLogs("galaxy_linux.ui.prefs_registry", "ERROR"):
+        with self.assertLogs("milkyway.ui.prefs_registry", "ERROR"):
             groups = pr.build_groups("features", "DLG")
         self.assertEqual(groups, [("a", "DLG"), ("b", "DLG")])
         pr.register("features", lambda d: ("b2", d), order=30, key="b")       # gleicher Schlüssel ersetzt
@@ -70,7 +70,7 @@ class PrefsRegistryTest(unittest.TestCase):
             pr.load_extensions()
             pr.load_extensions()
             self.assertTrue(pr._loaded)
-        imp.assert_called_once_with("galaxy_linux.ui.ext_demo")
+        imp.assert_called_once_with("milkyway.ui.ext_demo")
 
 
 class UiRegistryTest(unittest.TestCase):
@@ -101,7 +101,7 @@ class UiRegistryTest(unittest.TestCase):
             raise RuntimeError("x")
         ur.register_game_action("x", "X", boom, visible=boom)
         act = ur.game_actions()[0]
-        with self.assertLogs("galaxy_linux.ui.ui_registry", "ERROR"):
+        with self.assertLogs("milkyway.ui.ui_registry", "ERROR"):
             self.assertFalse(ur.action_visible(act, "P", "1"))
             ur.run_action(act, "P", "1")
 
@@ -137,7 +137,7 @@ class UiRegistryTest(unittest.TestCase):
         def boom(w):
             raise RuntimeError("x")
         ur.register_window_hook("c", boom, order=3)
-        with self.assertLogs("galaxy_linux.ui.ui_registry", "ERROR"):
+        with self.assertLogs("milkyway.ui.ui_registry", "ERROR"):
             self.assertEqual(ur.run_window_hooks("WIN"), ["a", "b"])
         self.assertEqual(seen, [("a", "WIN"), ("b", "WIN")])
         ur.unregister("a")
@@ -154,7 +154,7 @@ class UiRegistryTest(unittest.TestCase):
         widgets = ur.recent_widgets()
         self.assertEqual([w.key for w in widgets], ["played", "friends", "kaputt"])
         self.assertEqual(ur.build_recent_widget(widgets[0], "PAGE"), ("P", "PAGE"))
-        with self.assertLogs("galaxy_linux.ui.ui_registry", "ERROR"):
+        with self.assertLogs("milkyway.ui.ui_registry", "ERROR"):
             self.assertIsNone(ur.build_recent_widget(widgets[2], "PAGE"))
         ur.unregister("kaputt")
         self.assertEqual([w.key for w in ur.recent_widgets()], ["played", "friends"])
@@ -164,7 +164,7 @@ class LaunchEventTest(unittest.TestCase):
     """Launch-Hooks melden Probleme (Cloud, Redistributables) an das Benachrichtigungszentrum – ohne Oberfläche nichts."""
 
     def ctx(self, bridge):
-        from galaxy_linux.launch.hooks import LaunchContext
+        from milkyway.launch.hooks import LaunchContext
         return LaunchContext(product_id="7", game=mock.Mock(), gs=mock.Mock(), settings=mock.Mock(), plan=None,
                              install_dir=mock.Mock(), exe=None, prefix=mock.Mock(), runner="native", tool=None,
                              log_file=mock.Mock(), status=lambda t: None, ask=lambda *a: "",
@@ -176,7 +176,7 @@ class LaunchEventTest(unittest.TestCase):
         bridge.post.assert_called_once_with("cloud", "Titel", "Text", "7")
 
     def test_console_bridge_without_post(self):
-        from galaxy_linux.launch.hooks import ConsoleBridge
+        from milkyway.launch.hooks import ConsoleBridge
         self.ctx(ConsoleBridge()).event("redist", "Titel")        # kein Fehler, keine Ausgabe nötig
         bridge = mock.Mock()
         bridge.post.side_effect = RuntimeError("weg")

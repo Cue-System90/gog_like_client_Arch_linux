@@ -5,8 +5,8 @@
 #   ./install.sh --purge    → vorher auch Einstellungen/Zugangsdaten/Logs löschen (Spiele bleiben)
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PKG="$(ls -t "$HERE"/galaxy-linux-*.pkg.tar.zst 2>/dev/null | head -1 || true)"
-[ -n "$PKG" ] || { echo "Kein galaxy-linux-*.pkg.tar.zst neben diesem Skript gefunden."; exit 1; }
+PKG="$(ls -t "$HERE"/milkyway-*.pkg.tar.zst 2>/dev/null | head -1 || true)"
+[ -n "$PKG" ] || { echo "Kein milkyway-*.pkg.tar.zst neben diesem Skript gefunden."; exit 1; }
 KEEP=0; PURGE=""
 for a in "$@"; do case "$a" in --keep) KEEP=1;; --purge) PURGE="--purge";; esac; done
 if [ -f "$HERE/SHA256SUMS" ]; then (cd "$HERE" && sha256sum -c --ignore-missing SHA256SUMS) || { echo "Prüfsumme stimmt nicht – Abbruch."; exit 1; }; fi
@@ -19,4 +19,4 @@ sudo pacman -U --noconfirm "$PKG"
 MISSING=""
 for p in umu-launcher proton-cachyos mangohud lib32-mangohud goverlay winetricks; do pacman -Qq "$p" >/dev/null 2>&1 || MISSING="$MISSING $p"; done
 [ -z "$MISSING" ] || echo "Empfohlene Pakete fehlen:$MISSING   (sudo pacman -S --needed$MISSING)"
-echo "Fertig: galaxy-linux $(pacman -Q galaxy-linux | awk '{print $2}') installiert. Start: galaxy-linux · Protokoll: ~/.local/share/galaxy-linux/logs/galaxy-linux.log"
+echo "Fertig: milkyway $(pacman -Q milkyway | awk '{print $2}') installiert. Start: milkyway · Protokoll: ~/.local/share/milkyway/logs/milkyway.log"

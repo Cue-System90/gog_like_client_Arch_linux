@@ -1,11 +1,14 @@
-# galaxy-linux
+# Milkyway
 
 An unofficial, native **GOG.com client for CachyOS / Arch Linux**, modelled on GOG Galaxy 2.x – a GTK4/libadwaita
 app plus a command line tool: **buy games in the built-in GOG store**, install, play and sync them. It rebuilds the
 client natively and talks to the GOG services the way Galaxy does (login, store, library, content system v2,
 GamesDB, gameplay API, cloud storage), and adds what Linux needs: Proton/Wine per game, prefixes and GOverlay.
 
-![galaxy-linux library view](docs/screenshot.png)
+Formerly *galaxy-linux* – renamed in 0.5.0 (the Milky Way is our galaxy). Settings, sign-in, shortcuts and prefixes
+carry over on first start, and 0.4.x installs 0.5.0 through ⚙ → *Update now*.
+
+![Milkyway library view](docs/screenshot.png)
 
 ## Features
 
@@ -61,9 +64,9 @@ Update with ⚙ → *Update now* once a release is out, or `git pull && ./instal
 - Sign in through the avatar menu, then install or play from a game's page.
 - ⚙ menu: add games, redeem a GOG code, scan folders for GOG games, refresh the library, settings.
 - Game page → ⚙ *Properties*: Proton/Wine version, launch options, GOverlay profile, cloud saves, prefix setup.
-- Language: *Settings → General → Interface*, or `GALAXY_LINUX_LANG=en galaxy-linux`.
-- Command line: `galaxy-linux --help` (`list`, `install`, `launch`, `cloud`, `redist`, `comet`, `goverlay`, `library` …).
-- Logs: ⚙ → *Log* (filter, search, copy), `~/.local/share/galaxy-linux/logs/` or `galaxy-linux log`.
+- Language: *Settings → General → Interface*, or `MILKYWAY_LANG=en milkyway`.
+- Command line: `milkyway --help` (`list`, `install`, `launch`, `cloud`, `redist`, `comet`, `goverlay`, `library` …).
+- Logs: ⚙ → *Log* (filter, search, copy), `~/.local/share/milkyway/logs/` or `milkyway log`.
   Changes: [CHANGELOG.md](CHANGELOG.md).
 
 Development: `python3 -m unittest discover -s tests -t .`; translations are kept with `scripts/i18n-update.py`.

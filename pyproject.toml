@@ -3,8 +3,8 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "galaxy-linux"
-version = "0.4.1"
+name = "milkyway"
+version = "0.5.0"
 description = "Inoffizieller nativer Client für GOG.com auf CachyOS/Arch Linux mit Proton-Auswahl pro Spiel und Steam-kompatiblen Startoptionen"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -15,11 +15,11 @@ dependencies = ["requests>=2.25"]
 vdf = ["vdf"]
 
 [project.scripts]
-galaxy-linux = "galaxy_linux.__main__:main"
+milkyway = "milkyway.__main__:main"
 
 [tool.setuptools.packages.find]
-include = ["galaxy_linux*"]
+include = ["milkyway*"]
 
 [tool.setuptools.package-data]
-"galaxy_linux" = ["locale/*.po"]
-"galaxy_linux.ui" = ["*.css"]
+"milkyway" = ["locale/*.po"]
+"milkyway.ui" = ["*.css"]

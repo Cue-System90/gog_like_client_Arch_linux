@@ -7,9 +7,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from galaxy_linux.api import wishlist as wl
-from galaxy_linux.api.client import ApiError
-from galaxy_linux.api.prices import Price
+from milkyway.api import wishlist as wl
+from milkyway.api.client import ApiError
+from milkyway.api.prices import Price
 
 from tests.test_discover import FakeApi, Resp
 
@@ -82,7 +82,7 @@ class DetectTest(unittest.TestCase):
 
 class TextTest(unittest.TestCase):
     def test_notification_text(self):
-        from galaxy_linux import i18n
+        from milkyway import i18n
         c = wl.Change("discount", "1", Price(1799, 2999, "EUR"), "Gwent")
         try:
             i18n.setup("de")

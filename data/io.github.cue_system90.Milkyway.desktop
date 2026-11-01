@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Name=Milkyway
+GenericName=Game library (GOG.com, unofficial)
+GenericName[de]=Spielebibliothek (GOG.com, inoffiziell)
+Comment=Unofficial GOG.com client with per-game Proton selection
+Comment[de]=Inoffizieller Client für GOG.com mit Proton-Auswahl pro Spiel
+Exec=milkyway %u
+Icon=io.github.cue_system90.Milkyway
+Terminal=false
+Categories=Game;
+Keywords=GOG;Milkyway;Galaxy;Proton;Wine;Games;
+Keywords[de]=GOG;Milkyway;Galaxy;Proton;Wine;Spiele;
+StartupNotify=true
+StartupWMClass=io.github.cue_system90.Milkyway
+MimeType=x-scheme-handler/milkyway;

@@ -2,7 +2,7 @@
 # EXPERIMENTELL / NICHT UNTERSTÜTZT:
 # Installiert den offiziellen GOG-Galaxy-Windows-Client (GOG_Galaxy_2.0.exe) in ein eigenes Wine-Prefix.
 # Die EXE im Projektordner ist nur der Web-Installer-Stub (~1 MB), der den eigentlichen Client nachlädt.
-# Der echte Linux-Port ist galaxy-linux (nativ). Dieses Skript ist nur ein Zusatz für Experimente.
+# Der echte Linux-Port ist Milkyway (nativ). Dieses Skript ist nur ein Zusatz für Experimente.
 set -euo pipefail
 EXE="${1:-$(dirname "$0")/../../GOG_Galaxy_2.0.exe}"
 PREFIX="${GALAXY_WINE_PREFIX:-$HOME/Games/GOG/official-galaxy-wine}"
@@ -23,5 +23,5 @@ cat <<MSG
 Falls die Installation durchlief, startet der Client mit:
   WINEPREFIX="$PREFIX" wine "$PREFIX/drive_c/Program Files (x86)/GOG Galaxy/GalaxyClient.exe"
 Hinweis: Der Windows-Client unter Wine ist bekannt instabil (CEF/Chromium, Overlay, Updater).
-Spiele, die er installiert, laufen im selben Wine-Prefix ohne Proton-Auswahl – dafür ist galaxy-linux da.
+Spiele, die er installiert, laufen im selben Wine-Prefix ohne Proton-Auswahl – dafür ist Milkyway da.
 MSG

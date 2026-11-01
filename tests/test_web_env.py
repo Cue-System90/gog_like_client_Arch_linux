@@ -2,7 +2,7 @@ import os
 import unittest
 from unittest import mock
 
-from galaxy_linux.ui import web
+from milkyway.ui import web
 
 
 class WebEnvironmentTest(unittest.TestCase):

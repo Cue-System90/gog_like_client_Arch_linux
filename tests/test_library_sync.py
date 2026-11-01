@@ -12,11 +12,11 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
-from galaxy_linux.api import library_sync as ls
-from galaxy_linux.api.client import ApiError, GogApi, NotLoggedIn
-from galaxy_linux.api.models import LibraryEntry
-from galaxy_linux.i18n import tr
-from galaxy_linux.settings import GlobalSettings
+from milkyway.api import library_sync as ls
+from milkyway.api.client import ApiError, GogApi, NotLoggedIn
+from milkyway.api.models import LibraryEntry
+from milkyway.i18n import tr
+from milkyway.settings import GlobalSettings
 
 DAY = 86400
 NOW = 1_800_000_000.0
@@ -37,7 +37,7 @@ class TempPaths(unittest.TestCase):
         cfg, data, cache = self.base / "cfg", self.base / "data", self.base / "cache"
         self.cfg, self.cache = cfg, cache
         self.patch = mock.patch.multiple(
-            "galaxy_linux.paths", CONFIG_DIR=cfg, DATA_DIR=data, CACHE_DIR=cache, LOG_DIR=data / "logs",
+            "milkyway.paths", CONFIG_DIR=cfg, DATA_DIR=data, CACHE_DIR=cache, LOG_DIR=data / "logs",
             MANIFEST_DIR=data / "manifests", IMAGE_CACHE_DIR=cache / "images", API_CACHE_DIR=cache / "api",
             SETTINGS_FILE=cfg / "settings.json", GAME_SETTINGS_FILE=cfg / "games.json", CREDENTIALS_FILE=cfg / "credentials.json",
             INSTALLED_FILE=data / "installed.json", PLAYTIME_FILE=data / "playtime.json")
@@ -203,7 +203,7 @@ class ClientLibraryTest(TempPaths):
                 raise ApiError("HTTP 500")
             return {"products": [product(1), product(2)], "totalPages": 1, "hasHiddenProducts": True}
         api = self.api()
-        with mock.patch.object(api, "get_json", side_effect=get_json), self.assertLogs("galaxy_linux.api.client", "WARNING"):
+        with mock.patch.object(api, "get_json", side_effect=get_json), self.assertLogs("milkyway.api.client", "WARNING"):
             lib = api.library()
         self.assertEqual([(e.id, e.is_hidden) for e in lib], [("1", False), ("2", False), ("9", True)])
 
@@ -348,7 +348,7 @@ class BackendAndCliTest(TempPaths):
         super().tearDown()
 
     def test_backend_sync_library(self):
-        from galaxy_linux.backend import Backend
+        from milkyway.backend import Backend
         b = Backend()
         self.assertEqual([e.id for e in b.library], ["1"])
         res = b.sync_library("manual")
@@ -360,7 +360,7 @@ class BackendAndCliTest(TempPaths):
         self.assertEqual([e.id for e in b.refresh_library()], ["1", "2"])
 
     def test_cli_list_refresh_prints_new_games(self):
-        from galaxy_linux import cli
+        from milkyway import cli
         out = io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
             rc = cli.main(["list", "--refresh"])
@@ -373,7 +373,7 @@ class BackendAndCliTest(TempPaths):
         self.assertFalse(rows["1"].endswith(tr('NEU')))
 
     def test_cli_json_stays_parseable(self):
-        from galaxy_linux import cli
+        from milkyway import cli
         out, err = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
             rc = cli.main(["list", "--refresh", "--json"])
@@ -384,7 +384,7 @@ class BackendAndCliTest(TempPaths):
 
 # ----------------------------------------------------------------------------- Steuerung im Fenster (ohne Anzeige)
 try:
-    from galaxy_linux.ui import library_sync as uls
+    from milkyway.ui import library_sync as uls
 except (ImportError, ValueError):     # pragma: no cover - ohne PyGObject/GTK 4
     uls = None
 
@@ -531,7 +531,7 @@ class ControllerTest(unittest.TestCase):
         for delay in (5, 15, 60):
             self.glib.fire(delay)
             if delay == 15:                                             # Fehler zählen als Versuch
-                with self.assertLogs("galaxy_linux.ui.library_sync", "WARNING"):
+                with self.assertLogs("milkyway.ui.library_sync", "WARNING"):
                     self.finish(ApiError("offline"))
             else:
                 self.finish()

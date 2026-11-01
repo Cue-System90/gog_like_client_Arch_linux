@@ -1,7 +1,7 @@
 """Strenger Titelabgleich für Cover externer Spiele: lieber kein Cover als ein falsches."""
 import unittest
 
-from galaxy_linux.api.covers import title_matches as m
+from milkyway.api.covers import title_matches as m
 
 
 class TitleMatchTest(unittest.TestCase):

@@ -9,9 +9,9 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
-from galaxy_linux import library_view as lv
-from galaxy_linux.api.models import LibraryEntry
-from galaxy_linux.settings import GameSettings, GameSettingsStore, GlobalSettings
+from milkyway import library_view as lv
+from milkyway.api.models import LibraryEntry
+from milkyway.settings import GameSettings, GameSettingsStore, GlobalSettings
 
 
 class Paths(unittest.TestCase):
@@ -21,7 +21,7 @@ class Paths(unittest.TestCase):
         cfg, data, cache = base / "cfg", base / "data", base / "cache"
         self.cache = cache
         self.patch = mock.patch.multiple(
-            "galaxy_linux.paths", CONFIG_DIR=cfg, DATA_DIR=data, CACHE_DIR=cache, LOG_DIR=data / "logs",
+            "milkyway.paths", CONFIG_DIR=cfg, DATA_DIR=data, CACHE_DIR=cache, LOG_DIR=data / "logs",
             MANIFEST_DIR=data / "manifests", IMAGE_CACHE_DIR=cache / "images", API_CACHE_DIR=cache / "api",
             SETTINGS_FILE=cfg / "settings.json", GAME_SETTINGS_FILE=cfg / "games.json", CREDENTIALS_FILE=cfg / "credentials.json",
             INSTALLED_FILE=data / "installed.json", PLAYTIME_FILE=data / "playtime.json")

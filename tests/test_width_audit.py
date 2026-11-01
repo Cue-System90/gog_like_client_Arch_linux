@@ -1,7 +1,7 @@
 """Mindestbreiten-Prüfung (ui/width_audit.py) ohne GTK: Knoten mit Kindern, Mindestbreite und Art der Anordnung."""
 import unittest
 
-from galaxy_linux.ui import width_audit as wa
+from milkyway.ui import width_audit as wa
 
 
 class Node:

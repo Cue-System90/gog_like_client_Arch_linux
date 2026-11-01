@@ -2,6 +2,27 @@
 
 Neueste Version zuerst. „Neu bei uns“ im Zahnrad-Menü zeigt den Abschnitt der installierten Version.
 
+## 0.5.0 (01.11.2026)
+
+galaxy-linux heißt jetzt **Milkyway** – die Milchstraße ist unsere Galaxie. Der Client verweist so auf sein Vorbild,
+ohne dessen Namen zu tragen. Funktionen ändern sich nicht.
+
+- **Neuer Name überall**: Programm und Paket `milkyway`, Menüeintrag und Fenster „Milkyway“, App-ID
+  `io.github.cue_system90.Milkyway`, Links `milkyway://…`, neues Symbol. Die oberste Gruppe der Seitenleiste heißt
+  wie im Original nach dem Client: MILKYWAY.
+- **Alles wird übernommen**: Beim ersten Start zieht Milkyway Einstellungen, Bibliothek, Spielzeit, Protokolle und
+  Cache von `~/.config`, `~/.local/share` und `~/.cache/galaxy-linux` nach `…/milkyway` um; an den alten Orten bleibt
+  ein Verweis, damit gespeicherte Pfade weiter gelten. Die Anmeldung im Schlüsselbund, Spielverknüpfungen im
+  Anwendungsmenü und auf dem Schreibtisch, der Autostart, GOverlays Ordnerliste und die Einrichtung der Prefixe
+  werden ebenfalls übernommen – niemand muss sich neu anmelden oder Prefixe neu einrichten.
+- **Update aus 0.4.x**: „Jetzt aktualisieren“ in galaxy-linux 0.4.0/0.4.1 installiert ein Übergangspaket
+  `galaxy-linux` mit Milkyway; das nächste Update ersetzt es durch das Paket `milkyway`. `./install.sh` entfernt
+  galaxy-linux direkt.
+- Umgebungsvariablen heißen jetzt `MILKYWAY_LANG`, `MILKYWAY_LOG` und `MILKYWAY_DEBUG`; die alten Namen
+  (`GALAXY_LINUX_…`) gelten weiter.
+- Fest an Taskleiste oder Favoriten angeheftete Starter von galaxy-linux zeigen ins Leere – Milkyway einmal neu
+  anheften.
+
 ## 0.4.1 (23.10.2026)
 
 - **Videos im Store**: Die kurzen Video-Schleifen in Spielbeschreibungen und andere Videos auf gog.com erschienen als

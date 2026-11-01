@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from galaxy_linux import notifications as nt
+from milkyway import notifications as nt
 
 DAY = 86400
 
@@ -122,7 +122,7 @@ class RouteTest(unittest.TestCase):
         self.assertEqual(nt.route("none", window_focused=False), (False, False))
 
     def test_register_type(self):
-        # eigener Testtyp – die echten Freunde-Typen (galaxy_linux/friends.py) bleiben unberührt
+        # eigener Testtyp – die echten Freunde-Typen (milkyway/friends.py) bleiben unberührt
         try:
             nt.register_type(nt.NotificationType("testtyp", "Test", "notify_testtyp", order=999, focus_desktop=True))
             nt.register_kind("test-kind", "testtyp")

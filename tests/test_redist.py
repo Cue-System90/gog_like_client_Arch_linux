@@ -14,15 +14,15 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from galaxy_linux.api.client import ApiError
-from galaxy_linux.backend import JOB_KINDS, Job, JobQueue
-from galaxy_linux.content import build_records, redist
-from galaxy_linux.content.downloader import FileJob
-from galaxy_linux.content.installer import InstallManager
-from galaxy_linux.content.manifest import DepotFile, parse_dependency_repository
-from galaxy_linux.launch import hook_redist
-from galaxy_linux.launch.hooks import LaunchContext
-from galaxy_linux.settings import GameSettingsStore, GlobalSettings, InstalledGame, InstalledRegistry
+from milkyway.api.client import ApiError
+from milkyway.backend import JOB_KINDS, Job, JobQueue
+from milkyway.content import build_records, redist
+from milkyway.content.downloader import FileJob
+from milkyway.content.installer import InstallManager
+from milkyway.content.manifest import DepotFile, parse_dependency_repository
+from milkyway.launch import hook_redist
+from milkyway.launch.hooks import LaunchContext
+from milkyway.settings import GameSettingsStore, GlobalSettings, InstalledGame, InstalledRegistry
 
 MSVC2005_ARGS = '/q:a /c:"VCREDI~3.EXE /q:a /c:""msiexec /i vcredist.msi /qb"" "'
 
@@ -64,7 +64,7 @@ class Base(unittest.TestCase):
         self.td = tempfile.TemporaryDirectory()
         self.root = root = Path(self.td.name)
         self.patch = mock.patch.multiple(
-            "galaxy_linux.paths", DATA_DIR=root / "data", MANIFEST_DIR=root / "data" / "manifests",
+            "milkyway.paths", DATA_DIR=root / "data", MANIFEST_DIR=root / "data" / "manifests",
             LOG_DIR=root / "logs", SETTINGS_FILE=root / "settings.json", GAME_SETTINGS_FILE=root / "games.json",
             INSTALLED_FILE=root / "installed.json", PLAYTIME_FILE=root / "playtime.json")
         self.patch.start()
@@ -365,7 +365,7 @@ class DownloadTest(Base):
 
     def test_download_keeps_isi_and_refreshes_on_new_build(self):
         api = FakeRepoApi()
-        with self.assertLogs("galaxy_linux.content.redist", "WARNING"):
+        with self.assertLogs("milkyway.content.redist", "WARNING"):
             got = redist.download_global_redists(api, ["MSVC2017", "DOSBox074", "Fehlt"])
         self.assertEqual(got, ["ISI", "MSVC2017"])                                   # ISI immer, nur globale
         self.assertIn(("get", f"{redist.CONTENT_SYSTEM}/dependencies/repository", False), api.calls)
@@ -446,7 +446,7 @@ class InstallerTest(Base):
         self.assertEqual(plan.game_dependencies, ["DOSBox074", "language_setup"])
         self.assertEqual(plan.dependency_names, ["Visual C++ Redist 2017", "DirectX 9.0c", "DOX Box 74", "Language Setup"])
 
-        with mock.patch("galaxy_linux.content.installer.ChunkDownloader", FakeDownloader):
+        with mock.patch("milkyway.content.installer.ChunkDownloader", FakeDownloader):
             inst.install(plan)
         rec = build_records.load_record("100")
         self.assertNotIn("100/support/icon.ico", rec["files"])
@@ -629,7 +629,7 @@ class SetupHookTest(Base):
     def test_failed_step_retried_three_times_then_reported_once(self):
         self.put_cache(["ISI", "MSVC2017"])
         self.rc["VC_redist.x86.exe"] = 1603
-        with self.assertLogs("galaxy_linux.launch.hook_redist", "INFO"):
+        with self.assertLogs("milkyway.launch.hook_redist", "INFO"):
             for n in range(redist.MAX_RETRIES + 1):
                 out = hook_redist.setup_prefix(self.ctx())
                 self.assertEqual(out["failed"], ["redist:MSVC2017"], n)
@@ -691,7 +691,7 @@ class SetupHookTest(Base):
         self.run.reset_mock()
         hook_redist.setup_prefix(self.ctx())                                         # Merker verbraucht
         self.run.assert_not_called()
-        hook_redist.setup_prefix(self.ctx(prepare_only=True))                        # galaxy-linux prefix setup
+        hook_redist.setup_prefix(self.ctx(prepare_only=True))                        # milkyway prefix setup
         self.assertEqual(len(self.ran()), 3)
 
     def test_update_installs_new_redists_per_prefix(self):
@@ -743,15 +743,15 @@ class SetupHookTest(Base):
 
     def test_expired_login_offline_keeps_other_steps(self):
         """Abgelaufenes Token ohne Netz: AuthError aus builds()/secure_link() lässt nur die betroffenen Schritte offen."""
-        from galaxy_linux.api.auth import AuthError
+        from milkyway.api.auth import AuthError
         self.put_cache(["ISI", "MSVC2017"])
         self.record.pop("script_interpreter")                                    # Datensatz von 0.1.6
         self.write_record()
         redist.write_support_marker("100", "5555", [], 0)
-        (redist.support_dir("100") / ".galaxy-linux-support.json").unlink(missing_ok=True)
+        (redist.support_dir("100") / ".milkyway-support.json").unlink(missing_ok=True)
         api = types.SimpleNamespace(logged_in=True, builds=mock.Mock(side_effect=AuthError("offline")),
                                     zlib_json=mock.Mock(side_effect=AuthError("offline")))
-        with self.assertLogs("galaxy_linux", "WARNING"):
+        with self.assertLogs("milkyway", "WARNING"):
             out = hook_redist.setup_prefix(self.ctx(api=api))
         self.assertIn("VC_redist.x86.exe", self.ran())
         self.assertEqual(out["failed"], [])

@@ -8,15 +8,15 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from galaxy_linux.content.installer import InstallError, InstallManager
-from galaxy_linux.settings import GlobalSettings, InstalledGame, InstalledRegistry
+from milkyway.content.installer import InstallError, InstallManager
+from milkyway.settings import GlobalSettings, InstalledGame, InstalledRegistry
 
 
 class MoveTest(unittest.TestCase):
     def setUp(self):
         self.td = tempfile.TemporaryDirectory()
         root = Path(self.td.name)
-        self.patch = mock.patch.multiple("galaxy_linux.paths", INSTALLED_FILE=root / "installed.json", MANIFEST_DIR=root / "manifests")
+        self.patch = mock.patch.multiple("milkyway.paths", INSTALLED_FILE=root / "installed.json", MANIFEST_DIR=root / "manifests")
         self.patch.start()
         self.src = root / "games" / "Demo Game"
         (self.src / "sub").mkdir(parents=True)
@@ -54,7 +54,7 @@ class MoveTest(unittest.TestCase):
 
         def fake_rename(a, b):
             raise OSError(18, "Invalid cross-device link")
-        with mock.patch("galaxy_linux.content.installer.os.rename", side_effect=fake_rename):
+        with mock.patch("milkyway.content.installer.os.rename", side_effect=fake_rename):
             game = self.mgr.move("1", new_root)
         self.assertTrue((new_root / "Demo Game" / "game.exe").exists())
         self.assertFalse(self.src.exists())
@@ -70,7 +70,7 @@ class MoveTest(unittest.TestCase):
         dst = Path(self.td.name) / "cancel" / "Demo Game"
         ev = threading.Event()
         ev.set()
-        from galaxy_linux.content.downloader import DownloadCancelled
+        from milkyway.content.downloader import DownloadCancelled
         with self.assertRaises(DownloadCancelled):
             InstallManager._copy_tree(self.src, dst, None, ev)
         self.assertFalse(dst.exists())

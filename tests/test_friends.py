@@ -8,13 +8,13 @@ import types
 import unittest
 from pathlib import Path
 
-from galaxy_linux import friends as fr
-from galaxy_linux import notifications as nt
-from galaxy_linux import presence
-from galaxy_linux.api import friends as fa
-from galaxy_linux.api.client import ApiError, NotLoggedIn
-from galaxy_linux.api.friends import Friend, Invitation, PresenceInfo
-from galaxy_linux.store_links import store_url
+from milkyway import friends as fr
+from milkyway import notifications as nt
+from milkyway import presence
+from milkyway.api import friends as fa
+from milkyway.api.client import ApiError, NotLoggedIn
+from milkyway.api.friends import Friend, Invitation, PresenceInfo
+from milkyway.store_links import store_url
 
 ME = "48628349957132247"
 A, B, C, D = "46988961654682898", "47510856674996320", "46988886297334688", "49000000000000001"
@@ -378,7 +378,7 @@ class NoticeTest(unittest.TestCase):
         self.assertEqual(keys["friend_invite"].title, "Freundschaftsanfrage")
         self.assertEqual(keys["friend_online"].title, "Freund geht online")
         self.assertEqual(keys["friend_playing"].title, "Freund startet ein Spiel")
-        from galaxy_linux.settings import GlobalSettings
+        from milkyway.settings import GlobalSettings
         s = GlobalSettings()
         self.assertEqual(nt.mode_for(s, fr.KIND_INVITE), nt.MODE_BOTH)
         self.assertEqual(nt.mode_for(s, fr.KIND_ONLINE), nt.MODE_CENTER)

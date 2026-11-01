@@ -15,7 +15,7 @@ class BuildPyWithChangelog(build_py):
         super().run()
         src = HERE / "CHANGELOG.md"
         if src.is_file():
-            dest = Path(self.build_lib) / "galaxy_linux" / "CHANGELOG.md"
+            dest = Path(self.build_lib) / "milkyway" / "CHANGELOG.md"
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(src, dest)
 
