@@ -8,10 +8,10 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from milkyway.api.client import ApiError
-from milkyway.content import build_records as br
-from milkyway.content.manifest import Build, BuildManifest, parse_dependency_repository
-from milkyway.settings import InstalledGame
+from local_cluster.api.client import ApiError
+from local_cluster.content import build_records as br
+from local_cluster.content.manifest import Build, BuildManifest, parse_dependency_repository
+from local_cluster.settings import InstalledGame
 
 SECRET = "geheim-0123456789abcdef"
 
@@ -70,7 +70,7 @@ class BuildRecordTest(unittest.TestCase):
         self.td = tempfile.TemporaryDirectory()
         root = Path(self.td.name)
         self.manifests = root / "manifests"
-        self.patch = mock.patch.multiple("milkyway.paths", MANIFEST_DIR=self.manifests)
+        self.patch = mock.patch.multiple("local_cluster.paths", MANIFEST_DIR=self.manifests)
         self.patch.start()
         self.repo_patch = mock.patch.object(br, "_repo_cache", None)
         self.repo_patch.start()
@@ -128,7 +128,7 @@ class BuildRecordTest(unittest.TestCase):
 
     def test_ensure_record_creates_installer_format(self):
         api = FakeApi()
-        with self.assertLogs("milkyway.content.build_records", "INFO") as logs:
+        with self.assertLogs("local_cluster.content.build_records", "INFO") as logs:
             rec = br.ensure_record(api, self.game)
         self.assertNotIn(SECRET, "\n".join(logs.output))                       # Client-Secret nie im Protokoll
         self.assertEqual(api.calls[:2], [("builds", "100", "windows"), ("zlib", "https://cdn/meta/old")])
@@ -176,18 +176,18 @@ class BuildRecordTest(unittest.TestCase):
     def test_unknown_build_uses_newest(self):
         (self.dir / "goggame-100.info").write_text(json.dumps({"gameId": "100", "buildId": "4444"}))
         api = FakeApi(manifest=dict(MANIFEST, buildId="9999"))
-        with self.assertLogs("milkyway.content.build_records", "INFO"):
+        with self.assertLogs("local_cluster.content.build_records", "INFO"):
             rec = br.ensure_record(api, self.game)
         self.assertEqual(rec["build_id"], "9999")
         self.assertIn(("zlib", "https://cdn/meta/new"), api.calls)
 
     def test_network_error_keeps_existing(self):
-        with self.assertLogs("milkyway.content.build_records", "WARNING"):
+        with self.assertLogs("local_cluster.content.build_records", "WARNING"):
             self.assertIsNone(br.ensure_record(FakeApi(fail=True), self.game))
         self.assertFalse((self.manifests / "100.json").exists())
 
     def test_no_v2_build(self):
-        with self.assertLogs("milkyway.content.build_records", "INFO"):
+        with self.assertLogs("local_cluster.content.build_records", "INFO"):
             self.assertIsNone(br.ensure_record(FakeApi(builds=[BUILDS[3]]), self.game))
 
     def test_not_for_external_or_linux(self):

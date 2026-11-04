@@ -1,12 +1,12 @@
-"""Sicherheitsnetz für alle Tests: HOME und XDG_* zeigen auf einen eigenen Temp-Ordner, bevor Milkyway geladen wird.
-So kann kein Test versehentlich die echten Daten (~/.config/milkyway, ~/.local/share/milkyway, GOverlays
+"""Sicherheitsnetz für alle Tests: HOME und XDG_* zeigen auf einen eigenen Temp-Ordner, bevor local:cluster geladen wird.
+So kann kein Test versehentlich die echten Daten (~/.config/local-cluster, ~/.local/share/local-cluster, GOverlays
 nonsteam_folders.txt oder Cover-Cache) anfassen, auch wenn er vergisst, einen Pfad umzubiegen."""
 import atexit
 import os
 import shutil
 import tempfile
 
-_HOME = tempfile.mkdtemp(prefix="milkyway-tests-")
+_HOME = tempfile.mkdtemp(prefix="local-cluster-tests-")
 atexit.register(shutil.rmtree, _HOME, True)
 os.environ["HOME"] = _HOME
 for _var, _sub in (("XDG_CONFIG_HOME", ".config"), ("XDG_DATA_HOME", ".local/share"), ("XDG_CACHE_HOME", ".cache")):

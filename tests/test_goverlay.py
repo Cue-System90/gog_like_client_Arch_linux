@@ -15,10 +15,10 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from milkyway.launch import compat, goverlay, goverlay_profiles as gp, hooks
-from milkyway.launch.hook_goverlay import GOverlayHook
-from milkyway.launch.launcher import Launcher, LaunchPlan
-from milkyway.settings import (CustomLibrary, GameSettings, GameSettingsStore, GlobalSettings, InstalledGame,
+from local_cluster.launch import compat, goverlay, goverlay_profiles as gp, hooks
+from local_cluster.launch.hook_goverlay import GOverlayHook
+from local_cluster.launch.launcher import Launcher, LaunchPlan
+from local_cluster.settings import (CustomLibrary, GameSettings, GameSettingsStore, GlobalSettings, InstalledGame,
                                    InstalledRegistry, PlaytimeStore)
 
 GAME = "Sid Meier's Alpha Centauri Planetary Pack"
@@ -45,7 +45,7 @@ class SanitizeTest(unittest.TestCase):
 
 
 class TempEnv(unittest.TestCase):
-    """HOME, XDG_CONFIG_HOME und XDG_DATA_HOME in einem Temp-Ordner; milkyway-Pfade ebenso."""
+    """HOME, XDG_CONFIG_HOME und XDG_DATA_HOME in einem Temp-Ordner; local-cluster-Pfade ebenso."""
 
     def setUp(self):
         self.td = tempfile.TemporaryDirectory()
@@ -58,7 +58,7 @@ class TempEnv(unittest.TestCase):
         self.env.start()
         gl = root / "gl"
         self.paths = mock.patch.multiple(
-            "milkyway.paths", SETTINGS_FILE=gl / "settings.json", GAME_SETTINGS_FILE=gl / "games.json",
+            "local_cluster.paths", SETTINGS_FILE=gl / "settings.json", GAME_SETTINGS_FILE=gl / "games.json",
             INSTALLED_FILE=gl / "installed.json", PLAYTIME_FILE=gl / "playtime.json", MANIFEST_DIR=gl / "manifests",
             LOG_DIR=gl / "logs", IMAGE_CACHE_DIR=gl / "images", API_CACHE_DIR=gl / "api", DATA_DIR=gl / "data",
             CONFIG_DIR=gl / "cfg", CACHE_DIR=gl / "cache")
@@ -185,7 +185,7 @@ class ViewSyncTest(TempEnv):
         self.view = self.data_dir() / gp.VIEW_DIR
 
     def data_dir(self) -> Path:
-        from milkyway import paths
+        from local_cluster import paths
         return paths.DATA_DIR
 
     def links(self) -> dict[str, str]:
@@ -316,7 +316,7 @@ class CoverRulesTest(unittest.TestCase):
 class CoverSyncTest(TempEnv):
     def setUp(self):
         super().setUp()
-        from milkyway import paths
+        from local_cluster import paths
         import hashlib
         self.install_goverlay()
         self.url = "https://images.gog.com/abc_glx_vertical_cover.jpg"
@@ -703,9 +703,9 @@ class LaunchIntegrationTest(TempEnv):
 
     def test_registered_hook(self):
         import importlib
-        from milkyway import backend
-        sys.modules.pop("milkyway.launch.hook_goverlay", None)
-        importlib.import_module("milkyway.launch.hook_goverlay")
+        from local_cluster import backend
+        sys.modules.pop("local_cluster.launch.hook_goverlay", None)
+        importlib.import_module("local_cluster.launch.hook_goverlay")
         h = next(h for h in hooks.hooks() if h.name == "goverlay")
         self.assertEqual((h.order, h.setup), (50, False))
         self.assertTrue(any(getattr(f, "__name__", "") == "undo_bgmod_changes" for f in backend._files_change_hooks))
@@ -743,18 +743,18 @@ class UninstallerTest(TempEnv):
         self.assertFalse(self.out.exists())
 
     def test_backend_hook_isolation(self):
-        from milkyway import backend
+        from local_cluster import backend
         calls = []
 
         def boom(b, pid, action, status):
             raise RuntimeError("x")
         with mock.patch.object(backend, "_files_change_hooks", [boom, lambda *a: calls.append(a[1:3])]), \
-             self.assertLogs("milkyway.backend", "ERROR"):
+             self.assertLogs("local_cluster.backend", "ERROR"):
             backend.Backend.before_files_change(types.SimpleNamespace(), "1", "move")
         self.assertEqual(calls, [("1", "move")])
 
     def test_job_queue_calls_hook_point(self):
-        from milkyway import backend
+        from local_cluster import backend
         fake = mock.Mock(updates={})
         with mock.patch.object(threading.Thread, "start"), mock.patch.object(backend, "_job_finished_hooks", []):
             q = backend.JobQueue(fake)

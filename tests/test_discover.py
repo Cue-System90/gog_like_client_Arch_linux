@@ -5,10 +5,10 @@ from __future__ import annotations
 import unittest
 from types import SimpleNamespace
 
-from milkyway.api import discover as dc
-from milkyway.api import wishlist as wl
-from milkyway.api.client import ApiError, NotLoggedIn
-from milkyway.api.prices import Price, catalog_price, format_amount, format_discount, parse_cents, parse_money
+from local_cluster.api import discover as dc
+from local_cluster.api import wishlist as wl
+from local_cluster.api.client import ApiError, NotLoggedIn
+from local_cluster.api.prices import Price, catalog_price, format_amount, format_discount, parse_cents, parse_money
 
 NBSP = " "
 
@@ -255,7 +255,7 @@ class ServiceTest(unittest.TestCase):
         self.assertEqual([p.title for p in dc.DiscoverService(api).shelf("dlc", "de")], ["DLC"])
         api = FakeApi(logged_in=True, user=self.USER,
                       routes={"catalog.gog.com": self.catalog_route({("dlc", True): 5000, ("dlc", False): 5000})})
-        with self.assertLogs("milkyway.api.discover", "INFO"):
+        with self.assertLogs("local_cluster.api.discover", "INFO"):
             self.assertEqual(dc.DiscoverService(api).shelf("dlc", "de"), [])
 
     def test_wishlist_shelf(self):

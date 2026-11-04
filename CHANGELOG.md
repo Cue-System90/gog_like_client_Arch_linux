@@ -2,6 +2,26 @@
 
 Neueste Version zuerst. „Neu bei uns“ im Zahnrad-Menü zeigt den Abschnitt der installierten Version.
 
+## 0.6.0 (04.11.2026)
+
+Milkyway heißt jetzt **local:cluster** – nach der Lokalen Gruppe, dem Galaxienhaufen, zu dem unsere Milchstraße
+gehört. Funktionen ändern sich nicht.
+
+- **Neuer Name**: angezeigt „local:cluster“ (Menüeintrag, Fenster, oberste Gruppe der Seitenleiste LOCAL:CLUSTER),
+  technisch `local-cluster` (Programm, Paket, Ordner), App-ID `io.github.cue_system90.LocalCluster`, Links
+  `local-cluster://…`, neues Symbol: das Sonnensystem.
+- **Alles wird übernommen** – von Milkyway wie von galaxy-linux: Einstellungen, Bibliothek, Spielzeit, Protokolle
+  und Cache ziehen nach `~/.config`, `~/.local/share` und `~/.cache/local-cluster`; an den alten Orten bleiben
+  Verweise. Anmeldung im Schlüsselbund, Spielverknüpfungen, Autostart, GOverlays Ordnerliste und die Einrichtung der
+  Prefixe werden ebenfalls übernommen.
+- **Update**: „Jetzt aktualisieren“ in Milkyway 0.5.x ersetzt das Paket direkt durch `local-cluster`; galaxy-linux
+  0.4.x kommt wie bisher über das Übergangspaket `galaxy-linux`. Der Befehl `milkyway` bleibt vorerst als Verweis
+  auf `local-cluster`.
+- Umgebungsvariablen `LOCAL_CLUSTER_LANG`, `LOCAL_CLUSTER_LOG` und `LOCAL_CLUSTER_DEBUG`; die Namen von Milkyway und
+  galaxy-linux gelten weiter.
+- Enthält die Korrektur aus 0.5.1: Freunde, Online-Status und Spielzeit aller Geräte über die Galaxy-Kennung.
+- An Taskleiste oder Favoriten angeheftete Starter von Milkyway einmal neu anheften.
+
 ## 0.5.1 (01.11.2026)
 
 - **Freunde, Online-Status und Spielzeit aller Geräte gehen wieder**: Seit 0.3.0 schickte der Client an GOGs

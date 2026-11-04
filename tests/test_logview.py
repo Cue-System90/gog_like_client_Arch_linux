@@ -7,17 +7,17 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from milkyway import logview
+from local_cluster import logview
 
-MAIN = """2026-10-23 09:18:03,329 INFO  [gl-goverlay] milkyway.launch.goverlay_profiles: GOverlay-Cover angelegt
-2026-10-23 09:18:04,000 DEBUG [MainThread] milkyway.backend: Einstellungen geladen
-2026-10-23 09:18:05,100 WARNING [gl-ui_0] milkyway.backend: Metadaten für 1 nicht verfügbar
-2026-10-23 09:18:06,200 ERROR [gl-ui_1] milkyway: Ausnahme im Thread gl-ui_1
+MAIN = """2026-10-23 09:18:03,329 INFO  [gl-goverlay] local_cluster.launch.goverlay_profiles: GOverlay-Cover angelegt
+2026-10-23 09:18:04,000 DEBUG [MainThread] local_cluster.backend: Einstellungen geladen
+2026-10-23 09:18:05,100 WARNING [gl-ui_0] local_cluster.backend: Metadaten für 1 nicht verfügbar
+2026-10-23 09:18:06,200 ERROR [gl-ui_1] local-cluster: Ausnahme im Thread gl-ui_1
 Traceback (most recent call last):
   File "x.py", line 1, in <module>
 ValueError: kaputt
-2026-10-23 09:18:07,300 INFO  [MainThread] milkyway.api: GET https://api.gog.com/x?access_token=geheim123
-2026-10-23 09:18:08,400 CRITICAL [MainThread] milkyway: Unbehandelte Ausnahme
+2026-10-23 09:18:07,300 INFO  [MainThread] local_cluster.api: GET https://api.gog.com/x?access_token=geheim123
+2026-10-23 09:18:08,400 CRITICAL [MainThread] local-cluster: Unbehandelte Ausnahme
 """.splitlines()
 
 
@@ -59,7 +59,7 @@ class FilesTest(unittest.TestCase):
     def setUp(self):
         self.td = tempfile.TemporaryDirectory()
         self.dir = Path(self.td.name)
-        self.patch = mock.patch("milkyway.paths.LOG_DIR", self.dir)
+        self.patch = mock.patch("local_cluster.paths.LOG_DIR", self.dir)
         self.patch.start()
 
     def tearDown(self):
@@ -67,7 +67,7 @@ class FilesTest(unittest.TestCase):
         self.td.cleanup()
 
     def test_tail_lines(self):
-        f = self.dir / "milkyway.log"
+        f = self.dir / "local-cluster.log"
         f.write_text("".join(f"Zeile {i}\n" for i in range(20000)))
         self.assertEqual(logview.tail_lines(f, 3), ["Zeile 19997", "Zeile 19998", "Zeile 19999"])
         self.assertEqual(len(logview.tail_lines(f, 3000)), 3000)
@@ -78,7 +78,7 @@ class FilesTest(unittest.TestCase):
         self.assertEqual(logview.tail_lines(small, 3000), ["a", "b"])
 
     def test_follower_append_clear_rotate(self):
-        f = self.dir / "milkyway.log"
+        f = self.dir / "local-cluster.log"
         f.write_text("alt\n")
         fol = logview.Follower(f)
         fol.start_at_end()
@@ -96,17 +96,17 @@ class FilesTest(unittest.TestCase):
         with open(f, "a") as fh:
             fh.write("nach dem Leeren\n")
         self.assertEqual(fol.read_new(), ["nach dem Leeren"])
-        os.replace(f, self.dir / "milkyway.log.1")                   # Rotation
+        os.replace(f, self.dir / "local-cluster.log.1")                   # Rotation
         f.write_text("rotiert\n")
         self.assertEqual(fol.read_new(), ["rotiert"])
         self.assertTrue(fol.reset_flag)
 
     def test_sources(self):
-        for name in ("milkyway.log", "milkyway.log.1", "comet.log", "ext-freelancer.log", "1207659039.log"):
+        for name in ("local-cluster.log", "local-cluster.log.1", "comet.log", "ext-freelancer.log", "1207659039.log"):
             (self.dir / name).write_text("x\n")
         srcs = logview.sources({"1207659039": "Zeus and Poseidon", "ext-freelancer": "Freelancer"})
-        self.assertEqual([s.label for s in srcs], ["milkyway.log", "comet.log", "Freelancer", "Zeus and Poseidon"])
-        self.assertEqual(srcs[0].path, self.dir / "milkyway.log")
+        self.assertEqual([s.label for s in srcs], ["local-cluster.log", "comet.log", "Freelancer", "Zeus and Poseidon"])
+        self.assertEqual(srcs[0].path, self.dir / "local-cluster.log")
 
 
 if __name__ == "__main__":

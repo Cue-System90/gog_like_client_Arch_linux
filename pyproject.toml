@@ -3,8 +3,8 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "milkyway"
-version = "0.5.1"
+name = "local-cluster"
+version = "0.6.0"
 description = "Inoffizieller nativer Client für GOG.com auf CachyOS/Arch Linux mit Proton-Auswahl pro Spiel und Steam-kompatiblen Startoptionen"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -15,11 +15,11 @@ dependencies = ["requests>=2.25"]
 vdf = ["vdf"]
 
 [project.scripts]
-milkyway = "milkyway.__main__:main"
+local-cluster = "local_cluster.__main__:main"
 
 [tool.setuptools.packages.find]
-include = ["milkyway*"]
+include = ["local_cluster*"]
 
 [tool.setuptools.package-data]
-"milkyway" = ["locale/*.po"]
-"milkyway.ui" = ["*.css"]
+"local_cluster" = ["locale/*.po"]
+"local_cluster.ui" = ["*.css"]

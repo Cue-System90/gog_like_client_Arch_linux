@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from milkyway.content import scanner
+from local_cluster.content import scanner
 
 
 def make_game(d: Path, pid: str, name: str, *, root: str | None = None, exe: str = "game.exe", build: str = "", dlcs=(), old=True):
@@ -91,12 +91,12 @@ class BackendScanTest(unittest.TestCase):
         self.games.mkdir()
         cfg, data, cache = base / "cfg", base / "data", base / "cache"
         self.patch = mock.patch.multiple(
-            "milkyway.paths", CONFIG_DIR=cfg, DATA_DIR=data, CACHE_DIR=cache, LOG_DIR=data / "logs",
+            "local_cluster.paths", CONFIG_DIR=cfg, DATA_DIR=data, CACHE_DIR=cache, LOG_DIR=data / "logs",
             MANIFEST_DIR=data / "manifests", IMAGE_CACHE_DIR=cache / "images", API_CACHE_DIR=cache / "api",
             SETTINGS_FILE=cfg / "settings.json", GAME_SETTINGS_FILE=cfg / "games.json", CREDENTIALS_FILE=cfg / "credentials.json",
             INSTALLED_FILE=data / "installed.json", PLAYTIME_FILE=data / "playtime.json")
         self.patch.start()
-        from milkyway.backend import Backend
+        from local_cluster.backend import Backend
         self.b = Backend()
         self.b.settings.install_dir = str(self.games)
         self.b.settings.prefix_dir = str(self.prefixes)
@@ -153,7 +153,7 @@ class BackendScanTest(unittest.TestCase):
         calls = []
         with mock.patch.object(self.b.launcher, "create_prefix", side_effect=fake_create), \
              mock.patch.object(self.b.launcher, "run_in_prefix", side_effect=lambda pid, argv, **kw: calls.append(argv) or 0), \
-             mock.patch("milkyway.launch.display.desktop_dpi", return_value=216):
+             mock.patch("local_cluster.launch.display.desktop_dpi", return_value=216):
             self.b.create_game_prefix("7")
         self.assertTrue(self.b.launcher.prefix_exists("7"))
         self.assertEqual(calls[0][:5], ["reg", "add", r"HKCU\Control Panel\Desktop", "/v", "LogPixels"])

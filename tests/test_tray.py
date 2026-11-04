@@ -9,7 +9,7 @@ import unittest
 
 try:
     from gi.repository import Gio, GLib
-    from milkyway.ui import tray
+    from local_cluster.ui import tray
 except Exception:  # pragma: no cover – ohne PyGObject
     tray = None
 

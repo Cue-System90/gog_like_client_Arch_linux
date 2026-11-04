@@ -8,10 +8,10 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from milkyway.launch import compat, launch_options as lo
-from milkyway.launch.launcher import LaunchError, Launcher, PlayTask, split_windows_args, primary_task, play_tasks
-from milkyway.content.manifest import BuildManifest, DepotManifest, normalize_path, pick_language, ManifestError
-from milkyway.settings import GameSettings, GameSettingsStore, GlobalSettings, InstalledGame, InstalledRegistry, PlaytimeStore
+from local_cluster.launch import compat, launch_options as lo
+from local_cluster.launch.launcher import LaunchError, Launcher, PlayTask, split_windows_args, primary_task, play_tasks
+from local_cluster.content.manifest import BuildManifest, DepotManifest, normalize_path, pick_language, ManifestError
+from local_cluster.settings import GameSettings, GameSettingsStore, GlobalSettings, InstalledGame, InstalledRegistry, PlaytimeStore
 
 
 class LaunchOptionsTest(unittest.TestCase):
@@ -126,7 +126,7 @@ class LauncherPlanTest(unittest.TestCase):
     def setUp(self):
         self.td = tempfile.TemporaryDirectory()
         root = Path(self.td.name)
-        self.patch = mock.patch.multiple("milkyway.paths",
+        self.patch = mock.patch.multiple("local_cluster.paths",
                                          SETTINGS_FILE=root / "settings.json", GAME_SETTINGS_FILE=root / "games.json",
                                          INSTALLED_FILE=root / "installed.json", PLAYTIME_FILE=root / "playtime.json",
                                          MANIFEST_DIR=root / "manifests", LOG_DIR=root / "logs")
@@ -229,7 +229,7 @@ class LauncherPlanTest(unittest.TestCase):
         self.assertEqual(env["WINEPREFIX"], str(root / "prefixes" / "1" / "pfx"))
         (wine_dir / "wineserver").unlink()
         with mock.patch.object(compat, "resolve", return_value=wine), \
-             mock.patch("milkyway.launch.launcher.shutil.which", return_value=None):
+             mock.patch("local_cluster.launch.launcher.shutil.which", return_value=None):
             with self.assertRaises(LaunchError):
                 self.launcher.wineserver_command("1")
 

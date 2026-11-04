@@ -2,7 +2,7 @@ import os
 import unittest
 from unittest import mock
 
-from milkyway.ui import web
+from local_cluster.ui import web
 
 
 class WebEnvironmentTest(unittest.TestCase):

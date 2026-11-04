@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Veröffentlichung für den Maintainer: baut das pacman-Paket mit scripts/build-package.sh in einen frischen Ordner und
-# legt mit gh das GitHub-Release v<version> an – mit dem Paket milkyway-<ver>-<rel>-any.pkg.tar.zst, dem
-# Übergangspaket galaxy-linux-<ver>-<rel>-any.pkg.tar.zst (Selbst-Update der Clients bis 0.4.1) und SHA256SUMS;
+# legt mit gh das GitHub-Release v<version> an – mit dem Paket local-cluster-<ver>-<rel>-any.pkg.tar.zst, demselben
+# Paket als milkyway-<ver>-<rel>-any.pkg.tar.zst (Selbst-Update von Milkyway 0.5.x), dem Übergangspaket
+# galaxy-linux-<ver>-<rel>-any.pkg.tar.zst (Selbst-Update der Clients bis 0.4.1) und SHA256SUMS;
 # die Versionshinweise sind der Abschnitt „## <version> …“ aus CHANGELOG.md.
 #
 # NUR NACH FREIGABE AUSFÜHREN: „Nach Updates suchen“ und die tägliche Suche aller Nutzer finden das Release sofort,
@@ -18,14 +19,14 @@ DRY=0
 VER="$(sed -n 's/^version = "\(.*\)"/\1/p' "$HERE/pyproject.toml")"
 PKGVER="$(sed -n 's/^pkgver=//p' "$HERE/PKGBUILD")"
 PKGREL="$(sed -n 's/^pkgrel=//p' "$HERE/PKGBUILD")"
-PYVER="$(sed -n 's/^__version__ = "\(.*\)"/\1/p' "$HERE/milkyway/__init__.py")"
+PYVER="$(sed -n 's/^__version__ = "\(.*\)"/\1/p' "$HERE/local_cluster/__init__.py")"
 TAG="v$VER"
 die() { echo "release.sh: $*" >&2; exit 1; }
 
 # Versionen müssen überall gleich sein, die Version braucht einen fertigen CHANGELOG-Abschnitt
 [ -n "$VER" ] || die "keine Version in pyproject.toml"
 [ "$PKGVER" = "$VER" ] || die "PKGBUILD pkgver=$PKGVER, pyproject.toml $VER"
-[ "$PYVER" = "$VER" ] || die "milkyway/__init__.py $PYVER, pyproject.toml $VER"
+[ "$PYVER" = "$VER" ] || die "local_cluster/__init__.py $PYVER, pyproject.toml $VER"
 grep -q "^## $VER (" "$HERE/CHANGELOG.md" || die "CHANGELOG.md hat keinen Abschnitt „## $VER (…)“"
 grep -q "^## $VER (in Arbeit)" "$HERE/CHANGELOG.md" && die "CHANGELOG.md: $VER ist noch „in Arbeit“"
 [ -z "$(git -C "$HERE" status --porcelain)" ] || die "Arbeitskopie hat ungesicherte Änderungen"
@@ -33,11 +34,12 @@ grep -q "^## $VER (in Arbeit)" "$HERE/CHANGELOG.md" && die "CHANGELOG.md: $VER i
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 "$HERE/scripts/build-package.sh" "$WORK/dist" >/dev/null
-PKG="$WORK/dist/milkyway-$VER-$PKGREL-any.pkg.tar.zst"
+PKG="$WORK/dist/local-cluster-$VER-$PKGREL-any.pkg.tar.zst"
+ALIAS="$WORK/dist/milkyway-$VER-$PKGREL-any.pkg.tar.zst"
 LEGACY="$WORK/dist/galaxy-linux-$VER-$PKGREL-any.pkg.tar.zst"
 SUMS="$WORK/dist/SHA256SUMS"
 ( cd "$WORK/dist" && sha256sum --quiet -c SHA256SUMS ) || die "SHA256SUMS passt nicht zu den gebauten Dateien"
-for f in "$PKG" "$LEGACY"; do
+for f in "$PKG" "$ALIAS" "$LEGACY"; do
   [ -f "$f" ] || die "Paket fehlt: $f"
   grep -q " $(basename "$f")\$" "$SUMS" || die "SHA256SUMS enthält $(basename "$f") nicht"
 done
@@ -47,7 +49,7 @@ python3 - "$HERE" "$VER" "$NOTES" <<'PY'
 import sys
 sys.path.insert(0, sys.argv[1])
 from pathlib import Path
-from milkyway import clientinfo
+from local_cluster import clientinfo
 section, _older = clientinfo.changelog_section(Path(sys.argv[1], "CHANGELOG.md").read_text(encoding="utf-8"), sys.argv[2])
 if not section:
     sys.exit("kein CHANGELOG-Abschnitt")
@@ -57,6 +59,7 @@ PY
 
 echo "Release $TAG für $REPO"
 echo "  Paket:       $(basename "$PKG") ($(du -h "$PKG" | cut -f1))"
+echo "  für 0.5.x:   $(basename "$ALIAS") (gleiches Paket)"
 echo "  Übergang:    $(basename "$LEGACY") ($(du -h "$LEGACY" | cut -f1))"
 echo "  SHA256SUMS:"; sed 's/^/    /' "$SUMS"
 echo "  Hinweise:    $(wc -l < "$NOTES") Zeilen aus CHANGELOG.md"
@@ -72,6 +75,6 @@ gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1 && die "Release $TAG gibt 
 
 read -r -p "Release $TAG jetzt auf GitHub veröffentlichen? [j/N] " answer
 [ "$answer" = "j" ] || [ "$answer" = "J" ] || die "abgebrochen"
-gh release create "$TAG" "$PKG" "$LEGACY" "$SUMS" --repo "$REPO" --target "$(git -C "$HERE" rev-parse HEAD)" \
-  --title "Milkyway $VER" --notes-file "$NOTES"
+gh release create "$TAG" "$PKG" "$ALIAS" "$LEGACY" "$SUMS" --repo "$REPO" --target "$(git -C "$HERE" rev-parse HEAD)" \
+  --title "local:cluster $VER" --notes-file "$NOTES"
 echo "Veröffentlicht: https://github.com/$REPO/releases/tag/$TAG"

@@ -1,4 +1,4 @@
-"""Netz-Tests gegen öffentliche GOG-Endpunkte (ohne Konto). Aktivieren mit MILKYWAY_NET_TESTS=1."""
+"""Netz-Tests gegen öffentliche GOG-Endpunkte (ohne Konto). Aktivieren mit LOCAL_CLUSTER_NET_TESTS=1."""
 from __future__ import annotations
 
 import os
@@ -6,12 +6,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from milkyway.api.client import GogApi
-from milkyway.api.auth import CredentialStore
-from milkyway.content.downloader import ChunkDownloader, FileJob, SfcSource
-from milkyway.content.manifest import Build, BuildManifest, DepotManifest, parse_dependency_repository
+from local_cluster.api.client import GogApi
+from local_cluster.api.auth import CredentialStore
+from local_cluster.content.downloader import ChunkDownloader, FileJob, SfcSource
+from local_cluster.content.manifest import Build, BuildManifest, DepotManifest, parse_dependency_repository
 
-NET = os.environ.get("MILKYWAY_NET_TESTS") == "1"
+NET = os.environ.get("LOCAL_CLUSTER_NET_TESTS") == "1"
 
 
 @unittest.skipUnless(NET, "Netz-Tests deaktiviert")
@@ -52,7 +52,7 @@ class PublicEndpointsTest(unittest.TestCase):
             self.assertEqual(prog2.downloaded_bytes, 0)
 
     def test_gamesdb_and_product_meta(self):
-        from milkyway.api.models import GameMeta, LibraryEntry
+        from local_cluster.api.models import GameMeta, LibraryEntry
         e = LibraryEntry(id="1207658924", title="The Witcher", image="//images-2.gog-statics.com/x")
         m = GameMeta.from_sources(e, self.api.gamesdb(e.id), self.api.product(e.id))
         self.assertIn("Witcher", m.title)

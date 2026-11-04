@@ -11,13 +11,13 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from milkyway import backend as bk
-from milkyway.content import bandwidth, extras, installer as inst_mod
-from milkyway.content.downloader import DownloadCancelled, Progress
-from milkyway.content.installer import InstallManager, InstallPlan, NotEnoughSpace
-from milkyway.content.manifest import Build, BuildManifest, Chunk, DepotFile
-from milkyway.content.downloader import FileJob
-from milkyway.settings import GlobalSettings, InstalledGame
+from local_cluster import backend as bk
+from local_cluster.content import bandwidth, extras, installer as inst_mod
+from local_cluster.content.downloader import DownloadCancelled, Progress
+from local_cluster.content.installer import InstallManager, InstallPlan, NotEnoughSpace
+from local_cluster.content.manifest import Build, BuildManifest, Chunk, DepotFile
+from local_cluster.content.downloader import FileJob
+from local_cluster.settings import GlobalSettings, InstalledGame
 
 
 def at(hhmm: str) -> float:

@@ -1,0 +1,6270 @@
+# local:cluster – Übersetzung der Oberfläche
+# Quelltexte: Deutsch. Pflege mit scripts/i18n-update.py
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: en\n"
+
+#: local_cluster/api/auth.py
+msgid "Der Anmeldecode ist ungültig, abgelaufen oder wurde bereits verwendet. Bitte die GOG-Login-Seite erneut öffnen, anmelden und die neue Adresse einfügen."
+msgstr "The sign-in code is invalid, has expired or has already been used. Please open the GOG login page again, sign in and paste the new URL."
+
+#: local_cluster/api/auth.py
+msgid "Die Sitzung ist abgelaufen – bitte neu bei GOG anmelden."
+msgstr "The session has expired – please sign in to GOG again."
+
+#: local_cluster/api/auth.py
+msgid "GOG akzeptiert die Client-Zugangsdaten nicht. Bitte den Client aktualisieren."
+msgstr "GOG does not accept the client credentials. Please update the client."
+
+#: local_cluster/api/auth.py
+msgid "GOG-Login abgelehnt (HTTP {0}): {1}"
+msgstr "GOG login rejected (HTTP {0}): {1}"
+
+#: local_cluster/api/auth.py
+msgid "Kein Refresh-Token vorhanden – bitte neu anmelden."
+msgstr "No refresh token available – please sign in again."
+
+#: local_cluster/api/auth.py
+msgid "Unerwartete Antwort von auth.gog.com"
+msgstr "Unexpected response from auth.gog.com"
+
+#: local_cluster/api/auth.py
+msgid "Verbindung zu auth.gog.com fehlgeschlagen: {0}"
+msgstr "Connection to auth.gog.com failed: {0}"
+
+#: local_cluster/api/auth.py
+msgid "local:cluster – GOG-Zugangsdaten"
+msgstr "local:cluster – GOG credentials"
+
+#: local_cluster/api/auth.py local_cluster/ui/chat_view.py
+msgid "unbekannter Fehler"
+msgstr "unknown error"
+
+#: local_cluster/api/client.py
+msgid "Download fehlgeschlagen (HTTP {0}) für {1}"
+msgstr "Download failed (HTTP {0}) for {1}"
+
+#: local_cluster/api/client.py
+msgid "Erfolge nicht abrufbar (HTTP {0})"
+msgstr "Achievements unavailable (HTTP {0})"
+
+#: local_cluster/api/client.py
+msgid "HTTP {0} für GamesDB {1}"
+msgstr "HTTP {0} for GamesDB {1}"
+
+#: local_cluster/api/client.py
+msgid "HTTP {0} für Produkt {1}"
+msgstr "HTTP {0} for product {1}"
+
+#: local_cluster/api/client.py local_cluster/api/discover.py local_cluster/api/wishlist.py
+msgid "HTTP {0} für {1}"
+msgstr "HTTP {0} for {1}"
+
+#: local_cluster/api/client.py
+msgid "Kein CDN-Endpunkt verfügbar"
+msgstr "No CDN endpoint available"
+
+#: local_cluster/api/client.py
+msgid "Netzwerkfehler bei {0}: {1}"
+msgstr "Network error for {0}: {1}"
+
+#: local_cluster/api/client.py
+msgid "Nicht bei GOG angemeldet."
+msgstr "Not signed in to GOG."
+
+#: local_cluster/api/client.py local_cluster/api/discover.py local_cluster/api/friends.py
+msgid "Ungültige JSON-Antwort von {0}"
+msgstr "Invalid JSON response from {0}"
+
+#: local_cluster/api/discover.py
+msgid "Angebote"
+msgstr "Deals"
+
+#: local_cluster/api/discover.py
+msgid "Aus deiner Wunschliste"
+msgstr "From your wishlist"
+
+#: local_cluster/api/discover.py
+msgid "Good Old Games"
+msgstr "Good Old Games"
+
+#: local_cluster/api/discover.py
+msgid "Neuerscheinungen"
+msgstr "New arrivals"
+
+#: local_cluster/api/discover.py
+msgid "Spiele für dich"
+msgstr "Games for you"
+
+#: local_cluster/api/discover.py
+msgid "Zusätzliche Inhalte für deine Spiele"
+msgstr "Additional content for your games"
+
+#: local_cluster/api/friends.py
+msgid "Der Freund konnte nicht entfernt werden (HTTP {0})."
+msgstr "The friend could not be removed (HTTP {0})."
+
+#: local_cluster/api/friends.py
+msgid "Die Einladung konnte nicht abgelehnt werden (HTTP {0})."
+msgstr "The invite could not be declined (HTTP {0})."
+
+#: local_cluster/api/friends.py
+msgid "Die Einladung konnte nicht angenommen werden (HTTP {0})."
+msgstr "The invite could not be accepted (HTTP {0})."
+
+#: local_cluster/api/friends.py
+msgid "{0}: HTTP {1}"
+msgstr "{0}: HTTP {1}"
+
+#: local_cluster/api/wishlist.py local_cluster/ui/discover_view.py
+msgid "Kostenlos"
+msgstr "Free"
+
+#: local_cluster/api/wishlist.py
+msgid "Neu erhältlich: „{0}“ – {1}"
+msgstr "Now available: “{0}” – {1}"
+
+#: local_cluster/api/wishlist.py
+msgid "„{0}“ ist jetzt um {1} % reduziert – {2}"
+msgstr "“{0}” is now {1}% off – {2}"
+
+#: local_cluster/backend.py
+msgid " (mehrdeutig)"
+msgstr " (ambiguous)"
+
+#: local_cluster/backend.py local_cluster/ui/downloads_view.py
+msgid "Abgebrochen"
+msgstr "Canceled"
+
+#: local_cluster/backend.py local_cluster/launch/galaxy_services.py
+msgid "Aktualisieren"
+msgstr "Update"
+
+#: local_cluster/backend.py
+msgid "Ansicht als JSON angeben, z. B. {\"layout\": \"list\", \"sort\": 1}"
+msgstr "Specify the view as JSON, e.g. {\"layout\": \"list\", \"sort\": 1}"
+
+#: local_cluster/backend.py
+msgid "Bibliothek nicht gefunden."
+msgstr "Library not found."
+
+#: local_cluster/backend.py
+msgid "Bibliothek „{0}“ nicht gefunden{1} – vorhanden: {2}"
+msgstr "Library “{0}” not found{1} – available: {2}"
+
+#: local_cluster/backend.py
+msgid "Bildschirm-Skalierung (DPI) einstellen …"
+msgstr "Setting display scaling (DPI)…"
+
+#: local_cluster/backend.py
+msgid "Bitte den Spiele-Ordner der Bibliothek angeben."
+msgstr "Please specify the library's games folder."
+
+#: local_cluster/backend.py
+msgid "Bitte einen Namen für die Bibliothek angeben."
+msgstr "Please enter a name for the library."
+
+#: local_cluster/backend.py
+msgid "DPI muss eine Zahl sein"
+msgstr "DPI must be a number"
+
+#: local_cluster/backend.py
+msgid "DPI zwischen 0 (globale Vorgabe) und 960"
+msgstr "DPI must be between 0 (global default) and 960"
+
+#: local_cluster/backend.py
+msgid "Das Spiel läuft oder wird gerade bearbeitet."
+msgstr "The game is running or has a task in progress."
+
+#: local_cluster/backend.py
+msgid "Das Spiel läuft – Prefix kann nicht gelöscht werden."
+msgstr "The game is running – the prefix can't be deleted."
+
+#: local_cluster/backend.py
+msgid "Das ist der Prefix-Ordner der GOG-Spiele."
+msgstr "That is the prefix folder of the GOG games."
+
+#: local_cluster/backend.py local_cluster/content/downloader.py
+msgid "Dateien prüfen"
+msgstr "Verify files"
+
+#: local_cluster/backend.py
+msgid "Der Name darf nicht leer sein."
+msgstr "The name must not be empty."
+
+#: local_cluster/backend.py
+msgid "Der Ordner liegt im Prefix-Ordner der Bibliothek „{0}“."
+msgstr "The folder is inside the prefix folder of the library “{0}”."
+
+#: local_cluster/backend.py
+msgid "Der Ordner überschneidet sich mit der Bibliothek „{0}“ ({1})."
+msgstr "The folder overlaps with the library “{0}” ({1})."
+
+#: local_cluster/backend.py
+msgid "Der Spiele-Ordner darf nicht im Prefix-Ordner liegen."
+msgstr "The games folder must not be inside the prefix folder."
+
+#: local_cluster/backend.py
+msgid "Die Bilddatei ist leer."
+msgstr "The image file is empty."
+
+#: local_cluster/backend.py
+msgid "Eine Bibliothek „{0}“ gibt es schon."
+msgstr "A library named “{0}” already exists."
+
+#: local_cluster/backend.py
+msgid "Erst beenden bzw. abwarten: {0}"
+msgstr "Quit or wait for these first: {0}"
+
+#: local_cluster/backend.py
+msgid "Extras herunterladen"
+msgstr "Download extras"
+
+#: local_cluster/backend.py
+msgid "Falsches Passwort für diesen Kanal!"
+msgstr "Incorrect private channel password!"
+
+#: local_cluster/backend.py local_cluster/ui/downloads_view.py
+msgid "Fehlgeschlagen"
+msgstr "Failed"
+
+#: local_cluster/backend.py local_cluster/content/downloader.py local_cluster/content/extras.py
+msgid "Fertig"
+msgstr "Done"
+
+#: local_cluster/backend.py
+msgid "Herunterladen ({0} Dateien)"
+msgstr "Downloading ({0} files)"
+
+#: local_cluster/backend.py local_cluster/ui/downloads_view.py
+msgid "In der Warteschlange"
+msgstr "Queued"
+
+#: local_cluster/backend.py local_cluster/power_search.py local_cluster/ui/dialogs.py
+msgid "Installieren"
+msgstr "Install"
+
+#: local_cluster/backend.py
+msgid "Installieren (Linux)"
+msgstr "Install (Linux)"
+
+#: local_cluster/backend.py
+msgid "Installieren (Offline-Installer)"
+msgstr "Install (offline installer)"
+
+#: local_cluster/backend.py
+msgid "Kanal nicht verfügbar."
+msgstr "Channel not available."
+
+#: local_cluster/backend.py
+msgid "Kein Galaxy-Build – nutze Offline-Installer …"
+msgstr "No Galaxy build – using offline installer…"
+
+#: local_cluster/backend.py
+msgid "Keine eigene Bibliothek vorhanden – bitte zuerst eine anlegen (Einstellungen → Bibliotheken)."
+msgstr "No custom library yet – please create one first (Settings → Libraries)."
+
+#: local_cluster/backend.py
+msgid "Keine startbare .exe gefunden – bitte die Startdatei angeben."
+msgstr "No launchable .exe found – please specify the executable."
+
+#: local_cluster/backend.py
+msgid "Nur für Spiele, die über das GOG-Content-System installiert sind."
+msgstr "Only for games installed through the GOG content system."
+
+#: local_cluster/backend.py
+msgid "Ordner nicht gefunden: {0}"
+msgstr "Folder not found: {0}"
+
+#: local_cluster/backend.py
+msgid "Ordner wird aus Sicherheitsgründen nicht gelöscht: {0}"
+msgstr "For safety reasons, the folder will not be deleted: {0}"
+
+#: local_cluster/backend.py local_cluster/ui/downloads_view.py
+msgid "Pausiert"
+msgstr "Paused"
+
+#: local_cluster/backend.py local_cluster/ui/game_menu.py
+msgid "Prefix anlegen"
+msgstr "Create prefix"
+
+#: local_cluster/backend.py
+msgid "Prefix konnte nicht angelegt werden (Code {0}) – Protokoll: {1}"
+msgstr "Prefix could not be created (code {0}) – log: {1}"
+
+#: local_cluster/backend.py
+msgid "Prefix wird angelegt: {0}"
+msgstr "Creating prefix: {0}"
+
+#: local_cluster/backend.py
+msgid "Prefix-Ordner wird aus Sicherheitsgründen nicht gelöscht: {0}"
+msgstr "For safety reasons, the prefix folder will not be deleted: {0}"
+
+#: local_cluster/backend.py
+msgid "Sicherungskopie deiner Cloud-Speicherstände"
+msgstr "Cloud saves backup"
+
+#: local_cluster/backend.py
+msgid "Sortierung muss eine Zahl sein (0–3)"
+msgstr "Sort order must be a number (0–3)"
+
+#: local_cluster/backend.py local_cluster/cli.py
+msgid "Spiel ist nicht in der Bibliothek."
+msgstr "Game is not in the library."
+
+#: local_cluster/backend.py local_cluster/cli.py local_cluster/content/cloudsaves.py
+msgid "Spiel ist nicht installiert."
+msgstr "Game is not installed."
+
+#: local_cluster/backend.py
+msgid "Spiele- und Prefix-Ordner müssen verschieden sein."
+msgstr "Games and prefix folders must be different."
+
+#: local_cluster/backend.py
+msgid "Spiele-Ordner kann nicht angelegt werden: {0}"
+msgstr "Cannot create games folder: {0}"
+
+#: local_cluster/backend.py
+msgid "Unbekannte Bibliothekseinstellung: {0}"
+msgstr "Unknown library setting: {0}"
+
+#: local_cluster/backend.py
+msgid "Unbekannter Job: {0}"
+msgstr "Unknown job: {0}"
+
+#: local_cluster/backend.py
+msgid "Verknüpfungen anlegen …"
+msgstr "Creating shortcuts…"
+
+#: local_cluster/backend.py local_cluster/content/installer.py local_cluster/ui/dialogs.py
+msgid "Verschieben"
+msgstr "Move"
+
+#: local_cluster/backend.py
+msgid "Vorbereiten …"
+msgstr "Preparing…"
+
+#: local_cluster/backend.py
+msgid "Wartet …"
+msgstr "Waiting…"
+
+#: local_cluster/backend.py
+msgid "Wayland-Treiber: on, off oder leer (globale Vorgabe)"
+msgstr "Wayland driver: on, off or empty (global default)"
+
+#: local_cluster/backend.py
+msgid "Wird pausiert …"
+msgstr "Pausing …"
+
+#: local_cluster/backend.py local_cluster/ui/ext_cloudsaves.py
+msgid "keine"
+msgstr "none"
+
+#: local_cluster/backend.py
+msgid "Über local:cluster starten (inoffizieller GOG-Client)"
+msgstr "Launch via local:cluster (unofficial GOG client)"
+
+#: local_cluster/backend.py
+msgid "„{0}“ ist als Spiele-Ordner zu allgemein – bitte einen eigenen Ordner wählen."
+msgstr "“{0}” is too general for a games folder – please choose a dedicated folder."
+
+#: local_cluster/backend.py
+msgid "„{0}“ ist bereits an anderer Stelle installiert."
+msgstr "“{0}” is already installed elsewhere."
+
+#: local_cluster/backend.py
+msgid "„{0}“ ist bereits in der Bibliothek."
+msgstr "“{0}” is already in the library."
+
+#: local_cluster/cli.py
+msgid "\nAbgebrochen."
+msgstr "\nCanceled."
+
+#: local_cluster/cli.py
+msgid "\nSpiel wird beendet – danach werden die Spielstände synchronisiert (erneut Strg+C: sofort beenden) …"
+msgstr "\nStopping the game – saves are synced afterwards (Ctrl+C again: quit immediately) …"
+
+#: local_cluster/cli.py
+msgid "\numu-run: {0} · GOverlay: {1} · MangoHud: {2} · vkBasalt: {3} · GameMode: {4} · Gamescope: {5}"
+msgstr "\numu-run: {0} · GOverlay: {1} · MangoHud: {2} · vkBasalt: {3} · GameMode: {4} · Gamescope: {5}"
+
+#: local_cluster/cli.py
+msgid "  (Runtime {0} → umu)"
+msgstr "  (runtime {0} → umu)"
+
+#: local_cluster/cli.py
+msgid "  Bibliothek: {0} ({1})"
+msgstr "  Library: {0} ({1})"
+
+#: local_cluster/cli.py
+msgid "  Build {0}: {1} gen{2} {3} {4} {5}"
+msgstr "  Build {0}: {1} gen{2} {3} {4} {5}"
+
+#: local_cluster/cli.py
+msgid "  Entwickler: {0} · Publisher: {1} · Release: {2}"
+msgstr "  Developer: {0} · Publisher: {1} · Release date: {2}"
+
+#: local_cluster/cli.py
+msgid "  Genres: {0} · Plattformen: {1} · Galaxy-Build: {2}"
+msgstr "  Genres: {0} · Platforms: {1} · Galaxy build: {2}"
+
+#: local_cluster/cli.py
+msgid "  Installiert: {0} ({1}, {2}, Version {3}, Build {4}, {5})"
+msgstr "  Installed: {0} ({1}, {2}, version {3}, build {4}, {5})"
+
+#: local_cluster/cli.py
+msgid "  Kompatibilitätstool: {0} · Startweg: {1}"
+msgstr "  Compatibility tool: {0} · Launch method: {1}"
+
+#: local_cluster/cli.py
+msgid "  Kompatibilitätstool: {0} · Wayland-Treiber: {1} · DPI: {2} · Überwachung: {3}"
+msgstr "  Compatibility tool: {0} · Wayland driver: {1} · DPI: {2} · Folder watching: {3}"
+
+#: local_cluster/cli.py
+msgid "  Nicht installiert."
+msgstr "  Not installed."
+
+#: local_cluster/cli.py
+msgid "  Prefix-Ordner: {0}"
+msgstr "  Prefix folder: {0}"
+
+#: local_cluster/cli.py
+msgid "  Spiele-Ordner: {0}{1}"
+msgstr "  Games folder: {0}{1}"
+
+#: local_cluster/cli.py
+msgid "  Spielzeit: {0} · zuletzt: {1}"
+msgstr "  Playtime: {0} · last played: {1}"
+
+#: local_cluster/cli.py
+msgid "  Startdatei: {0}: {1} {2}{3}"
+msgstr "  Executable: {0}: {1} {2}{3}"
+
+#: local_cluster/cli.py
+msgid "  Startoptionen: {0}"
+msgstr "  Launch options: {0}"
+
+#: local_cluster/cli.py
+msgid "  Startoptionen: {0}  · Prefix: {1}"
+msgstr "  Launch options: {0}  · Prefix: {1}"
+
+#: local_cluster/cli.py
+msgid " (Ordner bleibt, wird bei der Suche nicht wieder aufgenommen)"
+msgstr " (folder kept; it won't be re-added by the next scan)"
+
+#: local_cluster/cli.py
+msgid " (nicht gefunden)"
+msgstr " (not found)"
+
+#: local_cluster/cli.py
+msgid " (primär)"
+msgstr " (primary)"
+
+#: local_cluster/cli.py
+msgid " inkl. Prefix"
+msgstr " incl. prefix"
+
+#: local_cluster/cli.py
+msgid " und "
+msgstr " and "
+
+#: local_cluster/cli.py
+msgid " · Bibliothek {0} · Prefix {1}"
+msgstr " · library {0} · prefix {1}"
+
+#: local_cluster/cli.py
+msgid "Abgemeldet."
+msgstr "Signed out."
+
+#: local_cluster/cli.py
+msgid "Abhängigkeiten"
+msgstr "Dependencies"
+
+#: local_cluster/cli.py
+msgid "Alle installierten Spiele sind aktuell."
+msgstr "All installed games are up to date."
+
+#: local_cluster/cli.py
+msgid "Angemeldet als {0} (ID {1})."
+msgstr "Signed in as {0} (ID {1})."
+
+#: local_cluster/cli.py
+msgid "Beendet mit Code {0} nach {1} Min."
+msgstr "Exited with code {0} after {1} min."
+
+#: local_cluster/cli.py
+msgid "Benötigt"
+msgstr "Required"
+
+#: local_cluster/cli.py
+msgid "Bibliothek anlegen (Spiele-Ordner wird bei Bedarf erstellt)"
+msgstr "create library (games folder is created if needed)"
+
+#: local_cluster/cli.py
+msgid "Bibliothek anzeigen"
+msgstr "show library"
+
+#: local_cluster/cli.py
+msgid "Bibliothek durchsuchen"
+msgstr "search library"
+
+#: local_cluster/cli.py local_cluster/ui/library_sync.py
+msgid "Bibliothek ist aktuell"
+msgstr "Library is up to date"
+
+#: local_cluster/cli.py
+msgid "Bibliothek löschen (Spielordner und Prefixe bleiben)"
+msgstr "delete library (game folders and prefixes are kept)"
+
+#: local_cluster/cli.py
+msgid "Bibliothek neu von GOG laden"
+msgstr "reload library from GOG"
+
+#: local_cluster/cli.py
+msgid "Bibliothek umbenennen"
+msgstr "rename library"
+
+#: local_cluster/cli.py
+msgid "Bibliothek „{0}“ löschen? {1} Spiele verschwinden aus dem Client; Spielordner und Prefixe bleiben erhalten. [j/N] "
+msgstr "Delete library “{0}”? {1} games will disappear from the client; game folders and prefixes are kept. [y/N] "
+
+#: local_cluster/cli.py
+msgid "Bibliothek: Seite {0}/{1}"
+msgstr "Library: page {0}/{1}"
+
+#: local_cluster/cli.py
+msgid "Bibliotheken mit Ordnern und Vorgaben"
+msgstr "libraries with folders and defaults"
+
+#: local_cluster/cli.py
+msgid "Build"
+msgstr "Build"
+
+#: local_cluster/cli.py
+msgid "Cloud-Spielstände abgleichen (ohne Schalter: beide Richtungen, Konflikte mit Rückfrage)"
+msgstr "sync cloud saves (without a switch: both directions, asks on conflicts)"
+
+#: local_cluster/cli.py
+msgid "DPI für neue Prefixe (0 = globale Vorgabe)"
+msgstr "DPI for new prefixes (0 = global default)"
+
+#: local_cluster/cli.py
+msgid "Dateien prüfen/reparieren"
+msgstr "verify/repair files"
+
+#: local_cluster/cli.py
+msgid "Deinstalliert."
+msgstr "Uninstalled."
+
+#: local_cluster/cli.py
+msgid "Details zu einem Spiel"
+msgstr "details about a game"
+
+#: local_cluster/cli.py local_cluster/ui/ext_redist.py
+msgid "Die Einrichtung läuft beim nächsten Start erneut."
+msgstr "The setup will run again on the next start."
+
+#: local_cluster/cli.py
+msgid "Durchsuche:"
+msgstr "Scanning:"
+
+#: local_cluster/cli.py
+msgid "Einrichtung abgeschlossen: {0}"
+msgstr "Setup finished: {0}"
+
+#: local_cluster/cli.py
+msgid "Einrichtung des Spiels beim nächsten Start wiederholen"
+msgstr "repeat the game's setup on the next start"
+
+#: local_cluster/cli.py
+msgid "Einstellungen anzeigen und ändern"
+msgstr "show and change settings"
+
+#: local_cluster/cli.py
+msgid "Es läuft bereits eine Suche."
+msgstr "A scan is already running."
+
+#: local_cluster/cli.py
+msgid "Externes Spiel"
+msgstr "External game"
+
+#: local_cluster/cli.py local_cluster/content/cloudsaves.py local_cluster/launch/galaxy_services.py
+msgid "Fehler: {0}"
+msgstr "Error: {0}"
+
+#: local_cluster/cli.py
+msgid "Fehlt"
+msgstr "Missing"
+
+#: local_cluster/cli.py
+msgid "GOG-Spiel"
+msgstr "GOG game"
+
+#: local_cluster/cli.py
+msgid "GOverlay nicht gefunden ({0} fehlt)."
+msgstr "GOverlay not found ({0} is missing)."
+
+#: local_cluster/cli.py
+msgid "GOverlay: Spielkarten, eingetragene Ordner und Profil pro Spiel anzeigen"
+msgstr "GOverlay: show the game cards, registered folders and the profile of each game"
+
+#: local_cluster/cli.py
+msgid "Galaxy-Dienste (comet): Status anzeigen oder herunterladen"
+msgstr "Galaxy services (comet): show status or download"
+
+#: local_cluster/cli.py
+msgid "Galaxy-Redistributables und die Einrichtung im Prefix anzeigen"
+msgstr "Show the Galaxy redistributables and the prefix setup"
+
+#: local_cluster/cli.py
+msgid "Geladen"
+msgstr "Downloaded"
+
+#: local_cluster/cli.py
+msgid "Geplante Spielkarten zeigen, ohne etwas zu schreiben"
+msgstr "Show the planned game cards without writing anything"
+
+#: local_cluster/cli.py
+msgid "Gestartet (PID {0}, {1}); Protokoll: {2}"
+msgstr "Started (PID {0}, {1}); log: {2}"
+
+#: local_cluster/cli.py
+msgid "ID oder Titel(teil)"
+msgstr "ID or (partial) title"
+
+#: local_cluster/cli.py
+msgid "Inoffizieller Client für GOG.com – Kommandozeile"
+msgstr "Unofficial GOG.com client – command line"
+
+#: local_cluster/cli.py
+msgid "Installation in einen anderen Basisordner verschieben"
+msgstr "move installation to another base folder"
+
+#: local_cluster/cli.py
+msgid "Installations-Datensätze (Build, Abhängigkeiten) anzeigen oder anlegen"
+msgstr "Show or create installation records (build, dependencies)"
+
+#: local_cluster/cli.py
+msgid "Installationsorte anzeigen/ergänzen"
+msgstr "show/add install locations"
+
+#: local_cluster/cli.py
+msgid "Kein Code erkannt."
+msgstr "No code recognized."
+
+#: local_cluster/cli.py
+msgid "Kein Spiel gefunden für »{0}« (ggf. erst »local-cluster list --refresh«)."
+msgstr "No game found for “{0}” (try “local-cluster list --refresh” first)."
+
+#: local_cluster/cli.py
+msgid "Keine eigenen Bibliotheken – anlegen mit »local-cluster library add NAME ORDNER«."
+msgstr "No custom libraries – create one with “local-cluster library add NAME FOLDER”."
+
+#: local_cluster/cli.py
+msgid "Keine verwaisten Prefixe."
+msgstr "No orphaned prefixes."
+
+#: local_cluster/cli.py
+msgid "Kompatibilitätstool für {0}: {1}"
+msgstr "Compatibility tool for {0}: {1}"
+
+#: local_cluster/cli.py
+msgid "Kompatibilitätstool setzen (ID, Namensteil, auto)"
+msgstr "set compatibility tool (ID, partial name, auto)"
+
+#: local_cluster/cli.py
+msgid "Kompatibilitätstool-Vorgabe (ID oder Namensteil)"
+msgstr "compatibility tool default (ID or partial name)"
+
+#: local_cluster/cli.py
+msgid "Login-Seite im Browser öffnen und bei GOG anmelden. Danach zeigt der Browser eine leere Seite"
+msgstr "Open the login page in your browser and sign in to GOG. The browser will then show a blank page"
+
+#: local_cluster/cli.py local_cluster/ui/window.py
+msgid "NEU"
+msgstr "NEW"
+
+#: local_cluster/cli.py
+msgid "Name der Startdatei (playTask)"
+msgstr "name of the executable (playTask)"
+
+#: local_cluster/cli.py
+msgid "Nicht angemeldet – bitte »local-cluster login« ausführen."
+msgstr "Not signed in – please run “local-cluster login”."
+
+#: local_cluster/cli.py
+msgid "Nicht angemeldet."
+msgstr "Not signed in."
+
+#: local_cluster/cli.py
+msgid "Nicht installiert."
+msgstr "Not installed."
+
+#: local_cluster/cli.py
+msgid "Noch kein Protokoll unter {0}"
+msgstr "No log yet at {0}"
+
+#: local_cluster/cli.py
+msgid "Offline-Installer + innoextract erzwingen"
+msgstr "force offline installer + innoextract"
+
+#: local_cluster/cli.py local_cluster/ui/dialogs.py local_cluster/ui/ext_redist.py
+msgid "Ordner"
+msgstr "Folder"
+
+#: local_cluster/cli.py
+msgid "Ordner nicht gleich durchsuchen"
+msgstr "don't scan the folder right away"
+
+#: local_cluster/cli.py
+msgid "Ordner oder Vorgabe ändern: games_dir, prefix_dir, tool, options, wayland (on/off/default), dpi, watch"
+msgstr "change folder or default: games_dir, prefix_dir, tool, options, wayland (on/off/default), dpi, watch"
+
+#: local_cluster/cli.py local_cluster/ui/game_page.py
+msgid "Prefix"
+msgstr "Prefix"
+
+#: local_cluster/cli.py
+msgid "Prefix für {0} …"
+msgstr "Prefix for {0}…"
+
+#: local_cluster/cli.py
+msgid "Prefix ✔"
+msgstr "prefix ✔"
+
+#: local_cluster/cli.py
+msgid "Prefix-Ordner (Vorgabe: <Spiele-Ordner>/prefixes)"
+msgstr "prefix folder (default: <games folder>/prefixes)"
+
+#: local_cluster/cli.py
+msgid "Prefix-Pfad setzen"
+msgstr "set prefix path"
+
+#: local_cluster/cli.py
+msgid "Prefix-Werkzeuge (setup = Einrichtung wie vor dem ersten Start erneut ausführen)"
+msgstr "Prefix tools (setup = run the first-start setup again)"
+
+#: local_cluster/cli.py
+msgid "Prefix: {0}"
+msgstr "Prefix: {0}"
+
+#: local_cluster/cli.py
+msgid "Prefixe global verwalten"
+msgstr "manage prefixes globally"
+
+#: local_cluster/cli.py
+msgid "Pro-Spiel-Einstellungen zeigen"
+msgstr "show per-game settings"
+
+#: local_cluster/cli.py
+msgid "Protokoll anzeigen (für die Auswertung)"
+msgstr "show log (for troubleshooting)"
+
+#: local_cluster/cli.py
+msgid "Protokoll geleert."
+msgstr "Log cleared."
+
+#: local_cluster/cli.py
+msgid "Repository"
+msgstr "Repository"
+
+#: local_cluster/cli.py
+msgid "Speicherorte, Zustand und Sicherungen anzeigen"
+msgstr "show save locations, state and backups"
+
+#: local_cluster/cli.py
+msgid "Spiel aus der Bibliothek entfernen"
+msgstr "remove game from the library"
+
+#: local_cluster/cli.py
+msgid "Spiel aus einem beliebigen Ordner hinzufügen (GOG oder extern)"
+msgstr "add a game from any folder (GOG or external)"
+
+#: local_cluster/cli.py
+msgid "Spiel: Status der Einrichtung in seinem Prefix"
+msgstr "Game: setup status in its prefix"
+
+#: local_cluster/cli.py
+msgid "Spiele aller eigenen Bibliotheken anzeigen"
+msgstr "show games of all custom libraries"
+
+#: local_cluster/cli.py
+msgid "Spiele in GOverlay anzeigen (bzw. entfernen) und Cover anlegen"
+msgstr "Show the games in GOverlay (or remove them) and create covers"
+
+#: local_cluster/cli.py
+msgid "Spiele in GOverlay: {0} ({1} neu, {2} entfernt), {3} Cover geschrieben"
+msgstr "Games in GOverlay: {0} ({1} new, {2} removed), {3} covers written"
+
+#: local_cluster/cli.py local_cluster/ui/dialogs.py
+msgid "Spiele-Ordner"
+msgstr "Games folder"
+
+#: local_cluster/cli.py
+msgid "Spiele-Ordner nach kopierten Spielen durchsuchen und fehlende Prefixe anlegen"
+msgstr "scan games folders for copied games and create missing prefixes"
+
+#: local_cluster/cli.py
+msgid "Spielordner"
+msgstr "game folder"
+
+#: local_cluster/cli.py local_cluster/ui/edit_dialog.py
+msgid "Standard"
+msgstr "Default"
+
+#: local_cluster/cli.py
+msgid "Standard:"
+msgstr "Default:"
+
+#: local_cluster/cli.py
+msgid "Startdatei relativ zum Ordner"
+msgstr "executable relative to the folder"
+
+#: local_cluster/cli.py
+msgid "Startdatei-Kandidaten:"
+msgstr "Executable candidates:"
+
+#: local_cluster/cli.py
+msgid "Startoptionen aus GOverlay/MangoHud ableiten"
+msgstr "derive launch options from GOverlay/MangoHud"
+
+#: local_cluster/cli.py
+msgid "Startoptionen für {0} gesetzt: {1}"
+msgstr "Launch options for {0} set: {1}"
+
+#: local_cluster/cli.py
+msgid "Startoptionen setzen (Steam-Syntax)"
+msgstr "set launch options (Steam syntax)"
+
+#: local_cluster/cli.py
+msgid "Startoptionen-Vorgabe (Steam-Syntax)"
+msgstr "launch options default (Steam syntax)"
+
+#: local_cluster/cli.py
+msgid "Startoptionen: {0}"
+msgstr "Launch options: {0}"
+
+#: local_cluster/cli.py
+msgid "Tool nicht gefunden – IDs mit »local-cluster tools« anzeigen."
+msgstr "Tool not found – list IDs with “local-cluster tools”."
+
+#: local_cluster/cli.py
+msgid "Umgebungsvariablen setzen (KEY=VAL) oder löschen (KEY)"
+msgstr "set (KEY=VAL) or delete (KEY) environment variables"
+
+#: local_cluster/cli.py
+msgid "Unbekannte Einstellung {0}"
+msgstr "Unknown setting {0}"
+
+#: local_cluster/cli.py
+msgid "Verknüpfung im Startmenü/auf dem Schreibtisch anlegen oder entfernen"
+msgstr "create or remove shortcut in the application menu/on the desktop"
+
+#: local_cluster/cli.py
+msgid "Warte trotz --no-wait auf das Spielende ({0})."
+msgstr "Waiting for the game to end despite --no-wait ({0})."
+
+#: local_cluster/cli.py
+msgid "Wayland-Treiber-Vorgabe"
+msgstr "Wayland driver default"
+
+#: local_cluster/cli.py
+msgid "Weiterer Ort:"
+msgstr "Other location:"
+
+#: local_cluster/cli.py
+msgid "Weiterleitungs-URL oder Code"
+msgstr "redirect URL or code"
+
+#: local_cluster/cli.py
+msgid "Weiterleitungs-URL oder Code: "
+msgstr "Redirect URL or code: "
+
+#: local_cluster/cli.py
+msgid "Wert (darf mit - beginnen)"
+msgstr "value (may start with -)"
+
+#: local_cluster/cli.py
+msgid "Wine-Prefix mitlöschen"
+msgstr "also delete the Wine prefix"
+
+#: local_cluster/cli.py
+msgid "abmelden"
+msgstr "sign out"
+
+#: local_cluster/cli.py
+msgid "aktualisieren"
+msgstr "update a game"
+
+#: local_cluster/cli.py local_cluster/content/cloudsaves.py local_cluster/ui/dialogs.py
+msgid "an"
+msgstr "on"
+
+#: local_cluster/cli.py
+msgid "angemeldeten Nutzer zeigen"
+msgstr "show the signed-in user"
+
+#: local_cluster/cli.py local_cluster/content/cloudsaves.py local_cluster/ui/dialogs.py
+msgid "aus"
+msgstr "off"
+
+#: local_cluster/cli.py
+msgid "aus (XWayland)"
+msgstr "off (XWayland)"
+
+#: local_cluster/cli.py
+msgid "ausgetragen (Ordner fehlt): {0}"
+msgstr "removed from the library (folder missing): {0}"
+
+#: local_cluster/cli.py
+msgid "bei GOG anmelden"
+msgstr "sign in to GOG"
+
+#: local_cluster/cli.py
+msgid "beim Durchsuchen keine Prefixe anlegen"
+msgstr "don't create prefixes when scanning"
+
+#: local_cluster/cli.py
+msgid "beliebige Pro-Spiel-Einstellung"
+msgstr "set any per-game setting"
+
+#: local_cluster/cli.py
+msgid "bereits anderswo installiert: {0}"
+msgstr "already installed elsewhere: {0}"
+
+#: local_cluster/cli.py
+msgid "bestimmte Build-ID"
+msgstr "specific build ID"
+
+#: local_cluster/cli.py
+msgid "comet und den GalaxyCommunication-Dienst herunterladen bzw. aktualisieren"
+msgstr "download or update comet and the GalaxyCommunication service"
+
+#: local_cluster/cli.py
+msgid "deinstallieren"
+msgstr "uninstall a game"
+
+#: local_cluster/cli.py
+msgid "eigene Bibliothek für externe Spiele (Name oder ID)"
+msgstr "custom library for external games (name or ID)"
+
+#: local_cluster/cli.py
+msgid "eigene Bibliotheken anlegen, umbenennen, ändern, löschen"
+msgstr "create, rename, change, delete custom libraries"
+
+#: local_cluster/cli.py
+msgid "eine Bibliothek anzeigen"
+msgstr "show a library"
+
+#: local_cluster/cli.py
+msgid "entfernt: {0}"
+msgstr "removed: {0}"
+
+#: local_cluster/cli.py
+msgid "fehlende Datensätze über das GOG-Content-System anlegen"
+msgstr "create missing records via the GOG content system"
+
+#: local_cluster/cli.py
+msgid "fehlt"
+msgstr "missing"
+
+#: local_cluster/cli.py
+msgid "gefundene Proton-/Wine-Versionen"
+msgstr "detected Proton/Wine versions"
+
+#: local_cluster/cli.py
+msgid "gelöscht:"
+msgstr "deleted:"
+
+#: local_cluster/cli.py
+msgid "gelöscht: {0} – {1} Spiele ausgetragen, Dateien in {2} und {3} bleiben"
+msgstr "deleted: {0} – {1} games removed from the library, files in {2} and {3} are kept"
+
+#: local_cluster/cli.py
+msgid "gemeinsamen Ordner jetzt laden bzw. aktualisieren"
+msgstr "download or update the shared folder now"
+
+#: local_cluster/cli.py
+msgid "globale Einstellung zeigen/setzen (z. B. install_dir /pfad)"
+msgstr "show/set global setting (e.g. install_dir /path)"
+
+#: local_cluster/cli.py
+msgid "globale Vorgabe"
+msgstr "global default"
+
+#: local_cluster/cli.py
+msgid "hinzugefügt: {0} ({1}) · Startdatei {2}"
+msgstr "added: {0} ({1}) · executable {2}"
+
+#: local_cluster/cli.py
+msgid "installieren"
+msgstr "install a game"
+
+#: local_cluster/cli.py
+msgid "ja"
+msgstr "yes"
+
+#: local_cluster/cli.py
+msgid "kein Prefix"
+msgstr "no prefix"
+
+#: local_cluster/cli.py
+msgid "kein Prefix vorhanden"
+msgstr "no prefix found"
+
+#: local_cluster/cli.py
+msgid "keine Prefixe anlegen"
+msgstr "don't create prefixes"
+
+#: local_cluster/cli.py local_cluster/ui/client_update.py
+msgid "local:cluster {0}"
+msgstr "local:cluster {0}"
+
+#: local_cluster/cli.py
+msgid "mit --upload/--download: eine Seite ersetzt die andere"
+msgstr "with --upload/--download: one side replaces the other"
+
+#: local_cluster/cli.py
+msgid "nach Spiel-Updates suchen"
+msgstr "check for game updates"
+
+#: local_cluster/cli.py local_cluster/ui/dialogs.py
+msgid "nativ"
+msgstr "native"
+
+#: local_cluster/cli.py
+msgid "nein"
+msgstr "no"
+
+#: local_cluster/cli.py
+msgid "neuer Basisordner (das Spiel bekommt dort seinen Unterordner)"
+msgstr "new base folder (the game gets its own subfolder there)"
+
+#: local_cluster/cli.py
+msgid "nicht auf das Spielende warten (außer Cloud-Spielstände oder Galaxy-Dienste brauchen es)"
+msgstr "do not wait for the game to end (unless cloud saves or Galaxy services need it)"
+
+#: local_cluster/cli.py
+msgid "nur Befehl anzeigen"
+msgstr "only show the command"
+
+#: local_cluster/cli.py
+msgid "nur Spiele dieser Bibliothek (Name oder ID)"
+msgstr "only games in this library (name or ID)"
+
+#: local_cluster/cli.py
+msgid "nur diese Bibliothek"
+msgstr "only this library"
+
+#: local_cluster/cli.py
+msgid "nur herunterladen (neuere lokale Stände bleiben unberührt)"
+msgstr "download only (newer local saves are left alone)"
+
+#: local_cluster/cli.py
+msgid "nur hochladen (neuere Cloud-Stände bleiben unberührt)"
+msgstr "upload only (newer cloud saves are left alone)"
+
+#: local_cluster/cli.py
+msgid "ohne GOG-Spieldaten: {0}"
+msgstr "no GOG game data: {0}"
+
+#: local_cluster/cli.py
+msgid "starten"
+msgstr "launch a game"
+
+#: local_cluster/cli.py
+msgid "umbenannt: {0} → {1}"
+msgstr "renamed: {0} → {1}"
+
+#: local_cluster/cli.py
+msgid "unvollständig"
+msgstr "incomplete"
+
+#: local_cluster/cli.py
+msgid "vollständig"
+msgstr "complete"
+
+#: local_cluster/cli.py
+msgid "von embed.gog.com – deren komplette Adresse (enthält code=…) hier einfügen:"
+msgstr "from embed.gog.com – paste its full address (contains code=…) here:"
+
+#: local_cluster/cli.py
+msgid "vorhandene Datensätze neu anlegen"
+msgstr "recreate existing records"
+
+#: local_cluster/cli.py
+msgid "wird noch kopiert: {0}"
+msgstr "still being copied: {0}"
+
+#: local_cluster/cli.py
+msgid "zusätzliche Argumente für das Spiel (nach --)"
+msgstr "additional arguments for the game (after --)"
+
+#: local_cluster/cli.py
+msgid "{0}  (ID {1})"
+msgstr "{0}  (ID {1})"
+
+#: local_cluster/cli.py
+msgid "{0}  (ID {1}) · {2} Spiele"
+msgstr "{0}  (ID {1}) · {2} games"
+
+#: local_cluster/cli.py
+msgid "{0}  (ID {1}, E-Mail {2})"
+msgstr "{0}  (ID {1}, email {2})"
+
+#: local_cluster/cli.py
+msgid "{0} Einträge, {1} installiert."
+msgstr "{0} entries, {1} installed."
+
+#: local_cluster/cli.py
+msgid "{0} Spiele in der Bibliothek."
+msgstr "{0} games in the library."
+
+#: local_cluster/cli.py
+msgid "{0} Spiele installiert, {1} Prefix(e) werden angelegt."
+msgstr "{0} games installed, {1} prefix(es) will be created."
+
+#: local_cluster/cli.py local_cluster/ui/window.py
+msgid "{0} abgeschlossen"
+msgstr "{0} finished"
+
+#: local_cluster/cli.py
+msgid "{0} abgeschlossen: {1} → {2}"
+msgstr "{0} finished: {1} → {2}"
+
+#: local_cluster/cli.py
+msgid "{0} aus {1} entfernen{2}? [j/N] "
+msgstr "Remove {0} from {1}{2}? [y/N] "
+
+#: local_cluster/cli.py
+msgid "{0} fehlende Prefixe werden angelegt."
+msgstr "Creating {0} missing prefixes."
+
+#: local_cluster/cli.py
+msgid "{0} gelöscht."
+msgstr "{0} deleted."
+
+#: local_cluster/cli.py local_cluster/ui/library_sync.py
+msgid "{0} neue(s) Spiel(e): {1}"
+msgstr "{0} new game(s): {1}"
+
+#: local_cluster/cli.py
+msgid "{0} verwaiste Prefixe löschen? [j/N] "
+msgstr "Delete {0} orphaned prefixes? [y/N] "
+
+#: local_cluster/cli.py
+msgid "{0}: {1:5.1f}%  {2}/{3}  {4}  ETA {5}  {6}/{7} Dateien"
+msgstr "{0}: {1:5.1f}%  {2}/{3}  {4}  ETA {5}  {6}/{7} files"
+
+#: local_cluster/cli.py
+msgid "{0}: {1} Spiele · Ordner {2} · Prefixe {3}"
+msgstr "{0}: {1} games · folder {2} · prefixes {3}"
+
+#: local_cluster/cli.py
+msgid "{0}: {1} wirklich löschen? [j/N] "
+msgstr "{0}: really delete {1}? [y/N] "
+
+#: local_cluster/cli.py
+msgid "übernommen: {0} ({1}) · Startdatei {2}"
+msgstr "imported: {0} ({1}) · executable {2}"
+
+#: local_cluster/cli.py
+msgid "übernommen: {0} ({1}, {2}) – {3}"
+msgstr "imported: {0} ({1}, {2}) – {3}"
+
+#: local_cluster/clientinfo.py
+msgid "Abgebrochen – die Abfrage des Systems wurde nicht bestätigt."
+msgstr "Cancelled – the system prompt was not confirmed."
+
+#: local_cluster/clientinfo.py
+msgid "Das Update ist installiert. Starte local:cluster neu, um die neue Version zu verwenden."
+msgstr "The update is installed. Restart local:cluster to use the new version."
+
+#: local_cluster/clientinfo.py
+msgid "Die Installation hat zu lange gedauert und wurde abgebrochen."
+msgstr "The installation took too long and was stopped."
+
+#: local_cluster/clientinfo.py
+msgid "Die Prüfsumme des Pakets stimmt nicht – der Download wurde verworfen."
+msgstr "The package checksum does not match – the download was discarded."
+
+#: local_cluster/clientinfo.py
+msgid "Die Veröffentlichung enthält kein pacman-Paket für {0}."
+msgstr "The release has no pacman package for {0}."
+
+#: local_cluster/clientinfo.py
+msgid "Die Veröffentlichung enthält keine Datei SHA256SUMS."
+msgstr "The release has no SHA256SUMS file."
+
+#: local_cluster/clientinfo.py local_cluster/launch/galaxy_services.py
+msgid "Download abgebrochen."
+msgstr "Download cancelled."
+
+#: local_cluster/clientinfo.py local_cluster/ui/store.py
+msgid "Download fehlgeschlagen: {0}"
+msgstr "Download failed: {0}"
+
+#: local_cluster/clientinfo.py
+msgid "GitHub antwortet mit HTTP {0}"
+msgstr "GitHub answered with HTTP {0}"
+
+#: local_cluster/clientinfo.py
+msgid "GitHub nicht erreichbar: {0}"
+msgstr "GitHub not reachable: {0}"
+
+#: local_cluster/clientinfo.py
+msgid "Nicht berechtigt – das System hat die Installation abgelehnt."
+msgstr "Not authorized – the system refused the installation."
+
+#: local_cluster/clientinfo.py
+msgid "SHA256SUMS enthält keine Prüfsumme für {0}."
+msgstr "SHA256SUMS has no checksum for {0}."
+
+#: local_cluster/clientinfo.py
+msgid "pacman meldet einen Fehler (Exit-Code {0})."
+msgstr "pacman reported an error (exit code {0})."
+
+#: local_cluster/clientinfo.py
+msgid "pkexec fehlt – bitte das Paket polkit installieren."
+msgstr "pkexec is missing – please install the polkit package."
+
+#: local_cluster/content/cloudsaves.py
+msgid "(nicht auflösbar)"
+msgstr "(cannot be resolved)"
+
+#: local_cluster/content/cloudsaves.py local_cluster/ui/client_update.py local_cluster/ui/dialogs.py
+msgid "Abbrechen"
+msgstr "Cancel"
+
+#: local_cluster/content/cloudsaves.py local_cluster/ui/dialogs.py local_cluster/ui/ext_goverlay.py
+msgid "Aus"
+msgstr "Off"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Automatischer Abgleich: {0}"
+msgstr "Automatic sync: {0}"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Beim Synchronisieren deiner Cloud-Spielstände ist ein Problem aufgetreten."
+msgstr "There was a problem while syncing your cloud saves."
+
+#: local_cluster/content/cloudsaves.py
+msgid "Benutzerdaten auf diesem Computer: {0}"
+msgstr "User data files on this computer: {0}"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Benutzerdaten können für dieses Spiel nicht synchronisiert werden"
+msgstr "User data files cannot be synced for this game"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Cloud-Dateiliste nicht abrufbar (HTTP {0})"
+msgstr "Cloud file list unavailable (HTTP {0})"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Cloud-Spielstände gibt es nur für GOG-Spiele."
+msgstr "Cloud saves are only available for GOG games."
+
+#: local_cluster/content/cloudsaves.py
+msgid "Cloud-Spielstände nicht synchronisiert"
+msgstr "Cloud saves not synced"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Cloud-Spielstände synchronisiert"
+msgstr "Cloud saves synced"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Cloud: {0} Dateien, {1} · nächster Schritt: {2}"
+msgstr "Cloud: {0} files, {1} · next step: {2}"
+
+#: local_cluster/content/cloudsaves.py local_cluster/ui/ext_cloudsaves.py
+msgid "Das Spiel läuft – die Spielstände werden nach dem Beenden synchronisiert."
+msgstr "The game is running - saves will be synced after it exits."
+
+#: local_cluster/content/cloudsaves.py
+msgid "Das Spiel unterstützt keine Cloud-Spielstände."
+msgstr "This game does not support cloud saves."
+
+#: local_cluster/content/cloudsaves.py
+msgid "Die Benutzerdaten auf diesem Computer übersteigen deinen GOG Galaxy Cloud-Speicherplatz. Starte bitte das Spiel und entferne ältere Spielstände."
+msgstr "User data files on this computer exceed GOG Galaxy Cloud storage quota for this game. Launch the game and remove some older saves data."
+
+#: local_cluster/content/cloudsaves.py
+msgid "Dieser Computer"
+msgstr "This computer"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Dieser Computer – Zuletzt geändert: {0}"
+msgstr "This computer - Last modified: {0}"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Einige Dateien aus der GOG Galaxy-Cloud stehen im Konflikt mit den Dateien auf diesem Computer. An welchem Ort befinden sich die zu verwendenden Dateien?"
+msgstr "Some user files previously uploaded to GOG Galaxy Cloud conflict with files on this computer. Which location has the most correct data?"
+
+#: local_cluster/content/cloudsaves.py local_cluster/ui/log_window.py
+msgid "Fehler"
+msgstr "Error"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Für dieses Spiel sind keine Cloud-Spielstände verfügbar."
+msgstr "No cloud saves are available for this game."
+
+#: local_cluster/content/cloudsaves.py
+msgid "GOG Galaxy Cloud-Speicherplatz: {0}"
+msgstr "GOG Galaxy Cloud storage quota: {0}"
+
+#: local_cluster/content/cloudsaves.py
+msgid "GOG Galaxy-Cloud"
+msgstr "GOG Galaxy Cloud"
+
+#: local_cluster/content/cloudsaves.py
+msgid "GOG Galaxy-Cloud – Zuletzt geändert: {0}"
+msgstr "GOG Galaxy Cloud - Last modified: {0}"
+
+#: local_cluster/content/cloudsaves.py
+msgid "GOG-Benutzerkennung unbekannt – bitte neu anmelden."
+msgstr "GOG user ID unknown - please sign in again."
+
+#: local_cluster/content/cloudsaves.py
+msgid "Herunterladen von {0} fehlgeschlagen (HTTP {1})"
+msgstr "Downloading {0} failed (HTTP {1})"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Hochladen"
+msgstr "Upload"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Hochladen abgebrochen."
+msgstr "Upload cancelled."
+
+#: local_cluster/content/cloudsaves.py
+msgid "Hochladen von {0} fehlgeschlagen (HTTP {1})"
+msgstr "Uploading {0} failed (HTTP {1})"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Ignorieren"
+msgstr "Ignore"
+
+#: local_cluster/content/cloudsaves.py
+msgid "In der Cloud liegen neuere Spielstände – sie werden vor dem nächsten Start heruntergeladen."
+msgstr "The cloud has newer saves - they will be downloaded before the next launch."
+
+#: local_cluster/content/cloudsaves.py
+msgid "In der GOG Galaxy-Cloud liegen Spielstände, die seit dem letzten Abgleich geändert wurden. Beim Hochladen werden sie durch die Dateien auf diesem Computer ersetzt; Cloud-Dateien, die es hier nicht gibt, werden gelöscht."
+msgstr "GOG Galaxy Cloud has saves that changed since the last sync. Uploading replaces them with the files on this computer; cloud files that do not exist here are deleted."
+
+#: local_cluster/content/cloudsaves.py
+msgid "Kein Galaxy-Zugang für dieses Spiel (Installations-Datensatz ohne Client-ID)."
+msgstr "No Galaxy access for this game (install record without client ID)."
+
+#: local_cluster/content/cloudsaves.py
+msgid "Kein Speicherort des Spiels ließ sich im Prefix auflösen."
+msgstr "None of the game's save locations could be resolved in the prefix."
+
+#: local_cluster/content/cloudsaves.py
+msgid "Kein Zugang zu den Cloud-Spielständen: {0}"
+msgstr "No access to cloud saves: {0}"
+
+#: local_cluster/content/cloudsaves.py local_cluster/launch/hook_cloudsaves.py
+msgid "Konflikt"
+msgstr "Conflict"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Konflikt zwischen Cloud und diesem Computer – nicht synchronisiert."
+msgstr "Conflict between the cloud and this computer - not synced."
+
+#: local_cluster/content/cloudsaves.py local_cluster/launch/hook_cloudsaves.py
+msgid "Kontingent überschritten"
+msgstr "Quota exceeded"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Letzte erfolgreiche Synchronisierung: {0}"
+msgstr "Last successful sync date: {0}"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Linux-Versionen von GOG-Spielen haben keine Cloud-Spielstände."
+msgstr "Linux versions of GOG games have no cloud saves."
+
+#: local_cluster/content/cloudsaves.py
+msgid "Lokale Spielstände sind neuer – sie werden nach dem Spielen hochgeladen."
+msgstr "Local saves are newer - they will be uploaded after playing."
+
+#: local_cluster/content/cloudsaves.py
+msgid "Lokale Spielstände werden nicht mit der GOG Galaxy-Cloud synchronisiert."
+msgstr "Local saves are not synced with GOG Galaxy Cloud."
+
+#: local_cluster/content/cloudsaves.py
+msgid "Löschen von {0} in der Cloud fehlgeschlagen (HTTP {1})"
+msgstr "Deleting {0} in the cloud failed (HTTP {1})"
+
+#: local_cluster/content/cloudsaves.py local_cluster/ui/ext_cloudsaves.py
+msgid "Nicht angemeldet – Cloud-Spielstände brauchen eine GOG-Anmeldung."
+msgstr "Not signed in - cloud saves need a GOG sign-in."
+
+#: local_cluster/content/cloudsaves.py
+msgid "Nicht synchronisiert"
+msgstr "Not synced"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Nicht verfügbar"
+msgstr "Not available"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Noch nicht synchronisiert"
+msgstr "Not synced yet"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Sicherung der Cloud-Spielstände fehlgeschlagen: {0}"
+msgstr "Backing up the cloud saves failed: {0}"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Sicherung der lokalen Spielstände fehlgeschlagen: {0}"
+msgstr "Backing up local saves failed: {0}"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Sicherung: {0}"
+msgstr "Backup: {0}"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Sicherungen: {0} ({1})"
+msgstr "Backups: {0} ({1})"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Speicherorte nicht abrufbar (HTTP {0})"
+msgstr "Save locations unavailable (HTTP {0})"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Speicherorte nicht abrufbar: {0}"
+msgstr "Save locations unavailable: {0}"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Spielstände in der Cloud ersetzen?"
+msgstr "Replace saves in the cloud?"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Synchronisation abbrechen"
+msgstr "Cancel sync"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Synchronisation läuft bereits."
+msgstr "A sync is already running."
+
+#: local_cluster/content/cloudsaves.py local_cluster/ui/ext_cloudsaves.py
+msgid "Synchronisiere Cloud-Spielstände …"
+msgstr "Syncing Cloud Saves …"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Synchronisiere …"
+msgstr "Syncing …"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Synchronisiert"
+msgstr "Synced"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Synchronisiert in GOG Galaxy-Cloud ({0} hochgeladen, {1} heruntergeladen)"
+msgstr "Synced with GOG Galaxy Cloud ({0} uploaded, {1} downloaded)"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Synchronisiert · {0}"
+msgstr "Synced · {0}"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Ungültige Antwort von cloudstorage.gog.com"
+msgstr "Invalid response from cloudstorage.gog.com"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Verbindung zu cloudstorage.gog.com fehlgeschlagen: {0}"
+msgstr "Connection to cloudstorage.gog.com failed: {0}"
+
+#: local_cluster/content/cloudsaves.py
+msgid "Zustand: {0}"
+msgstr "State: {0}"
+
+#: local_cluster/content/cloudsaves.py
+msgid "abgebrochen"
+msgstr "cancelled"
+
+#: local_cluster/content/cloudsaves.py local_cluster/ui/util.py
+msgid "gerade eben"
+msgstr "just now"
+
+#: local_cluster/content/cloudsaves.py local_cluster/ui/util.py
+msgid "gestern"
+msgstr "yesterday"
+
+#: local_cluster/content/cloudsaves.py
+msgid "herunterladen"
+msgstr "download"
+
+#: local_cluster/content/cloudsaves.py
+msgid "hochladen"
+msgstr "upload"
+
+#: local_cluster/content/cloudsaves.py
+msgid "lokal: {0} Dateien, {1} · zuletzt synchronisiert: {2}"
+msgstr "local: {0} files, {1} · last synced: {2}"
+
+#: local_cluster/content/cloudsaves.py
+msgid "nicht auflösbar"
+msgstr "cannot be resolved"
+
+#: local_cluster/content/cloudsaves.py
+msgid "nichts zu tun"
+msgstr "nothing to do"
+
+#: local_cluster/content/cloudsaves.py local_cluster/ui/util.py
+msgid "vor {0} Min."
+msgstr "{0} min ago"
+
+#: local_cluster/content/cloudsaves.py
+msgid "vor {0} Std."
+msgstr "{0} h ago"
+
+#: local_cluster/content/cloudsaves.py local_cluster/ui/util.py
+msgid "vor {0} Tagen"
+msgstr "{0} days ago"
+
+#: local_cluster/content/cloudsaves.py
+msgid "{0} (Client-ID {1}) · Kontingent {2}"
+msgstr "{0} (client ID {1}) · quota {2}"
+
+#: local_cluster/content/cloudsaves.py
+msgid "{0} · hochgeladen {1}, heruntergeladen {2}, gelöscht lokal {3}, in der Cloud {4}"
+msgstr "{0} · uploaded {1}, downloaded {2}, deleted locally {3}, in the cloud {4}"
+
+#: local_cluster/content/cloudsaves.py
+msgid "übersprungen"
+msgstr "skipped"
+
+#: local_cluster/content/downloader.py
+msgid "Chunk {0}… konnte nicht geladen werden: {1}"
+msgstr "Chunk {0}… could not be downloaded: {1}"
+
+#: local_cluster/content/downloader.py
+msgid "HTTP {0}"
+msgstr "HTTP {0}"
+
+#: local_cluster/content/downloader.py local_cluster/ui/game_page.py
+msgid "Herunterladen"
+msgstr "Downloading"
+
+#: local_cluster/content/downloader.py
+msgid "MD5 der entpackten Daten falsch"
+msgstr "MD5 mismatch in decompressed data"
+
+#: local_cluster/content/downloader.py
+msgid "MD5 der komprimierten Daten falsch"
+msgstr "MD5 mismatch in compressed data"
+
+#: local_cluster/content/downloader.py
+msgid "Prüfsumme falsch für {0}"
+msgstr "Checksum mismatch for {0}"
+
+#: local_cluster/content/downloader.py
+msgid "SmallFilesContainer {0} fehlt im Manifest"
+msgstr "SmallFilesContainer {0} missing from manifest"
+
+#: local_cluster/content/downloader.py
+msgid "Zugriff verweigert (HTTP {0}) – Link abgelaufen?"
+msgstr "Access denied (HTTP {0}) – link expired?"
+
+#: local_cluster/content/downloader.py
+msgid "kleine Dateien"
+msgstr "small files"
+
+#: local_cluster/content/extras.py local_cluster/content/phases.py
+msgid "Cloud-Speicher wird synchronisiert"
+msgstr "Syncing cloud storage"
+
+#: local_cluster/content/extras.py local_cluster/content/installer.py
+msgid "Download-Link konnte nicht aufgelöst werden."
+msgstr "Could not resolve the download link."
+
+#: local_cluster/content/extras.py local_cluster/ui/game_page.py
+msgid "Extras"
+msgstr "Extras"
+
+#: local_cluster/content/extras.py
+msgid "In der GOG Galaxy-Cloud liegen keine Spielstände für dieses Spiel."
+msgstr "There are no saves for this game in the GOG Galaxy Cloud."
+
+#: local_cluster/content/extras.py
+msgid "Offline-Versionen der Spiele-Installationsdateien"
+msgstr "Offline backup installers"
+
+#: local_cluster/content/extras.py
+msgid "Patches"
+msgstr "Patches"
+
+#: local_cluster/content/extras.py
+msgid "Sprachpakete"
+msgstr "Language packs"
+
+#: local_cluster/content/extras.py local_cluster/content/phases.py
+msgid "Wird heruntergeladen"
+msgstr "Downloading"
+
+#: local_cluster/content/extras.py
+msgid "{0} - Extras"
+msgstr "{0} - Extras"
+
+#: local_cluster/content/extras.py
+msgid "{0} - Offline-Sicherungskopie der Spiele-Installationsdatei"
+msgstr "{0} - Offline backup installer"
+
+#: local_cluster/content/extras.py
+msgid "{0} - Sicherungskopie deiner Speicherstände"
+msgstr "{0} - Saves backup"
+
+#: local_cluster/content/extras.py
+msgid "{0} wird heruntergeladen …"
+msgstr "Downloading {0} …"
+
+#: local_cluster/content/installer.py
+msgid "Abhängigkeit {0} …"
+msgstr "Dependency {0}…"
+
+#: local_cluster/content/installer.py local_cluster/ui/dialogs.py
+msgid "Benötigt: {0}, frei: {1}"
+msgstr "Needed: {0}, free: {1}"
+
+#: local_cluster/content/installer.py
+msgid "Build {0} nicht gefunden."
+msgstr "Build {0} not found."
+
+#: local_cluster/content/installer.py
+msgid "Builds abrufen …"
+msgstr "Fetching builds…"
+
+#: local_cluster/content/installer.py
+msgid "Das Spiel liegt bereits in diesem Ordner."
+msgstr "The game is already in this folder."
+
+#: local_cluster/content/installer.py
+msgid "Depot {0}/{1} laden …"
+msgstr "Loading depot {0}/{1}…"
+
+#: local_cluster/content/installer.py
+msgid "Der Zielordner darf nicht innerhalb des Spielordners liegen."
+msgstr "The destination folder must not be inside the game folder."
+
+#: local_cluster/content/installer.py
+msgid "Entpacken"
+msgstr "Extracting"
+
+#: local_cluster/content/installer.py
+msgid "Entpacken mit innoextract …"
+msgstr "Extracting with innoextract…"
+
+#: local_cluster/content/installer.py
+msgid "Entpacken …"
+msgstr "Extracting…"
+
+#: local_cluster/content/installer.py
+msgid "Für {0} gibt es keinen Galaxy-Build ({1})."
+msgstr "There is no Galaxy build for {0} ({1})."
+
+#: local_cluster/content/installer.py local_cluster/launch/launcher.py
+msgid "Installationsordner fehlt: {0}"
+msgstr "Installation folder missing: {0}"
+
+#: local_cluster/content/installer.py
+msgid "Installer konnte nicht entpackt werden: {0}"
+msgstr "Could not extract the installer: {0}"
+
+#: local_cluster/content/installer.py
+msgid "Installer suchen …"
+msgstr "Looking for installer…"
+
+#: local_cluster/content/installer.py
+msgid "Kanal nicht mehr verfügbar."
+msgstr "Channel no longer available."
+
+#: local_cluster/content/installer.py
+msgid "Kein Linux-Installer für dieses Spiel gefunden."
+msgstr "No Linux installer found for this game."
+
+#: local_cluster/content/installer.py
+msgid "Kein Windows-Installer gefunden."
+msgstr "No Windows installer found."
+
+#: local_cluster/content/installer.py
+msgid "Linux-Installer"
+msgstr "Linux installer"
+
+#: local_cluster/content/installer.py
+msgid "Manifest laden …"
+msgstr "Loading manifest…"
+
+#: local_cluster/content/installer.py
+msgid "Nicht genügend Speicherplatz auf {0}."
+msgstr "Not enough free disk space in {0}."
+
+#: local_cluster/content/installer.py
+msgid "Offline-Installer"
+msgstr "Offline installer"
+
+#: local_cluster/content/installer.py
+msgid "Prüfen ist nur für Galaxy-Installationen möglich."
+msgstr "Verifying is only possible for Galaxy installations."
+
+#: local_cluster/content/installer.py local_cluster/content/phases.py
+msgid "Speicherplatz wird zugewiesen"
+msgstr "Allocating disk space"
+
+#: local_cluster/content/installer.py
+msgid "Updates sind nur für Galaxy-Installationen möglich (Spiel neu installieren)."
+msgstr "Updates are only possible for Galaxy installations (reinstall the game)."
+
+#: local_cluster/content/installer.py
+msgid "Verschiebe nach {0} …"
+msgstr "Moving to {0}…"
+
+#: local_cluster/content/installer.py
+msgid "Verschieben fehlgeschlagen: {0}"
+msgstr "Move failed: {0}"
+
+#: local_cluster/content/installer.py
+msgid "Zielordner existiert bereits: {0}"
+msgstr "Destination folder already exists: {0}"
+
+#: local_cluster/content/installer.py
+msgid "innoextract fehlgeschlagen: {0}"
+msgstr "innoextract failed: {0}"
+
+#: local_cluster/content/installer.py
+msgid "innoextract fehlt (sudo pacman -S innoextract) – nötig für Offline-Installer."
+msgstr "innoextract is missing (sudo pacman -S innoextract) – required for offline installers."
+
+#: local_cluster/content/installer.py
+msgid "{0} herunterladen"
+msgstr "Downloading {0}"
+
+#: local_cluster/content/manifest.py
+msgid "Nur Content-System-Manifeste der Generation 2 werden unterstützt"
+msgstr "Only generation 2 content system manifests are supported"
+
+#: local_cluster/content/manifest.py
+msgid "Unzulässiger Pfad im Manifest: {0!r}"
+msgstr "Invalid path in manifest: {0!r}"
+
+#: local_cluster/content/phases.py
+msgid "Ausstehend"
+msgstr "Pending"
+
+#: local_cluster/content/phases.py
+msgid "Dateien werden verifiziert"
+msgstr "Verifying patched files"
+
+#: local_cluster/content/phases.py
+msgid "Dateiliste wird abgerufen"
+msgstr "Getting file list"
+
+#: local_cluster/content/phases.py
+msgid "Einrichtung wird ausgeführt"
+msgstr "Executing setup"
+
+#: local_cluster/content/phases.py local_cluster/ui/window.py
+msgid "Installation abgeschlossen"
+msgstr "Installation complete"
+
+#: local_cluster/content/phases.py
+msgid "Installation begonnen"
+msgstr "Installation started"
+
+#: local_cluster/content/phases.py
+msgid "Installierte Dateien werden gescannt"
+msgstr "Scanning installed files"
+
+#: local_cluster/content/phases.py
+msgid "Patches werden ausgeführt"
+msgstr "Applying patches"
+
+#: local_cluster/content/phases.py
+msgid "Verschiebe Dateien"
+msgstr "Moving files"
+
+#: local_cluster/content/phases.py
+msgid "Wird finalisiert"
+msgstr "Finalizing"
+
+#: local_cluster/content/redist.py
+msgid "Abgebrochen – läuft beim nächsten Start"
+msgstr "Cancelled – runs on the next launch"
+
+#: local_cluster/content/redist.py
+msgid "Abhängigkeits-Repository abrufen …"
+msgstr "Fetching the dependency repository …"
+
+#: local_cluster/content/redist.py
+msgid "Abhängigkeits-Repository nicht verfügbar"
+msgstr "Dependency repository not available"
+
+#: local_cluster/content/redist.py
+msgid "Ausgeführt"
+msgstr "Done"
+
+#: local_cluster/content/redist.py
+msgid "Ausstehend – läuft beim nächsten Start"
+msgstr "Pending – runs on the next start"
+
+#: local_cluster/content/redist.py
+msgid "Fehlgeschlagen (Exit-Code {0}) – neuer Versuch beim nächsten Start ({1}/{2})"
+msgstr "Failed (exit code {0}) – trying again on the next start ({1}/{2})"
+
+#: local_cluster/content/redist.py
+msgid "Fehlgeschlagen (Exit-Code {0}) – wird nicht mehr versucht"
+msgstr "Failed (exit code {0}) – will not be tried again"
+
+#: local_cluster/content/redist.py
+msgid "Installationsskript (ISI) für {0}"
+msgstr "Install script (ISI) for {0}"
+
+#: local_cluster/content/redist.py local_cluster/library_view.py local_cluster/power_search.py
+msgid "Installiert"
+msgstr "Installed"
+
+#: local_cluster/content/redist.py
+msgid "Installiert (für ein anderes Spiel in diesem Prefix)"
+msgstr "Installed (for another game in this prefix)"
+
+#: local_cluster/content/redist.py
+msgid "Kein Galaxy-Build für {0}"
+msgstr "No Galaxy build for {0}"
+
+#: local_cluster/content/redist.py
+msgid "Manifest {0} laden …"
+msgstr "Loading manifest {0} …"
+
+#: local_cluster/content/redist.py
+msgid "Nichts einzurichten"
+msgstr "Nothing to set up"
+
+#: local_cluster/content/redist.py
+msgid "Setup-Programm für {0}"
+msgstr "Setup program for {0}"
+
+#: local_cluster/content/redist.py
+msgid "Support-Dateien laden …"
+msgstr "Downloading support files …"
+
+#: local_cluster/content/redist.py
+msgid "{0} von {1} erledigt"
+msgstr "{0} of {1} done"
+
+#: local_cluster/friends.py
+msgid "Abwesend"
+msgstr "Away"
+
+#: local_cluster/friends.py
+msgid "Ein Freund hat ein Spiel gestartet"
+msgstr "A friend started a game"
+
+#: local_cluster/friends.py
+msgid "Ein Freund ist jetzt online"
+msgstr "A friend is now online"
+
+#: local_cluster/friends.py
+msgid "Freund geht online"
+msgstr "Friend comes online"
+
+#: local_cluster/friends.py
+msgid "Freund startet ein Spiel"
+msgstr "Friend starts a game"
+
+#: local_cluster/friends.py
+msgid "Freundschaftsanfrage"
+msgstr "Friend invite"
+
+#: local_cluster/friends.py local_cluster/ui/friends_view.py
+msgid "Freundschaftseinladung erhalten"
+msgstr "Friend invite received"
+
+#: local_cluster/friends.py local_cluster/ui/ext_friends.py
+msgid "Im Spiel"
+msgstr "In game"
+
+#: local_cluster/friends.py
+msgid "Jemand möchte dein Freund sein"
+msgstr "Someone wants to be your friend"
+
+#: local_cluster/friends.py
+msgid "Jetzt online"
+msgstr "Now online"
+
+#: local_cluster/friends.py local_cluster/ui/friends_view.py
+msgid "Offline"
+msgstr "Offline"
+
+#: local_cluster/friends.py local_cluster/ui/friends_view.py local_cluster/ui/menus.py
+msgid "Online"
+msgstr "Online"
+
+#: local_cluster/friends.py
+msgid "Spielt – {0}"
+msgstr "Playing - {0}"
+
+#: local_cluster/friends.py
+msgid "Spielt – {0} – {1}"
+msgstr "Playing - {0} - {1}"
+
+#: local_cluster/friends.py
+msgid "Zuletzt online {0}"
+msgstr "Last online {0}"
+
+#: local_cluster/friends.py
+msgid "{0} möchte dein Freund sein."
+msgstr "{0} wants to be your friend."
+
+#: local_cluster/friends.py local_cluster/ui/ext_friends.py
+msgid "{0} spielt jetzt"
+msgstr "{0} started playing"
+
+#: local_cluster/i18n.py
+msgid "Automatisch (Systemsprache)"
+msgstr "Automatic (system language)"
+
+#: local_cluster/launch/compat.py
+msgid "GE-Proton (neueste Version, Download über umu)"
+msgstr "GE-Proton (latest version, downloaded via umu)"
+
+#: local_cluster/launch/compat.py
+msgid "Nativ (kein Kompatibilitätstool)"
+msgstr "Native (no compatibility tool)"
+
+#: local_cluster/launch/compat.py
+msgid "System-Wine ({0})"
+msgstr "System Wine ({0})"
+
+#: local_cluster/launch/compat.py
+msgid "UMU-Proton (neueste Version, Download über umu)"
+msgstr "UMU-Proton (latest version, downloaded via umu)"
+
+#: local_cluster/launch/galaxy_services.py
+msgid " · Port {0} belegt (z. B. comet von Heroic) – dieser Dienst wird mitbenutzt"
+msgstr " · port {0} in use (e.g. comet from Heroic) – that service will be shared"
+
+#: local_cluster/launch/galaxy_services.py
+msgid " · Version {0} verfügbar"
+msgstr " · version {0} available"
+
+#: local_cluster/launch/galaxy_services.py
+msgid " · läuft gerade"
+msgstr " · running now"
+
+#: local_cluster/launch/galaxy_services.py
+msgid "Anmeldung bei GOG konnte nicht erneuert werden: {0}"
+msgstr "Could not renew the GOG sign-in: {0}"
+
+#: local_cluster/launch/galaxy_services.py
+msgid "Download von {0} fehlgeschlagen: HTTP {1}"
+msgstr "Download of {0} failed: HTTP {1}"
+
+#: local_cluster/launch/galaxy_services.py
+msgid "Download von {0} fehlgeschlagen: {1}"
+msgstr "Download of {0} failed: {1}"
+
+#: local_cluster/launch/galaxy_services.py
+msgid "GalaxyCommunication-Dienst: {0}"
+msgstr "GalaxyCommunication service: {0}"
+
+#: local_cluster/launch/galaxy_services.py
+msgid "Gefunden: {0} · Version {1} · {2}"
+msgstr "Found: {0} · version {1} · {2}"
+
+#: local_cluster/launch/galaxy_services.py
+msgid "Lade Galaxy-Dienste herunter …"
+msgstr "Downloading Galaxy services …"
+
+#: local_cluster/launch/galaxy_services.py
+msgid "Lade comet herunter …"
+msgstr "Downloading comet …"
+
+#: local_cluster/launch/galaxy_services.py
+msgid "Lade comet herunter … {0} %"
+msgstr "Downloading comet … {0} %"
+
+#: local_cluster/launch/galaxy_services.py
+msgid "Neuer Pfad eingetragen: {0}"
+msgstr "New path set: {0}"
+
+#: local_cluster/launch/galaxy_services.py
+msgid "Neuere Version {0} verfügbar: local-cluster comet --download"
+msgstr "Newer version {0} available: local-cluster comet --download"
+
+#: local_cluster/launch/galaxy_services.py
+msgid "Nicht gefunden"
+msgstr "Not found"
+
+#: local_cluster/launch/galaxy_services.py
+msgid "Nicht gefunden – wird beim ersten Start eines Spiels mit Galaxy-Diensten heruntergeladen."
+msgstr "Not found – will be downloaded when a game with Galaxy services is first launched."
+
+#: local_cluster/launch/galaxy_services.py
+msgid "Port {0} ist belegt – ein anderer Galaxy-Dienst (z. B. von Heroic) läuft."
+msgstr "Port {0} is in use – another Galaxy service (e.g. from Heroic) is running."
+
+#: local_cluster/launch/galaxy_services.py
+msgid "Prüfsumme von {0} stimmt nicht – Datei verworfen."
+msgstr "Checksum of {0} does not match – file discarded."
+
+#: local_cluster/launch/galaxy_services.py
+msgid "Richte Galaxy-Dienste im Prefix ein …"
+msgstr "Setting up Galaxy services in the prefix …"
+
+#: local_cluster/launch/galaxy_services.py
+msgid "Starte Galaxy-Dienste (comet) …"
+msgstr "Starting Galaxy services (comet) …"
+
+#: local_cluster/launch/galaxy_services.py
+msgid "Systempfad"
+msgstr "system path"
+
+#: local_cluster/launch/galaxy_services.py
+msgid "Unerwartete Dateigröße bei {0}."
+msgstr "Unexpected file size for {0}."
+
+#: local_cluster/launch/galaxy_services.py
+msgid "aus Heroic"
+msgstr "from Heroic"
+
+#: local_cluster/launch/galaxy_services.py
+msgid "comet gibt es hier nur für x86_64 – bitte comet selbst installieren und den Pfad eintragen."
+msgstr "comet is only available for x86_64 here – please install comet yourself and enter its path."
+
+#: local_cluster/launch/galaxy_services.py
+msgid "comet hat sich sofort beendet (Exit-Code {0}) – Details im comet-Protokoll."
+msgstr "comet exited immediately (exit code {0}) – see the comet log for details."
+
+#: local_cluster/launch/galaxy_services.py local_cluster/ui/prefs_galaxy_services.py
+msgid "comet herunterladen"
+msgstr "Download comet"
+
+#: local_cluster/launch/galaxy_services.py
+msgid "comet konnte nicht gestartet werden: {0}"
+msgstr "comet could not be started: {0}"
+
+#: local_cluster/launch/galaxy_services.py
+msgid "comet: nicht gefunden – local-cluster comet --download"
+msgstr "comet: not found – local-cluster comet --download"
+
+#: local_cluster/launch/galaxy_services.py
+msgid "comet: {0} (Version {1}, Quelle {2})"
+msgstr "comet: {0} (version {1}, source {2})"
+
+#: local_cluster/launch/galaxy_services.py
+msgid "eigener Pfad"
+msgstr "own path"
+
+#: local_cluster/launch/galaxy_services.py local_cluster/ui/dialogs.py
+msgid "nicht gefunden"
+msgstr "not found"
+
+#: local_cluster/launch/galaxy_services.py
+msgid "von local:cluster geladen"
+msgstr "downloaded by local:cluster"
+
+#: local_cluster/launch/goverlay.py
+msgid "DXVK-HUD (FPS)"
+msgstr "DXVK HUD (FPS)"
+
+#: local_cluster/launch/goverlay.py
+msgid "Gamescope Vollbild + MangoHud"
+msgstr "Gamescope fullscreen + MangoHud"
+
+#: local_cluster/launch/goverlay.py
+msgid "Keine Startoptionen"
+msgstr "No launch options"
+
+#: local_cluster/launch/goverlay.py
+msgid "MangoHud (GOverlay-Standard)"
+msgstr "MangoHud (GOverlay default)"
+
+#: local_cluster/launch/goverlay.py
+msgid "MangoHud + GameMode"
+msgstr "MangoHud + GameMode"
+
+#: local_cluster/launch/goverlay.py
+msgid "MangoHud + vkBasalt"
+msgstr "MangoHud + vkBasalt"
+
+#: local_cluster/launch/goverlay.py
+msgid "MangoHud nur per Variable"
+msgstr "MangoHud via variable only"
+
+#: local_cluster/launch/goverlay.py
+msgid "Proton-Log aktivieren"
+msgstr "Enable Proton log"
+
+#: local_cluster/launch/goverlay.py
+msgid "Wayland nativ (Proton 9+)"
+msgstr "Native Wayland (Proton 9+)"
+
+#: local_cluster/launch/goverlay_profiles.py
+msgid "GOverlay-Profil „{0}“ wird eingerichtet …"
+msgstr "Setting up GOverlay profile “{0}” …"
+
+#: local_cluster/launch/goverlay_profiles.py
+msgid "GOverlay-Profil: aus"
+msgstr "GOverlay profile: off"
+
+#: local_cluster/launch/goverlay_profiles.py
+msgid "GOverlay-Profil: {0} (aus den Startoptionen, wird einmal vorangestellt)"
+msgstr "GOverlay profile: {0} (from the launch options, prepended once)"
+
+#: local_cluster/launch/goverlay_profiles.py
+msgid "GOverlay-Profil: {0} (pro Spiel)"
+msgstr "GOverlay profile: {0} (per game)"
+
+#: local_cluster/launch/goverlay_profiles.py
+msgid "GOverlay-Änderungen werden zurückgenommen …"
+msgstr "Undoing GOverlay changes …"
+
+#: local_cluster/launch/goverlay_profiles.py local_cluster/ui/dialogs.py local_cluster/ui/ext_goverlay.py
+msgid "globales GOverlay-Profil"
+msgstr "global GOverlay profile"
+
+#: local_cluster/launch/goverlay_profiles.py
+msgid "kein Profil – Spiel in GOverlay anklicken, um sein Profil anzulegen"
+msgstr "no profile – click the game in GOverlay to create its profile"
+
+#: local_cluster/launch/goverlay_profiles.py
+msgid "kein Profil – das Spiel erscheint nicht in GOverlay (Einstellungen → Kompatibilität → GOverlay)"
+msgstr "no profile – the game does not appear in GOverlay (Settings → Compatibility → GOverlay)"
+
+#: local_cluster/launch/hook_cloudsaves.py local_cluster/notifications.py local_cluster/ui/dialogs.py
+msgid "Cloud-Spielstände"
+msgstr "Cloud saves"
+
+#: local_cluster/launch/hook_cloudsaves.py
+msgid "Cloud-Spielstände: {0}"
+msgstr "Cloud saves: {0}"
+
+#: local_cluster/launch/hook_cloudsaves.py
+msgid "Cloud-Synchronisation fehlgeschlagen"
+msgstr "Failed to sync with GOG Galaxy Cloud"
+
+#: local_cluster/launch/hook_cloudsaves.py local_cluster/ui/ext_cloudsaves.py
+msgid "Cloud-Synchronisierung fehlgeschlagen: {0}"
+msgstr "Cloud Sync failed: {0}"
+
+#: local_cluster/launch/hook_cloudsaves.py
+msgid "Synchronisiert in GOG Galaxy-Cloud"
+msgstr "Synced with GOG Galaxy Cloud"
+
+#: local_cluster/launch/hook_cloudsaves.py
+msgid "Warte auf die laufende Synchronisation der Cloud-Spielstände …"
+msgstr "Waiting for the running cloud save sync …"
+
+#: local_cluster/launch/hook_galaxy_services.py
+msgid "Galaxy-Dienste (comet)"
+msgstr "Galaxy services (comet)"
+
+#: local_cluster/launch/hook_galaxy_services.py local_cluster/ui/prefs_galaxy_services.py
+msgid "GalaxyCommunication-Dienst"
+msgstr "GalaxyCommunication service"
+
+#: local_cluster/launch/hook_goverlay.py local_cluster/ui/ext_goverlay.py
+msgid "GOverlay-Profil"
+msgstr "GOverlay profile"
+
+#: local_cluster/launch/hook_redist.py
+msgid "Einrichtung abgebrochen – „{0}“ läuft beim nächsten Start erneut."
+msgstr "Setup cancelled – “{0}” will run again on the next launch."
+
+#: local_cluster/launch/hook_redist.py local_cluster/ui/ext_redist.py
+msgid "Einrichtung im Prefix"
+msgstr "Prefix setup"
+
+#: local_cluster/launch/hook_redist.py
+msgid "Einrichtung im Prefix: {0}"
+msgstr "Prefix setup: {0}"
+
+#: local_cluster/launch/hook_redist.py
+msgid "Einrichtung {0}/{1}: {2} …"
+msgstr "Setup {0}/{1}: {2} …"
+
+#: local_cluster/launch/hook_redist.py local_cluster/ui/ext_redist.py
+msgid "Galaxy-Redistributables"
+msgstr "Galaxy redistributables"
+
+#: local_cluster/launch/hook_redist.py
+msgid "Galaxy-Redistributables laden …"
+msgstr "Downloading Galaxy redistributables …"
+
+#: local_cluster/launch/hook_redist.py
+msgid "Galaxy-Redistributables laden … {0} %"
+msgstr "Downloading Galaxy redistributables … {0} %"
+
+#: local_cluster/launch/hook_redist.py
+msgid "Installations-Datensatz anlegen …"
+msgstr "Creating installation record …"
+
+#: local_cluster/launch/hook_redist.py
+msgid "„{0}“ fehlt und wird nicht mehr versucht."
+msgstr "\"{0}\" is missing and will not be tried again."
+
+#: local_cluster/launch/hook_redist.py
+msgid "„{0}“ ist mehrmals fehlgeschlagen (Exit-Code {1}) und wird nicht mehr versucht – Details im Spielprotokoll."
+msgstr "\"{0}\" failed several times (exit code {1}) and will not be tried again – details in the game log."
+
+#: local_cluster/launch/hooks.py
+msgid "Auswahl [Eingabe = Vorgabe]: "
+msgstr "Choice [Enter = default]: "
+
+#: local_cluster/launch/hooks.py
+msgid "Nachbereitung „{0}“ fehlgeschlagen: {1}"
+msgstr "Post-processing \"{0}\" failed: {1}"
+
+#: local_cluster/launch/hooks.py local_cluster/ui/game_page.py
+msgid "Start abgebrochen."
+msgstr "Launch cancelled."
+
+#: local_cluster/launch/hooks.py
+msgid "Vorbereitung „{0}“ fehlgeschlagen: {1}"
+msgstr "Preparation \"{0}\" failed: {1}"
+
+#: local_cluster/launch/launch_options.py
+msgid "Startoptionen ungültig: {0}"
+msgstr "Invalid launch options: {0}"
+
+#: local_cluster/launch/launcher.py
+msgid "Das Spiel läuft bereits."
+msgstr "The game is already running."
+
+#: local_cluster/launch/launcher.py
+msgid "Globale Vorgabe"
+msgstr "Global default"
+
+#: local_cluster/launch/launcher.py
+msgid "Kein Proton/Wine gefunden. Bitte proton-cachyos, umu-launcher oder wine installieren."
+msgstr "No Proton/Wine found. Please install proton-cachyos, umu-launcher or wine."
+
+#: local_cluster/launch/launcher.py
+msgid "Kein Proton/Wine verfügbar."
+msgstr "No Proton/Wine available."
+
+#: local_cluster/launch/launcher.py
+msgid "Keine startbare Datei gefunden (goggame-*.info fehlt und keine .exe erkannt)."
+msgstr "No launchable file found (goggame-*.info missing and no .exe detected)."
+
+#: local_cluster/launch/launcher.py local_cluster/ui/dialogs.py
+msgid "Start"
+msgstr "Launch"
+
+#: local_cluster/launch/launcher.py
+msgid "Start (start.sh)"
+msgstr "Launch (start.sh)"
+
+#: local_cluster/launch/launcher.py local_cluster/ui/game_page.py
+msgid "Start fehlgeschlagen: {0}"
+msgstr "Launch failed: {0}"
+
+#: local_cluster/launch/launcher.py
+msgid "Startdatei nicht gefunden: {0}"
+msgstr "Executable not found: {0}"
+
+#: local_cluster/launch/launcher.py local_cluster/ui/game_page.py
+msgid "Starte …"
+msgstr "Launching…"
+
+#: local_cluster/launch/launcher.py
+msgid "Steam Linux Runtime fehlt – bitte umu-launcher installieren."
+msgstr "Steam Linux Runtime is missing – please install umu-launcher."
+
+#: local_cluster/launch/launcher.py
+msgid "Vorgabe der Bibliothek „{0}“"
+msgstr "Default of library “{0}”"
+
+#: local_cluster/launch/launcher.py
+msgid "umu-run nicht gefunden (Paket umu-launcher)."
+msgstr "umu-run not found (package umu-launcher)."
+
+#: local_cluster/launch/launcher.py
+msgid "wineserver nicht gefunden."
+msgstr "wineserver not found."
+
+#: local_cluster/launch/launcher.py
+msgid "winetricks ist nicht installiert."
+msgstr "winetricks is not installed."
+
+#: local_cluster/launch/launcher.py
+msgid "{0} benötigt die Steam Linux Runtime (AppID {1}). Bitte umu-launcher installieren oder ein anderes Proton wählen."
+msgstr "{0} requires the Steam Linux Runtime (AppID {1}). Please install umu-launcher or choose a different Proton."
+
+#: local_cluster/launch/shortcuts.py
+msgid "Spielseite im Client öffnen"
+msgstr "Open game page in client"
+
+#: local_cluster/launch/shortcuts.py
+msgid "Über local:cluster starten"
+msgstr "Launch via local:cluster"
+
+#: local_cluster/library_view.py local_cluster/ui/window.py
+msgid "Bewertung"
+msgstr "Rating"
+
+#: local_cluster/library_view.py
+msgid "Datum hinzugefügt"
+msgstr "Date added"
+
+#: local_cluster/library_view.py
+msgid "Datum unbekannt"
+msgstr "Date unknown"
+
+#: local_cluster/library_view.py local_cluster/ui/discover_view.py
+msgid "Demnächst"
+msgstr "Upcoming"
+
+#: local_cluster/library_view.py
+msgid "Dieses Jahr"
+msgstr "This year"
+
+#: local_cluster/library_view.py
+msgid "Dieses Jahr veröffentlicht"
+msgstr "Released this year"
+
+#: local_cluster/library_view.py local_cluster/power_search.py local_cluster/ui/game_page.py
+msgid "Genre"
+msgstr "Genre"
+
+#: local_cluster/library_view.py
+msgid "Genres"
+msgstr "Genres"
+
+#: local_cluster/library_view.py
+msgid "Größe auf der Festplatte"
+msgstr "Size on disk"
+
+#: local_cluster/library_view.py
+msgid "Heute"
+msgstr "Today"
+
+#: local_cluster/library_view.py
+msgid "Kein Genre"
+msgstr "No genre"
+
+#: local_cluster/library_view.py local_cluster/ui/window.py
+msgid "Keine Bewertung"
+msgstr "No rating"
+
+#: local_cluster/library_view.py
+msgid "Keine Lesezeichen in der Datei"
+msgstr "No bookmarks in the file"
+
+#: local_cluster/library_view.py local_cluster/ui/tags.py local_cluster/ui/window.py
+msgid "Keine Tags"
+msgstr "No tags"
+
+#: local_cluster/library_view.py
+msgid "Letzten 30 Tage"
+msgstr "Last 30 days"
+
+#: local_cluster/library_view.py local_cluster/ui/friends_view.py
+msgid "Nicht gruppieren"
+msgstr "Don't group"
+
+#: local_cluster/library_view.py local_cluster/ui/game_page.py local_cluster/ui/window.py
+msgid "Nicht installiert"
+msgstr "Not installed"
+
+#: local_cluster/library_view.py local_cluster/ui/dialogs.py local_cluster/ui/game_page.py
+msgid "Plattform"
+msgstr "Platform"
+
+#: local_cluster/library_view.py local_cluster/ui/game_page.py
+msgid "Presse-Wertung"
+msgstr "Critics rating"
+
+#: local_cluster/library_view.py local_cluster/ui/game_page.py local_cluster/ui/window.py
+msgid "Spielzeit"
+msgstr "Playtime"
+
+#: local_cluster/library_view.py local_cluster/ui/game_page.py local_cluster/ui/window.py
+msgid "Status"
+msgstr "Status"
+
+#: local_cluster/library_view.py local_cluster/ui/game_page.py local_cluster/ui/window.py
+msgid "Tags"
+msgstr "Tags"
+
+#: local_cluster/library_view.py local_cluster/ui/edit_dialog.py
+msgid "Titel"
+msgstr "Title"
+
+#: local_cluster/library_view.py
+msgid "Unbekanntes Veröffentlichungsdatum"
+msgstr "Unknown release date"
+
+#: local_cluster/library_view.py local_cluster/ui/window.py
+msgid "Update verfügbar"
+msgstr "Update available"
+
+#: local_cluster/library_view.py
+msgid "Veröffentlichungsdatum"
+msgstr "Release date"
+
+#: local_cluster/library_view.py local_cluster/ui/game_page.py local_cluster/ui/recent_view.py
+msgid "Zuletzt gespielt"
+msgstr "Last played"
+
+#: local_cluster/notifications.py
+msgid "Desktop und Benachrichtigungszentrum"
+msgstr "Desktop and notification center"
+
+#: local_cluster/notifications.py
+msgid "Downloads fertig oder fehlgeschlagen, Updates verfügbar, Probleme mit Galaxy-Redistributables"
+msgstr "Downloads finished or failed, updates available, problems with Galaxy redistributables"
+
+#: local_cluster/notifications.py
+msgid "Installation/Update"
+msgstr "Installing/updating"
+
+#: local_cluster/notifications.py
+msgid "Konflikte, überschrittenes Kontingent und Fehler beim Synchronisieren"
+msgstr "Conflicts, exceeded quota and sync errors"
+
+#: local_cluster/notifications.py
+msgid "Käufe und eingelöste Codes, sobald der Abgleich sie findet"
+msgstr "Purchases and redeemed codes as soon as the library sync finds them"
+
+#: local_cluster/notifications.py
+msgid "Neue Spiele in der Bibliothek"
+msgstr "New games in library"
+
+#: local_cluster/notifications.py
+msgid "Nur Benachrichtigungszentrum"
+msgstr "Notification center only"
+
+#: local_cluster/notifications.py
+msgid "Rabatte und neu erhältliche Spiele deiner Wunschliste"
+msgstr "Discounts and newly available games on your wishlist"
+
+#: local_cluster/notifications.py local_cluster/ui/store.py
+msgid "Wunschliste"
+msgstr "Wishlist"
+
+#: local_cluster/power_search.py local_cluster/ui/game_page.py
+msgid "Entwickler"
+msgstr "Developer"
+
+#: local_cluster/power_search.py
+msgid "Im Store kaufen"
+msgstr "Buy in store"
+
+#: local_cluster/power_search.py local_cluster/ui/dialogs.py local_cluster/ui/power_search_dialog.py
+msgid "Lesezeichen"
+msgstr "Bookmarks"
+
+#: local_cluster/power_search.py
+msgid "Lesezeichen anzeigen"
+msgstr "Show bookmark"
+
+#: local_cluster/power_search.py
+msgid "Spiel"
+msgstr "Game"
+
+#: local_cluster/power_search.py
+msgid "Spiel anzeigen"
+msgstr "Show game"
+
+#: local_cluster/power_search.py
+msgid "Spiel im Besitz"
+msgstr "Owned game"
+
+#: local_cluster/power_search.py local_cluster/ui/game_menu.py
+msgid "Spielen"
+msgstr "Play"
+
+#: local_cluster/power_search.py
+msgid "Tag"
+msgstr "Tag"
+
+#: local_cluster/settings.py
+msgid "Erwartet wird JSON vom Typ {0}"
+msgstr "Expected JSON of type {0}"
+
+#: local_cluster/settings.py
+msgid "noch nicht gespielt"
+msgstr "not played yet"
+
+#: local_cluster/settings.py
+msgid "{0:.1f} TB"
+msgstr "{0:.1f} TB"
+
+#: local_cluster/settings.py local_cluster/ui/recent_view.py
+msgid "{0} Min."
+msgstr "{0} min"
+
+#: local_cluster/settings.py
+msgid "{0} Std."
+msgstr "{0} h"
+
+#: local_cluster/settings.py
+msgid "{0} Std. {1} Min."
+msgstr "{0} h {1} min"
+
+#: local_cluster/ui/app.py
+msgid "Inoffizielles Community-Projekt"
+msgstr "Unofficial community project"
+
+#: local_cluster/ui/app.py
+msgid "Nativer GOG-Client für CachyOS/Arch Linux. Nutzt dieselben GOG-Dienste wie der offizielle Galaxy-Client (Login, Bibliothek, Content-System v2, GamesDB, Spielzeit, Erfolge) und startet Windows-Spiele über ein frei wählbares Proton (umu-launcher), Wine oder nativ.\n\nGOG und GOG Galaxy sind Marken von GOG sp. z o.o. Dieses Projekt steht in keiner Verbindung zu GOG."
+msgstr "Native GOG client for CachyOS/Arch Linux. Uses the same GOG services as the official Galaxy client (login, library, content system v2, GamesDB, playtime, achievements) and launches Windows games through a Proton of your choice (umu-launcher), Wine, or natively.\n\nGOG and GOG Galaxy are trademarks of GOG sp. z o.o. This project is not affiliated with GOG."
+
+#: local_cluster/ui/chat_view.py local_cluster/ui/friends_view.py local_cluster/ui/window.py
+msgid "BEI GOG ANMELDEN"
+msgstr "SIGN IN TO GOG"
+
+#: local_cluster/ui/chat_view.py
+msgid "Der Chat blieb leer"
+msgstr "The chat stayed empty"
+
+#: local_cluster/ui/chat_view.py
+msgid "Der Chat hat die Anmeldung nicht angenommen"
+msgstr "The chat did not accept the sign-in"
+
+#: local_cluster/ui/chat_view.py
+msgid "Der Chat konnte nicht geladen werden"
+msgstr "The chat could not be loaded"
+
+#: local_cluster/ui/chat_view.py
+msgid "Die Chat-Anwendung von GOG antwortete mit HTTP {0}. GOG Galaxy betreibt den Chat in einem eigenen, angemeldeten Fenster; ob er sich außerhalb von Galaxy anmelden lässt, ist nicht bestätigt."
+msgstr "GOG's chat app answered with HTTP {0}. GOG Galaxy runs the chat in its own signed-in window; whether it can be signed in outside of Galaxy is not confirmed."
+
+#: local_cluster/ui/chat_view.py
+msgid "Die Chat-Anwendung von GOG hat nichts angezeigt – vermutlich erkennt sie die Anmeldung außerhalb von GOG Galaxy nicht."
+msgstr "GOG's chat app did not show anything – it probably does not recognise the sign-in outside of GOG Galaxy."
+
+#: local_cluster/ui/chat_view.py local_cluster/ui/friends_view.py local_cluster/ui/store.py
+msgid "ERNEUT VERSUCHEN"
+msgstr "TRY AGAIN"
+
+#: local_cluster/ui/chat_view.py
+msgid "Eingebetteter Chat nicht verfügbar"
+msgstr "Embedded chat not available"
+
+#: local_cluster/ui/chat_view.py
+msgid "Für den Chat fehlt das Paket webkitgtk-6.0."
+msgstr "The chat needs the package webkitgtk-6.0."
+
+#: local_cluster/ui/chat_view.py
+msgid "GOG.COM ÖFFNEN"
+msgstr "OPEN GOG.COM"
+
+#: local_cluster/ui/chat_view.py
+msgid "Keine Verbindung zu chat.gog.com: {0}"
+msgstr "No connection to chat.gog.com: {0}"
+
+#: local_cluster/ui/chat_view.py
+msgid "Melde dich bei GOG an, um Nachrichten zu lesen und zu schreiben."
+msgstr "Sign in to GOG to read and write messages."
+
+#: local_cluster/ui/chat_view.py
+msgid "NACHRICHTEN"
+msgstr "MESSAGES"
+
+#: local_cluster/ui/chat_view.py
+msgid "Nachrichten erreichst du auf gog.com – dort bist du über den eingebetteten Store angemeldet."
+msgstr "You can reach your messages on gog.com – you are signed in there through the embedded store."
+
+#: local_cluster/ui/chat_view.py local_cluster/ui/discover_view.py local_cluster/ui/store.py
+msgid "Neu laden"
+msgstr "Reload"
+
+#: local_cluster/ui/chat_view.py local_cluster/ui/friends_view.py local_cluster/ui/window.py
+msgid "Nicht angemeldet"
+msgstr "Not signed in"
+
+#: local_cluster/ui/client_update.py
+msgid "Diese Veröffentlichung hat keine Versionshinweise."
+msgstr "This release has no release notes."
+
+#: local_cluster/ui/client_update.py local_cluster/ui/ext_redist.py local_cluster/ui/menus.py
+msgid "Jetzt aktualisieren"
+msgstr "Update now"
+
+#: local_cluster/ui/client_update.py
+msgid "Keine Updates für local:cluster verfügbar ({0})"
+msgstr "No updates for local:cluster available ({0})"
+
+#: local_cluster/ui/client_update.py local_cluster/ui/window.py
+msgid "Menü"
+msgstr "Menu"
+
+#: local_cluster/ui/client_update.py
+msgid "Menü – Update verfügbar"
+msgstr "Menu – update available"
+
+#: local_cluster/ui/client_update.py
+msgid "Neu starten"
+msgstr "Restart"
+
+#: local_cluster/ui/client_update.py
+msgid "Neues Update verfügbar"
+msgstr "New update available"
+
+#: local_cluster/ui/client_update.py
+msgid "Noch keine Veröffentlichung"
+msgstr "No release published yet"
+
+#: local_cluster/ui/client_update.py
+msgid "Prüfsumme stimmt. Wird installiert – bitte die Abfrage des Systems bestätigen …"
+msgstr "Checksum verified. Installing – please confirm the system prompt …"
+
+#: local_cluster/ui/client_update.py local_cluster/ui/menus.py
+msgid "Schließen"
+msgstr "Close"
+
+#: local_cluster/ui/client_update.py
+msgid "Später"
+msgstr "Later"
+
+#: local_cluster/ui/client_update.py
+msgid "Suche nach Updates …"
+msgstr "Checking for updates …"
+
+#: local_cluster/ui/client_update.py
+msgid "Update wird geladen …"
+msgstr "Downloading update …"
+
+#: local_cluster/ui/client_update.py
+msgid "Update wird geladen … {0} %"
+msgstr "Downloading update … {0} %"
+
+#: local_cluster/ui/client_update.py
+msgid "Update-Suche fehlgeschlagen: {0}"
+msgstr "Update check failed: {0}"
+
+#: local_cluster/ui/client_update.py
+msgid "Veröffentlichung {0} im Browser geöffnet"
+msgstr "Opened release {0} in your browser"
+
+#: local_cluster/ui/client_update.py
+msgid "Veröffentlichung öffnen"
+msgstr "Open release"
+
+#: local_cluster/ui/client_update.py
+msgid "Wird abgebrochen …"
+msgstr "Cancelling …"
+
+#: local_cluster/ui/client_update.py
+msgid "local:cluster aktualisieren"
+msgstr "Update local:cluster"
+
+#: local_cluster/ui/client_update.py
+msgid "local:cluster ist hier nicht als pacman-Paket installiert – „Jetzt aktualisieren“ öffnet die Veröffentlichung im Browser."
+msgstr "local:cluster is not installed as a pacman package here – “Update now” opens the release in your browser."
+
+#: local_cluster/ui/client_update.py
+msgid "local:cluster {0} ist verfügbar – installiert ist {1}."
+msgstr "local:cluster {0} is available – {1} is installed."
+
+#: local_cluster/ui/configure.py
+msgid " (installiert)"
+msgstr " (installed)"
+
+#: local_cluster/ui/configure.py local_cluster/ui/dialogs.py
+msgid "Alle auswählen"
+msgstr "Select all"
+
+#: local_cluster/ui/configure.py
+msgid "Argumente"
+msgstr "Arguments"
+
+#: local_cluster/ui/configure.py
+msgid "Ausgeschaltet"
+msgstr "Disabled"
+
+#: local_cluster/ui/configure.py
+msgid "Automatisch auf die neuste Version aktualisieren"
+msgstr "Automatically update to newest version"
+
+#: local_cluster/ui/configure.py
+msgid "Automatische Updates"
+msgstr "Auto-updates"
+
+#: local_cluster/ui/configure.py local_cluster/ui/dialogs.py
+msgid "Automatische Updates sind in den Einstellungen deaktiviert – wir benachrichtigen dich, wenn ein Update verfügbar ist."
+msgstr "Auto-updates are disabled in the settings. You will be notified whenever a new update is available."
+
+#: local_cluster/ui/configure.py
+msgid "Benutzerdefinierte Dateiverknüpfungen / Argumente"
+msgstr "Custom executables / arguments"
+
+#: local_cluster/ui/configure.py
+msgid "Beta-Kanäle"
+msgstr "Beta channels"
+
+#: local_cluster/ui/configure.py
+msgid "Cloud-Speicherstände"
+msgstr "Cloud saves"
+
+#: local_cluster/ui/configure.py
+msgid "Cloud-Speicherstände sind in den Einstellungen deaktiviert."
+msgstr "Cloud saves are disabled in the settings."
+
+#: local_cluster/ui/configure.py local_cluster/ui/dialogs.py
+msgid "DLC"
+msgstr "DLC"
+
+#: local_cluster/ui/configure.py
+msgid "DLC-Auswahl wird übernommen – siehe Downloads."
+msgstr "Applying the DLC selection – see Downloads."
+
+#: local_cluster/ui/configure.py
+msgid "Datei"
+msgstr "File"
+
+#: local_cluster/ui/configure.py
+msgid "Dateiverknüpfung"
+msgstr "Executable"
+
+#: local_cluster/ui/configure.py
+msgid "Dateiverknüpfung auswählen"
+msgstr "Select executable"
+
+#: local_cluster/ui/configure.py
+msgid "Dateiverknüpfung entfernen"
+msgstr "Remove executable"
+
+#: local_cluster/ui/configure.py
+msgid "Eigene DLCs"
+msgstr "Owned DLCs"
+
+#: local_cluster/ui/configure.py
+msgid "Einblendungen"
+msgstr "Overlay"
+
+#: local_cluster/ui/configure.py local_cluster/ui/dialogs.py
+msgid "Funktionen"
+msgstr "Features"
+
+#: local_cluster/ui/configure.py
+msgid "Für dieses Spiel gibt es keine öffentlichen Beta-Kanäle."
+msgstr "There are no public beta channels for this game."
+
+#: local_cluster/ui/configure.py
+msgid "GOG Galaxy-Funktionen im Spiel nutzen"
+msgstr "Access GOG Galaxy features in-game"
+
+#: local_cluster/ui/configure.py
+msgid "Galaxy-Dienste im Spiel sind in den Einstellungen deaktiviert."
+msgstr "Galaxy services in game are disabled in the settings."
+
+#: local_cluster/ui/configure.py
+msgid "Häkchen setzen oder entfernen installiert bzw. entfernt den DLC sofort."
+msgstr "Ticking or unticking a DLC installs or removes it right away."
+
+#: local_cluster/ui/configure.py local_cluster/ui/dialogs.py
+msgid "Installation"
+msgstr "Installation"
+
+#: local_cluster/ui/configure.py
+msgid "Kanal"
+msgstr "Channel"
+
+#: local_cluster/ui/configure.py
+msgid "Kanal „{0}“ wird installiert – siehe Downloads."
+msgstr "Installing channel \"{0}\" – see Downloads."
+
+#: local_cluster/ui/configure.py local_cluster/ui/dialogs.py
+msgid "Keine DLCs im Besitz"
+msgstr "No owned DLCs"
+
+#: local_cluster/ui/configure.py
+msgid "Keine eigenen Einträge"
+msgstr "No custom entries"
+
+#: local_cluster/ui/configure.py
+msgid "Konfiguration von „{0}“"
+msgstr "Configuring \"{0}\""
+
+#: local_cluster/ui/configure.py
+msgid "Kopieren"
+msgstr "Duplicate"
+
+#: local_cluster/ui/configure.py
+msgid "Lokale Speicherstände mit der GOG Galaxy-Cloud synchronisieren"
+msgstr "Sync local saves with GOG Galaxy Cloud"
+
+#: local_cluster/ui/configure.py
+msgid "Mehr Versionen anzeigen"
+msgstr "Show more versions"
+
+#: local_cluster/ui/configure.py
+msgid "Meine Bezeichnung"
+msgstr "My label"
+
+#: local_cluster/ui/configure.py
+msgid "Nur eine Sprache verfügbar"
+msgstr "Only one language available"
+
+#: local_cluster/ui/configure.py local_cluster/ui/dialogs.py
+msgid "Nur für die Windows-Version des Spiels."
+msgstr "Only for the Windows version of the game."
+
+#: local_cluster/ui/configure.py
+msgid "Passwort für privaten Kanal ändern"
+msgstr "Change private channel password"
+
+#: local_cluster/ui/configure.py
+msgid "Pfad relativ zum Spielordner oder absolut; Argumente wie in der Windows-Verknüpfung."
+msgstr "Path relative to the game folder or absolute; arguments as in a Windows shortcut."
+
+#: local_cluster/ui/configure.py
+msgid "Private Kanäle hinzufügen"
+msgstr "Add private channel"
+
+#: local_cluster/ui/configure.py
+msgid "Privater Kanal hinzugefügt: {0}"
+msgstr "Private channel added: {0}"
+
+#: local_cluster/ui/configure.py local_cluster/ui/dialogs.py local_cluster/ui/game_page.py
+msgid "Sprache"
+msgstr "Language"
+
+#: local_cluster/ui/configure.py
+msgid "Sprache im Spiel wählbar"
+msgstr "Language to choose in-game"
+
+#: local_cluster/ui/configure.py
+msgid "Sprache wird geändert: {0} – siehe Downloads."
+msgstr "Changing language: {0} – see Downloads."
+
+#: local_cluster/ui/configure.py local_cluster/ui/dialogs.py
+msgid "Standard (primärer Eintrag)"
+msgstr "Default (primary entry)"
+
+#: local_cluster/ui/configure.py
+msgid "Standardmäßige Dateiverknüpfung"
+msgstr "Default executable"
+
+#: local_cluster/ui/configure.py
+msgid "Start-Parameter"
+msgstr "Launch parameters"
+
+#: local_cluster/ui/configure.py local_cluster/ui/dialogs.py local_cluster/ui/game_page.py
+msgid "Version"
+msgstr "Version"
+
+#: local_cluster/ui/configure.py
+msgid "Version {0} wird installiert – siehe Downloads."
+msgstr "Installing version {0} – see Downloads."
+
+#: local_cluster/ui/configure.py
+msgid "Wechsel lädt die Sprachdateien herunter"
+msgstr "Changing it downloads the language files"
+
+#: local_cluster/ui/configure.py
+msgid "Weitere Dateiverknüpfungen / Argumente hinzufügen"
+msgstr "Add another executable / arguments"
+
+#: local_cluster/ui/configure.py
+msgid "Weniger Versionen anzeigen"
+msgstr "Show fewer versions"
+
+#: local_cluster/ui/configure.py local_cluster/ui/dialogs.py
+msgid "nicht ermittelbar: {0}"
+msgstr "could not be determined: {0}"
+
+#: local_cluster/ui/configure.py local_cluster/ui/dialogs.py
+msgid "wird ermittelt …"
+msgstr "calculating…"
+
+#: local_cluster/ui/configure.py
+msgid "{0} Kanäle verfügbar"
+msgstr "{0} channels available"
+
+#: local_cluster/ui/configure.py
+msgid "Ältere Version wählen, um zu ihr zurückzukehren."
+msgstr "Choose an older version to roll back to it."
+
+#: local_cluster/ui/dialogs.py
+msgid " (Download {0})"
+msgstr " (download {0})"
+
+#: local_cluster/ui/dialogs.py
+msgid " (Schreibtisch)"
+msgstr " (desktop)"
+
+#: local_cluster/ui/dialogs.py
+msgid " (Startmenü)"
+msgstr " (application menu)"
+
+#: local_cluster/ui/dialogs.py
+msgid " · benötigt Runtime {0} (→ umu)"
+msgstr " · requires runtime {0} (→ umu)"
+
+#: local_cluster/ui/dialogs.py
+msgid " – Layer nicht gefunden"
+msgstr " – layer not found"
+
+#: local_cluster/ui/dialogs.py
+msgid " – nicht installiert"
+msgstr " – not installed"
+
+#: local_cluster/ui/dialogs.py
+msgid " – umu-run nicht gefunden"
+msgstr " – umu-run not found"
+
+#: local_cluster/ui/dialogs.py
+msgid "0 = automatisch aus der Desktop-Skalierung (derzeit {0}), 96 = unverändert"
+msgstr "0 = automatic from desktop scaling (currently {0}), 96 = unchanged"
+
+#: local_cluster/ui/dialogs.py
+msgid "0 = globale Vorgabe ({0})"
+msgstr "0 = global default ({0})"
+
+#: local_cluster/ui/dialogs.py
+msgid "1. „GOG-Login im Browser öffnen“ und bei GOG anmelden (auch mit Zwei-Faktor-Code).\n2. Nach dem Login landet der Browser auf einer leeren Seite von embed.gog.com – das ist richtig so.\n3. Die komplette Adresse dieser Seite aus der Adressleiste kopieren und hier einfügen. Der Login startet automatisch, sobald ein Code erkannt wird."
+msgstr "1. Click “Open GOG login in browser” and sign in to GOG (two-factor codes work too).\n2. After signing in, the browser lands on a blank page on embed.gog.com – that’s expected.\n3. Copy the full address of that page from the address bar and paste it here. Sign-in starts automatically as soon as a code is detected."
+
+#: local_cluster/ui/dialogs.py
+msgid "Abweichend von „Einstellungen → Spielfunktionen“ nur für dieses Spiel."
+msgstr "Overrides \"Settings → Game features\" for this game only."
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/recent_view.py local_cluster/ui/window.py
+msgid "Aktuelle Übersicht"
+msgstr "Recent"
+
+#: local_cluster/ui/dialogs.py
+msgid "Alle enthaltenen Extras herunterladen"
+msgstr "Download all bundled bonus goodies"
+
+#: local_cluster/ui/dialogs.py
+msgid "Allgemein"
+msgstr "General"
+
+#: local_cluster/ui/dialogs.py
+msgid "Allgemeine Funktionen zum Spiel"
+msgstr "Game data features"
+
+#: local_cluster/ui/dialogs.py
+msgid "An"
+msgstr "On"
+
+#: local_cluster/ui/dialogs.py
+msgid "Andere .exe wählen …"
+msgstr "Choose another .exe…"
+
+#: local_cluster/ui/dialogs.py
+msgid "Anderer Ordner …"
+msgstr "Other folder…"
+
+#: local_cluster/ui/dialogs.py
+msgid "Anlegen"
+msgstr "Create"
+
+#: local_cluster/ui/dialogs.py
+msgid "Anmelden"
+msgstr "Sign in"
+
+#: local_cluster/ui/dialogs.py
+msgid "Anpassungen"
+msgstr "Customizations"
+
+#: local_cluster/ui/dialogs.py
+msgid "Anzeige der Download-Geschwindigkeit"
+msgstr "Download speed display"
+
+#: local_cluster/ui/dialogs.py
+msgid "Art"
+msgstr "Type"
+
+#: local_cluster/ui/dialogs.py
+msgid "Auf dem Schreibtisch"
+msgstr "On the desktop"
+
+#: local_cluster/ui/dialogs.py
+msgid "Aus (XWayland)"
+msgstr "Off (XWayland)"
+
+#: local_cluster/ui/dialogs.py
+msgid "Aus der Zwischenablage einfügen"
+msgstr "Paste from clipboard"
+
+#: local_cluster/ui/dialogs.py
+msgid "Ausgeschlossene Spielordner"
+msgstr "Excluded game folders"
+
+#: local_cluster/ui/dialogs.py
+msgid "Ausgewählte löschen"
+msgstr "Delete selected"
+
+#: local_cluster/ui/dialogs.py
+msgid "Automatisch ({0})"
+msgstr "Automatic ({0})"
+
+#: local_cluster/ui/dialogs.py
+msgid "Automatisch einloggen – aus: beim Beenden abmelden"
+msgstr "Auto login – off: sign out when quitting"
+
+#: local_cluster/ui/dialogs.py
+msgid "Automatischer Start"
+msgstr "Auto start"
+
+#: local_cluster/ui/dialogs.py
+msgid "Bandbreite"
+msgstr "Bandwidth"
+
+#: local_cluster/ui/dialogs.py
+msgid "Bandbreite begrenzen"
+msgstr "Limit bandwidth"
+
+#: local_cluster/ui/dialogs.py
+msgid "Bandbreitenbegrenzung"
+msgstr "Bandwidth limit"
+
+#: local_cluster/ui/dialogs.py
+msgid "Befehl nach dem Beenden (sh -c)"
+msgstr "Command after exit (sh -c)"
+
+#: local_cluster/ui/dialogs.py
+msgid "Befehl vor dem Start (sh -c)"
+msgstr "Command before launch (sh -c)"
+
+#: local_cluster/ui/dialogs.py
+msgid "Begrenzung gilt nur im Zeitraum"
+msgstr "The limit only applies within this time window"
+
+#: local_cluster/ui/dialogs.py
+msgid "Begrenzung planen"
+msgstr "Schedule limit"
+
+#: local_cluster/ui/dialogs.py
+msgid "Behebt Vollbild-Probleme wie weiße Ränder unter XWayland"
+msgstr "Fixes fullscreen issues such as white borders under XWayland"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/menus.py
+msgid "Bei GOG anmelden"
+msgstr "Sign in to GOG"
+
+#: local_cluster/ui/dialogs.py
+msgid "Bei Minimierung des Fensters"
+msgstr "When minimizing the window"
+
+#: local_cluster/ui/dialogs.py
+msgid "Bei Schließung des Fensters"
+msgstr "When closing the window"
+
+#: local_cluster/ui/dialogs.py
+msgid "Beim Start nach Client-Updates suchen"
+msgstr "Check for client updates on startup"
+
+#: local_cluster/ui/dialogs.py
+msgid "Beim Start nach Spiel-Updates suchen"
+msgstr "Check for game updates on startup"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/notification_center.py
+msgid "Benachrichtigungen"
+msgstr "Notifications"
+
+#: local_cluster/ui/dialogs.py
+msgid "Bevorzugte Sprache"
+msgstr "Preferred game language"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/window.py
+msgid "Bibliothek"
+msgstr "Library"
+
+#: local_cluster/ui/dialogs.py
+msgid "Bibliothek anlegen"
+msgstr "Create library"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/menus.py local_cluster/ui/window.py
+msgid "Bibliothek anlegen …"
+msgstr "Create library…"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/window.py
+msgid "Bibliothek löschen …"
+msgstr "Delete library…"
+
+#: local_cluster/ui/dialogs.py
+msgid "Bibliothek „{0}“ löschen?"
+msgstr "Delete library “{0}”?"
+
+#: local_cluster/ui/dialogs.py
+msgid "Bibliotheken"
+msgstr "Libraries"
+
+#: local_cluster/ui/dialogs.py
+msgid "Cloud-Spielstände lädt deine Spielstände herunter, wenn du ein unterstütztes GOG-Spiel installierst. Außerdem werden die Spielstände vor und nach jeder Session synchronisiert."
+msgstr "Cloud saves downloads your saves when installing a supported GOG game, and syncs them before and after play sessions."
+
+#: local_cluster/ui/dialogs.py
+msgid "DPI für neue Prefixe"
+msgstr "DPI for new prefixes"
+
+#: local_cluster/ui/dialogs.py
+msgid "Deaktivieren, um auszuwählen, welche DLCs installiert werden sollen"
+msgstr "Uncheck to select which DLCs to install"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/game_menu.py
+msgid "Deinstallieren"
+msgstr "Uninstall"
+
+#: local_cluster/ui/dialogs.py
+msgid "Der Prefix wird gelöscht und frisch angelegt. Spielstände, die im Prefix liegen (Dokumente, AppData), gehen dabei verloren."
+msgstr "The prefix will be deleted and created from scratch. Saved games stored in the prefix (Documents, AppData) will be lost."
+
+#: local_cluster/ui/dialogs.py
+msgid "Der Prefix-Ordner wird gelöscht – inklusive Spielständen darin. Beim nächsten Start bzw. über „Prefix jetzt anlegen“ entsteht ein neuer."
+msgstr "The prefix folder will be deleted – including any saved games inside it. A new one is created on the next launch or via “Create prefix now”."
+
+#: local_cluster/ui/dialogs.py
+msgid "Desktopverknüpfung erstellen"
+msgstr "Create desktop shortcut"
+
+#: local_cluster/ui/dialogs.py
+msgid "Details"
+msgstr "Details"
+
+#: local_cluster/ui/dialogs.py
+msgid "Die Datei muss im Spielordner liegen"
+msgstr "The file must be inside the game folder"
+
+#: local_cluster/ui/dialogs.py
+msgid "Die Spieldateien werden gelöscht. Spielstände im Wine-Prefix bleiben erhalten, sofern das Prefix nicht mit gelöscht wird."
+msgstr "The game files will be deleted. Saved games in the Wine prefix are kept unless the prefix is deleted as well."
+
+#: local_cluster/ui/dialogs.py
+msgid "Diese Prefix-Ordner gehören zu keinem Spiel der Bibliothek. Ausgewählte werden gelöscht – inklusive Spielständen, die darin liegen."
+msgstr "These prefix folders don’t belong to any game in the library. Selected ones will be deleted – including any saved games inside them."
+
+#: local_cluster/ui/dialogs.py
+msgid "Download-Geschwindigkeit in Bit pro Sekunde anzeigen"
+msgstr "Display download speed in bits per second"
+
+#: local_cluster/ui/dialogs.py
+msgid "Downloads während des Spiels pausieren"
+msgstr "Pause downloads when playing"
+
+#: local_cluster/ui/dialogs.py
+msgid "Eigene Bibliotheken"
+msgstr "Custom libraries"
+
+#: local_cluster/ui/dialogs.py
+msgid "Eigene DLCs installieren"
+msgstr "Install owned DLCs"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/game_page.py
+msgid "Eigenschaften"
+msgstr "Properties"
+
+#: local_cluster/ui/dialogs.py
+msgid "Eigenschaften – {0}"
+msgstr "Properties – {0}"
+
+#: local_cluster/ui/dialogs.py
+msgid "Eingeloggt bleiben"
+msgstr "Keep me logged in"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/menus.py
+msgid "Einstellungen"
+msgstr "Settings"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/discover_view.py local_cluster/ui/window.py
+msgid "Entdecken"
+msgstr "Discover"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/downloads_view.py local_cluster/ui/ext_friends.py
+msgid "Entfernen"
+msgstr "Remove"
+
+#: local_cluster/ui/dialogs.py
+msgid "Erfassung der Spielzeit"
+msgstr "Game time tracking"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/game_page.py
+msgid "Erfolge"
+msgstr "Achievements"
+
+#: local_cluster/ui/dialogs.py
+msgid "Erfolge unterstützter Spiele auf der Spielseite anzeigen. Freigeschaltet werden sie im Spiel über die Galaxy-Dienste (comet)."
+msgstr "Show achievements of supported games on the game page. They are unlocked in-game through the Galaxy services (comet)."
+
+#: local_cluster/ui/dialogs.py
+msgid "Erfolge, Statistiken und Bestenlisten für Spiele mit GOG Galaxy-SDK – comet ersetzt den Galaxy-Dienst im Prefix."
+msgstr "Achievements, stats and leaderboards for games using the GOG Galaxy SDK – comet replaces the Galaxy service in the prefix."
+
+#: local_cluster/ui/dialogs.py
+msgid "Erscheinen im Installations-Dialog zur Auswahl; Standard ist der Installationspfad oben."
+msgstr "Offered in the install dialog; the default is the installation folder above."
+
+#: local_cluster/ui/dialogs.py
+msgid "Erweitert"
+msgstr "Advanced"
+
+#: local_cluster/ui/dialogs.py
+msgid "Exportieren …"
+msgstr "Export …"
+
+#: local_cluster/ui/dialogs.py
+msgid "Externes Spiel (nicht von GOG)"
+msgstr "External game (not from GOG)"
+
+#: local_cluster/ui/dialogs.py
+msgid "Falls sich der Browser nicht öffnet: Adresse kopieren und manuell aufrufen"
+msgstr "If the browser doesn’t open: copy the address and open it manually"
+
+#: local_cluster/ui/dialogs.py
+msgid "Favorit"
+msgstr "Favorite"
+
+#: local_cluster/ui/dialogs.py
+msgid "Fehlende Wine-Prefixe automatisch anlegen"
+msgstr "Automatically create missing Wine prefixes"
+
+#: local_cluster/ui/dialogs.py
+msgid "Funktionen im Spiel"
+msgstr "In-game features"
+
+#: local_cluster/ui/dialogs.py
+msgid "Für Spiele, die nicht von GOG stammen: Jeder Unterordner des Spiele-Ordners wird ein Spiel mit eigenem Prefix im Prefix-Ordner. Jede Bibliothek erscheint in der Seitenleiste unter BIBLIOTHEKEN. Die Vorgaben gelten für ihre Spiele, solange ein Spiel nichts Eigenes eingestellt hat."
+msgstr "For games not from GOG: every subfolder of the games folder becomes a game with its own prefix in the prefix folder. Each library appears in the sidebar under LIBRARIES. The defaults apply to its games as long as a game has no settings of its own."
+
+#: local_cluster/ui/dialogs.py
+msgid "GOG hat keinen Anmeldecode übergeben – bitte erneut versuchen."
+msgstr "GOG did not return a sign-in code – please try again."
+
+#: local_cluster/ui/dialogs.py
+msgid "GOG-Linux-Installer (.sh)"
+msgstr "GOG Linux installer (.sh)"
+
+#: local_cluster/ui/dialogs.py
+msgid "GOG-Login im Browser öffnen"
+msgstr "Open GOG login in browser"
+
+#: local_cluster/ui/dialogs.py
+msgid "GOG-Spiel (goggame-Daten gefunden)"
+msgstr "GOG game (goggame data found)"
+
+#: local_cluster/ui/dialogs.py
+msgid "Galaxy Content-System (Build {0}), Sprache {1}"
+msgstr "Galaxy content system (build {0}), language {1}"
+
+#: local_cluster/ui/dialogs.py
+msgid "Galaxy-Dienste im Spiel (comet)"
+msgstr "Galaxy services in-game (comet)"
+
+#: local_cluster/ui/dialogs.py
+msgid "Gamescope"
+msgstr "Gamescope"
+
+#: local_cluster/ui/dialogs.py
+msgid "Gamescope-Argumente"
+msgstr "Gamescope arguments"
+
+#: local_cluster/ui/dialogs.py
+msgid "Gefundene Werkzeuge"
+msgstr "Detected tools"
+
+#: local_cluster/ui/dialogs.py
+msgid "Genau wie im Steam-Client: z. B. „mangohud %command%“, „ENABLE_VKBASALT=1 mangohud %command%“ oder „gamescope -f -- %command% -novid“. Ein GOverlay-Profil braucht keine Zeile – es wird beim Start eingesetzt (Eigenschaften → Kompatibilität)."
+msgstr "Same as in the Steam client: e.g. “mangohud %command%”, “ENABLE_VKBASALT=1 mangohud %command%” or “gamescope -f -- %command% -novid”. A GOverlay profile needs no line – it is applied at launch (Properties → Compatibility)."
+
+#: local_cluster/ui/dialogs.py
+msgid "Gilt für alle Windows-Spiele ohne eigene Auswahl."
+msgstr "Applies to all Windows games without a selection of their own."
+
+#: local_cluster/ui/dialogs.py
+msgid "Globale Einstellungen – einzelne Spiele lassen sich unter „Eigenschaften → Spielfunktionen“ abweichend einstellen."
+msgstr "Global toggles – single games can be set differently under \"Properties → Game features\"."
+
+#: local_cluster/ui/dialogs.py
+msgid "Globale Startoptionen (für alle Spiele)"
+msgstr "Global launch options (for all games)"
+
+#: local_cluster/ui/dialogs.py
+msgid "Globale Vorgabe ({0})"
+msgstr "Global default ({0})"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/game_page.py local_cluster/ui/window.py
+msgid "Größe"
+msgstr "Size"
+
+#: local_cluster/ui/dialogs.py
+msgid "Handbücher, Soundtracks und Artworks in den Ordner für andere Downloads"
+msgstr "Manuals, soundtracks and artwork into the other downloads folder"
+
+#: local_cluster/ui/dialogs.py
+msgid "Hiermit werden deine GOG-Spiele automatisch im Hintergrund aktualisiert und du musst Updates nicht selber ausführen."
+msgstr "Auto-update keeps all installed GOG games up to date in the background, without need to confirm updates manually."
+
+#: local_cluster/ui/dialogs.py
+msgid "Hinzufügen"
+msgstr "Add"
+
+#: local_cluster/ui/dialogs.py
+msgid "Höchstens einmal am Tag auf GitHub nach einer neuen Version von local:cluster suchen"
+msgstr "Look for a new local:cluster version on GitHub at most once a day"
+
+#: local_cluster/ui/dialogs.py
+msgid "Im Browser anmelden"
+msgstr "Sign in via browser"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/ext_redist.py
+msgid "Im Dateimanager öffnen"
+msgstr "Open in file manager"
+
+#: local_cluster/ui/dialogs.py
+msgid "Im Startmenü"
+msgstr "In the application menu"
+
+#: local_cluster/ui/dialogs.py
+msgid "Im System-Tray minimieren"
+msgstr "Minimize to tray"
+
+#: local_cluster/ui/dialogs.py
+msgid "Importieren …"
+msgstr "Import …"
+
+#: local_cluster/ui/dialogs.py
+msgid "In Taskleiste minimieren"
+msgstr "Minimize to taskbar"
+
+#: local_cluster/ui/dialogs.py
+msgid "In der Bibliothek verstecken"
+msgstr "Hide in library"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/game_menu.py
+msgid "Installation verschieben …"
+msgstr "Move installation…"
+
+#: local_cluster/ui/dialogs.py
+msgid "Installation verschieben?"
+msgstr "Move installation?"
+
+#: local_cluster/ui/dialogs.py
+msgid "Installationsordner wählen"
+msgstr "Choose installation folder"
+
+#: local_cluster/ui/dialogs.py
+msgid "Installationsordner öffnen"
+msgstr "Open install folder"
+
+#: local_cluster/ui/dialogs.py
+msgid "Installationsort hinzufügen"
+msgstr "Add install location"
+
+#: local_cluster/ui/dialogs.py
+msgid "Installationsort hinzufügen …"
+msgstr "Add install location…"
+
+#: local_cluster/ui/dialogs.py
+msgid "Installationspfad"
+msgstr "Install to"
+
+#: local_cluster/ui/dialogs.py
+msgid "Installationspfad für Spiele"
+msgstr "Game installation folder"
+
+#: local_cluster/ui/dialogs.py
+msgid "Installieren/aktualisieren"
+msgstr "Installing, updating"
+
+#: local_cluster/ui/dialogs.py
+msgid "Jeder Unterordner des Spiele-Ordners wird ein Spiel dieser Bibliothek; kopierte Spiele werden nach dem Kopieren automatisch übernommen. Vorgaben (Proton, Startoptionen, Wayland, DPI) danach in den Einstellungen."
+msgstr "Every subfolder of the games folder becomes a game in this library; copied games are added automatically once copying has finished. Set defaults (Proton, launch options, Wayland, DPI) afterwards in Settings."
+
+#: local_cluster/ui/dialogs.py
+msgid "Kein Anmeldecode gefunden – bitte die komplette Adresse der Seite nach dem Login einfügen (sie enthält „code=…“)."
+msgstr "No sign-in code found – please paste the full address of the page shown after login (it contains “code=…”)."
+
+#: local_cluster/ui/dialogs.py
+msgid "Kein Linux-Installer gefunden"
+msgstr "No Linux installer found"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/game_page.py
+msgid "Kein Prefix vorhanden"
+msgstr "No prefix exists"
+
+#: local_cluster/ui/dialogs.py
+msgid "Kein System-Tray gefunden – „Im System-Tray minimieren“ wirkt hier wie „In Taskleiste minimieren“."
+msgstr "No system tray found – \"Minimize to tray\" acts like \"Minimize to taskbar\" here."
+
+#: local_cluster/ui/dialogs.py
+msgid "Keine"
+msgstr "None"
+
+#: local_cluster/ui/dialogs.py
+msgid "Keine Variablen gesetzt"
+msgstr "No variables set"
+
+#: local_cluster/ui/dialogs.py
+msgid "Keine Veränderung"
+msgstr "Do nothing"
+
+#: local_cluster/ui/dialogs.py
+msgid "Keine weiteren Orte"
+msgstr "No additional locations"
+
+#: local_cluster/ui/dialogs.py
+msgid "Komfort"
+msgstr "Convenience"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/game_page.py
+msgid "Kompatibilität"
+msgstr "Compatibility"
+
+#: local_cluster/ui/dialogs.py
+msgid "Kompatibilitätstool"
+msgstr "Compatibility tool"
+
+#: local_cluster/ui/dialogs.py
+msgid "Kopierte Spiele in den Spiele-Ordnern erkennen"
+msgstr "Detect copied games in the games folders"
+
+#: local_cluster/ui/dialogs.py
+msgid "Lesezeichen der Seitenleiste sichern oder übernehmen"
+msgstr "Back up or restore the sidebar bookmarks"
+
+#: local_cluster/ui/dialogs.py
+msgid "Lesezeichen exportieren"
+msgstr "Export bookmarks"
+
+#: local_cluster/ui/dialogs.py
+msgid "Lesezeichen importieren"
+msgstr "Import bookmarks"
+
+#: local_cluster/ui/dialogs.py
+msgid "Lesezeichen konnten nicht importiert werden. Stelle sicher, dass die Datei gültig ist."
+msgstr "Could not import bookmarks. Make sure the file is valid."
+
+#: local_cluster/ui/dialogs.py
+msgid "Lesezeichen wurden erfolgreich importiert."
+msgstr "Bookmarks imported successfully."
+
+#: local_cluster/ui/dialogs.py
+msgid "Linux-Version (nativ)"
+msgstr "Linux version (native)"
+
+#: local_cluster/ui/dialogs.py
+msgid "Login-Adresse kopieren"
+msgstr "Copy login address"
+
+#: local_cluster/ui/dialogs.py
+msgid "Login-Seite neu laden"
+msgstr "Reload sign-in page"
+
+#: local_cluster/ui/dialogs.py
+msgid "Lokale Spielstände mit der GOG Galaxy-Cloud synchronisieren"
+msgstr "Sync local saves with GOG Galaxy Cloud"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/game_page.py local_cluster/ui/tags.py
+msgid "Löschen"
+msgstr "Delete"
+
+#: local_cluster/ui/dialogs.py
+msgid "MangoHud (32-Bit)"
+msgstr "MangoHud (32-bit)"
+
+#: local_cluster/ui/dialogs.py
+msgid "MangoHud-Konfiguration (GOverlay)"
+msgstr "MangoHud configuration (GOverlay)"
+
+#: local_cluster/ui/dialogs.py
+msgid "Melde dich bei GOG an – der Client übernimmt den Login automatisch."
+msgstr "Sign in to GOG – the client picks up the login automatically."
+
+#: local_cluster/ui/dialogs.py
+msgid "Micro-Compositor"
+msgstr "Micro-compositor"
+
+#: local_cluster/ui/dialogs.py
+msgid "Name"
+msgstr "Name"
+
+#: local_cluster/ui/dialogs.py
+msgid "Name geändert (leer = automatisch)"
+msgstr "Name changed (empty = automatic)"
+
+#: local_cluster/ui/dialogs.py
+msgid "Name in der Bibliothek"
+msgstr "Name in library"
+
+#: local_cluster/ui/dialogs.py
+msgid "Name in der Seitenleiste"
+msgstr "Name in sidebar"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/game_page.py
+msgid "Neu anlegen"
+msgstr "Recreate"
+
+#: local_cluster/ui/dialogs.py
+msgid "Neuer Basisordner für die Installation"
+msgstr "New base folder for the installation"
+
+#: local_cluster/ui/dialogs.py
+msgid "Nicht genügend freier Speicherplatz auf „{0}“. Wähle bitte ein anderes Laufwerk, um dieses Spiel zu installieren."
+msgstr "Not enough free space on disk \"{0}\". To install this game, select another disk or free up space."
+
+#: local_cluster/ui/dialogs.py
+msgid "Oberfläche"
+msgstr "Interface"
+
+#: local_cluster/ui/dialogs.py
+msgid "Offline-Installer + innoextract (kein Galaxy-Build)"
+msgstr "Offline installer + innoextract (no Galaxy build)"
+
+#: local_cluster/ui/dialogs.py
+msgid "Offline-Installer, Extras und Sicherungskopien der Cloud-Speicherstände"
+msgstr "Offline installers, goodies and cloud saves backups"
+
+#: local_cluster/ui/dialogs.py
+msgid "Ohne Häkchen bleiben alle Dateien liegen; der Ordner wird dann bei der Ordnersuche nicht wieder aufgenommen (rückgängig in den Einstellungen)."
+msgstr "If nothing is checked, all files stay in place; the folder will then be skipped by future folder scans (can be undone in Settings)."
+
+#: local_cluster/ui/dialogs.py
+msgid "Optionen"
+msgstr "Options"
+
+#: local_cluster/ui/dialogs.py
+msgid "Ordner für andere Downloads"
+msgstr "Other downloads folder"
+
+#: local_cluster/ui/dialogs.py
+msgid "Ordner für andere Downloads (leer = {0})"
+msgstr "Other downloads folder (empty = {0})"
+
+#: local_cluster/ui/dialogs.py
+msgid "Ordner gespeichert"
+msgstr "Folder saved"
+
+#: local_cluster/ui/dialogs.py
+msgid "Ordner wählen"
+msgstr "Choose folder"
+
+#: local_cluster/ui/dialogs.py
+msgid "Ordner überwachen"
+msgstr "Watch folder"
+
+#: local_cluster/ui/dialogs.py
+msgid "Overlays & Leistung (Schalter)"
+msgstr "Overlays & performance (toggles)"
+
+#: local_cluster/ui/dialogs.py
+msgid "Parallele Verbindungen"
+msgstr "Parallel connections"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/game_page.py
+msgid "Prefix gelöscht"
+msgstr "Prefix deleted"
+
+#: local_cluster/ui/dialogs.py
+msgid "Prefix gleich anlegen"
+msgstr "Create prefix now"
+
+#: local_cluster/ui/dialogs.py
+msgid "Prefix ist bereits vorhanden"
+msgstr "Prefix already exists"
+
+#: local_cluster/ui/dialogs.py
+msgid "Prefix jetzt anlegen"
+msgstr "Create prefix now"
+
+#: local_cluster/ui/dialogs.py
+msgid "Prefix kommt in den Prefix-Ordner dieser Bibliothek"
+msgstr "The prefix goes into this library's prefix folder"
+
+#: local_cluster/ui/dialogs.py
+msgid "Prefix löschen"
+msgstr "Delete prefix"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/game_page.py
+msgid "Prefix löschen?"
+msgstr "Delete prefix?"
+
+#: local_cluster/ui/dialogs.py
+msgid "Prefix neu anlegen (zurücksetzen)"
+msgstr "Recreate prefix (reset)"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/game_page.py
+msgid "Prefix neu anlegen?"
+msgstr "Recreate prefix?"
+
+#: local_cluster/ui/dialogs.py
+msgid "Prefix verwalten"
+msgstr "Manage prefix"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/game_page.py
+msgid "Prefix wird angelegt …"
+msgstr "Creating prefix…"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/game_page.py
+msgid "Prefix wird bereits bearbeitet"
+msgstr "Prefix is already being processed"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/game_page.py
+msgid "Prefix wird neu angelegt …"
+msgstr "Recreating prefix…"
+
+#: local_cluster/ui/dialogs.py
+msgid "Prefix-Ordner"
+msgstr "Prefix folder"
+
+#: local_cluster/ui/dialogs.py
+msgid "Prefix-Ordner (ein Prefix pro Spiel)"
+msgstr "Prefix folder (one prefix per game)"
+
+#: local_cluster/ui/dialogs.py
+msgid "Prefix-Ordner (leer = Unterordner „prefixes“ im Spiele-Ordner)"
+msgstr "Prefix folder (empty = “prefixes” subfolder in the games folder)"
+
+#: local_cluster/ui/dialogs.py
+msgid "Prefix-Ordner (leer = {0})"
+msgstr "Prefix folder (empty = {0})"
+
+#: local_cluster/ui/dialogs.py
+msgid "Prefix-Ordner der Bibliothek"
+msgstr "Library prefix folder"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/window.py
+msgid "Prefix-Ordner öffnen"
+msgstr "Open prefix folder"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/game_menu.py
+msgid "Protokoll öffnen"
+msgstr "Open log"
+
+#: local_cluster/ui/dialogs.py
+msgid "Proton direkt"
+msgstr "Proton (direct)"
+
+#: local_cluster/ui/dialogs.py
+msgid "Proton im Steam-Linux-Runtime-Container mit protonfixes (empfohlen; für proton-cachyos-slr Pflicht)"
+msgstr "Proton in the Steam Linux Runtime container with protonfixes (recommended; required for proton-cachyos-slr)"
+
+#: local_cluster/ui/dialogs.py
+msgid "Proton-/Wine-Version"
+msgstr "Proton/Wine version"
+
+#: local_cluster/ui/dialogs.py
+msgid "Proton-Verb"
+msgstr "Proton verb"
+
+#: local_cluster/ui/dialogs.py
+msgid "Quelle"
+msgstr "Source"
+
+#: local_cluster/ui/dialogs.py
+msgid "Redistributables mitladen und beim ersten Start installieren"
+msgstr "Download Redistributables and install them on first launch"
+
+#: local_cluster/ui/dialogs.py
+msgid "Resultierender Startbefehl"
+msgstr "Resulting launch command"
+
+#: local_cluster/ui/dialogs.py
+msgid "Spiel automatisch aktualisieren"
+msgstr "Keep this game up to date automatically"
+
+#: local_cluster/ui/dialogs.py
+msgid "Spiel hinzufügen"
+msgstr "Add game"
+
+#: local_cluster/ui/dialogs.py
+msgid "Spiele automatisch aktualisieren"
+msgstr "Auto-update games"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/window.py
+msgid "Spiele im Besitz"
+msgstr "Owned games"
+
+#: local_cluster/ui/dialogs.py
+msgid "Spiele installieren"
+msgstr "Installing games"
+
+#: local_cluster/ui/dialogs.py
+msgid "Spiele laufen direkt unter Wayland statt XWayland (PROTON_ENABLE_WAYLAND=1); pro Spiel unter „Eigenschaften → Kompatibilität“ abschaltbar"
+msgstr "Games run directly on Wayland instead of XWayland (PROTON_ENABLE_WAYLAND=1); can be turned off per game under “Properties → Compatibility”"
+
+#: local_cluster/ui/dialogs.py
+msgid "Spiele-Ordner der Bibliothek"
+msgstr "Library games folder"
+
+#: local_cluster/ui/dialogs.py
+msgid "Spielfunktionen"
+msgstr "Game features"
+
+#: local_cluster/ui/dialogs.py
+msgid "Spielordner ({0}) und Prefixe ({1}) bleiben auf der Festplatte erhalten; eine neue Bibliothek mit demselben Ordner nimmt die Spiele samt Einstellungen und Spielzeit wieder auf."
+msgstr "Game folders ({0}) and prefixes ({1}) stay on disk; a new library with the same folder picks the games up again, including their settings and playtime."
+
+#: local_cluster/ui/dialogs.py
+msgid "Spielordner ebenfalls löschen"
+msgstr "Also delete game folder"
+
+#: local_cluster/ui/dialogs.py
+msgid "Spielzeit nach jeder Sitzung an GOG übertragen – erscheint im GOG-Profil und in GOG Galaxy."
+msgstr "Upload the game time to GOG after every session – it shows up in the GOG profile and in GOG Galaxy."
+
+#: local_cluster/ui/dialogs.py
+msgid "Sprache wird nach einem Neustart des Clients übernommen"
+msgstr "Language will change after restarting the client"
+
+#: local_cluster/ui/dialogs.py
+msgid "Standard – globaler Spiele-Ordner ({0})"
+msgstr "Default – global games folder ({0})"
+
+#: local_cluster/ui/dialogs.py
+msgid "Standard-Kompatibilitätstool"
+msgstr "Default compatibility tool"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/game_page.py
+msgid "Startdatei"
+msgstr "Executable"
+
+#: local_cluster/ui/dialogs.py
+msgid "Startdatei wählen"
+msgstr "Choose executable"
+
+#: local_cluster/ui/dialogs.py
+msgid "Startdatei: {0}"
+msgstr "Executable: {0}"
+
+#: local_cluster/ui/dialogs.py
+msgid "Starten das Spiel über den Client (Spielzeit, Proton-Einstellungen)."
+msgstr "Launch the game through the client (playtime, Proton settings)."
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/game_page.py
+msgid "Startoptionen"
+msgstr "Launch options"
+
+#: local_cluster/ui/dialogs.py
+msgid "Startoptionen (Steam-Syntax)"
+msgstr "Launch options (Steam syntax)"
+
+#: local_cluster/ui/dialogs.py
+msgid "Startoptionen (Vorgabe, Steam-Syntax)"
+msgstr "Launch options (default, Steam syntax)"
+
+#: local_cluster/ui/dialogs.py
+msgid "Startoptionen (leer = Vorgabe der Bibliothek: {0})"
+msgstr "Launch options (empty = library default: {0})"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/game_page.py
+msgid "Startoptionen gespeichert"
+msgstr "Launch options saved"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/store.py
+msgid "Startseite"
+msgstr "Home"
+
+#: local_cluster/ui/dialogs.py
+msgid "Startweg"
+msgstr "Launch method"
+
+#: local_cluster/ui/dialogs.py
+msgid "Stattdessen den System-Browser nutzen und die Adresse einfügen"
+msgstr "Use the system browser instead and paste the address"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/power_search_dialog.py
+msgid "Store"
+msgstr "Store"
+
+#: local_cluster/ui/dialogs.py
+msgid "Uhrzeit als HH:MM angeben, z. B. 08:00"
+msgstr "Enter the time as HH:MM, e.g. 08:00"
+
+#: local_cluster/ui/dialogs.py
+msgid "Umbenannt"
+msgstr "Renamed"
+
+#: local_cluster/ui/dialogs.py
+msgid "Umgebung"
+msgstr "Environment"
+
+#: local_cluster/ui/dialogs.py
+msgid "Umgebungsvariablen"
+msgstr "Environment variables"
+
+#: local_cluster/ui/dialogs.py
+msgid "Ungültiger Variablenname"
+msgstr "Invalid variable name"
+
+#: local_cluster/ui/dialogs.py
+msgid "Variable hinzufügen"
+msgstr "Add variable"
+
+#: local_cluster/ui/dialogs.py
+msgid "Verfügbare Sprachen"
+msgstr "Available languages"
+
+#: local_cluster/ui/dialogs.py
+msgid "Verhalten des Hauptfensters"
+msgstr "Main window behaviour"
+
+#: local_cluster/ui/dialogs.py
+msgid "Verknüpfung angelegt"
+msgstr "Shortcut created"
+
+#: local_cluster/ui/dialogs.py
+msgid "Verknüpfung auf Desktop erstellen"
+msgstr "Create shortcut on desktop"
+
+#: local_cluster/ui/dialogs.py
+msgid "Verknüpfung entfernt"
+msgstr "Shortcut removed"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/game_menu.py
+msgid "Verknüpfung im Startmenü anlegen"
+msgstr "Create application menu shortcut"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/game_menu.py
+msgid "Verknüpfungen"
+msgstr "Shortcuts"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/window.py
+msgid "Versteckte Spiele anzeigen"
+msgstr "Show hidden games"
+
+#: local_cluster/ui/dialogs.py
+msgid "Von Hand aus der Bibliothek entfernt – die Ordnersuche nimmt sie nicht wieder auf. Entfernen aus dieser Liste = beim nächsten Durchsuchen wieder aufnehmen."
+msgstr "Removed from the library by hand – the folder scan won't add them again. Removing an entry from this list = add it again on the next scan."
+
+#: local_cluster/ui/dialogs.py
+msgid "Vorgabe der Bibliothek ({0})"
+msgstr "Library default ({0})"
+
+#: local_cluster/ui/dialogs.py
+msgid "Vorgabe für den Installations-Dialog"
+msgstr "Default for the install dialog"
+
+#: local_cluster/ui/dialogs.py
+msgid "Vorgabe für die Spiele dieser Bibliothek"
+msgstr "Default for the games in this library"
+
+#: local_cluster/ui/dialogs.py
+msgid "Vorherige Sitzung fortsetzen"
+msgstr "Continue previous session"
+
+#: local_cluster/ui/dialogs.py
+msgid "Vorlage"
+msgstr "Template"
+
+#: local_cluster/ui/dialogs.py
+msgid "Vorlage wählen …"
+msgstr "Choose template…"
+
+#: local_cluster/ui/dialogs.py
+msgid "Wayland-Treiber von Proton"
+msgstr "Proton Wayland driver"
+
+#: local_cluster/ui/dialogs.py
+msgid "Wayland-Treiber von Proton als Vorgabe"
+msgstr "Use Proton Wayland driver by default"
+
+#: local_cluster/ui/dialogs.py
+msgid "Weitere Installationsorte"
+msgstr "Additional install locations"
+
+#: local_cluster/ui/dialogs.py
+msgid "Wenn ein Spiel gestartet wird"
+msgstr "When launching a game"
+
+#: local_cluster/ui/dialogs.py
+msgid "Werden zusätzlich zu den Startoptionen angewendet."
+msgstr "Applied in addition to the launch options."
+
+#: local_cluster/ui/dialogs.py
+msgid "Werkzeuge"
+msgstr "Tools"
+
+#: local_cluster/ui/dialogs.py
+msgid "Wert"
+msgstr "Value"
+
+#: local_cluster/ui/dialogs.py
+msgid "Wie in GOG Galaxy je Art wählbar. Ein Galaxy-Overlay gibt es unter Linux nicht – seine Rolle übernimmt das Benachrichtigungszentrum (Glocke oben links). Desktop-Benachrichtigungen erscheinen nur, solange das Fenster nicht im Vordergrund ist."
+msgstr "Chosen per type, as in GOG Galaxy. There is no Galaxy overlay on Linux – the notification center (bell, top left) takes its place. Desktop notifications only appear while the window is not in the foreground."
+
+#: local_cluster/ui/dialogs.py
+msgid "Wie unter Steam: pro Spiel eine Proton-/Wine-Version erzwingen. Die globale Vorgabe gilt, wenn nichts gewählt ist."
+msgstr "As in Steam: force a specific Proton/Wine version per game. The global default applies if nothing is selected."
+
+#: local_cluster/ui/dialogs.py
+msgid "Wieder aufnehmen"
+msgstr "Include again"
+
+#: local_cluster/ui/dialogs.py
+msgid "Windows-Version (über Proton/Wine)"
+msgstr "Windows version (via Proton/Wine)"
+
+#: local_cluster/ui/dialogs.py
+msgid "Wine"
+msgstr "Wine"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/game_menu.py
+msgid "Wine-Prefix"
+msgstr "Wine prefix"
+
+#: local_cluster/ui/dialogs.py
+msgid "Wine-Prefix ebenfalls löschen (inkl. Spielstände darin)"
+msgstr "Also delete Wine prefix (incl. saved games inside)"
+
+#: local_cluster/ui/dialogs.py
+msgid "Wine-Prefix ebenfalls löschen (inkl. Spielständen darin)"
+msgstr "Also delete Wine prefix (incl. saved games inside)"
+
+#: local_cluster/ui/dialogs.py
+msgid "Winetricks für dieses Prefix öffnen"
+msgstr "Open Winetricks for this prefix"
+
+#: local_cluster/ui/dialogs.py
+msgid "Wird beim nächsten Durchsuchen wieder aufgenommen"
+msgstr "Will be added again on the next scan"
+
+#: local_cluster/ui/dialogs.py
+msgid "Wird installiert nach"
+msgstr "Will be installed to"
+
+#: local_cluster/ui/dialogs.py
+msgid "Während des Spiels"
+msgstr "While playing"
+
+#: local_cluster/ui/dialogs.py
+msgid "Zugangsdaten im System-Schlüsselbund speichern"
+msgstr "Store credentials in the system keyring"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/ext_cloudsaves.py
+msgid "Zustand"
+msgstr "Status"
+
+#: local_cluster/ui/dialogs.py
+msgid "Zusätzlich zu VAR=wert in den Startoptionen; z. B. DXVK_ASYNC=1, PROTON_USE_WINED3D=1."
+msgstr "In addition to VAR=value in the launch options; e.g. DXVK_ASYNC=1, PROTON_USE_WINED3D=1."
+
+#: local_cluster/ui/dialogs.py
+msgid "auf (MB/s)"
+msgstr "to (MB/s)"
+
+#: local_cluster/ui/dialogs.py
+msgid "aus goggame-*.info (playTasks)"
+msgstr "from goggame-*.info (playTasks)"
+
+#: local_cluster/ui/dialogs.py
+msgid "automatisch erkannt – bei Bedarf ändern"
+msgstr "detected automatically – change if needed"
+
+#: local_cluster/ui/dialogs.py
+msgid "automatisch, derzeit {0}"
+msgstr "automatic, currently {0}"
+
+#: local_cluster/ui/dialogs.py
+msgid "bis"
+msgstr "to"
+
+#: local_cluster/ui/dialogs.py
+msgid "ein Prefix je Spiel, benannt wie der Spielordner – vorhandene Prefixe werden nicht verschoben"
+msgstr "one prefix per game, named after the game folder – existing prefixes are not moved"
+
+#: local_cluster/ui/dialogs.py
+msgid "erkannte .exe-Dateien im Spielordner"
+msgstr "detected .exe files in the game folder"
+
+#: local_cluster/ui/dialogs.py
+msgid "gefunden"
+msgstr "found"
+
+#: local_cluster/ui/dialogs.py
+msgid "im Prefix-Ordner"
+msgstr "in the prefix folder"
+
+#: local_cluster/ui/dialogs.py
+msgid "im Prefix-Ordner bzw. dem der Bibliothek, mit passender Bildschirm-Skalierung"
+msgstr "in the prefix folder (or the library's), with matching display scaling"
+
+#: local_cluster/ui/dialogs.py
+msgid "im Prefix-Ordner der Bibliothek"
+msgstr "in the library's prefix folder"
+
+#: local_cluster/ui/dialogs.py
+msgid "jeder Unterordner ist ein Spiel"
+msgstr "each subfolder is a game"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/game_page.py
+msgid "keine .exe gefunden"
+msgstr "no .exe found"
+
+#: local_cluster/ui/dialogs.py
+msgid "keine gefunden"
+msgstr "none found"
+
+#: local_cluster/ui/dialogs.py
+msgid "keine – bitte zuerst anlegen"
+msgstr "none – please create one first"
+
+#: local_cluster/ui/dialogs.py
+msgid "kopierte Spiele nach dem Kopieren automatisch übernehmen"
+msgstr "automatically add games once they have been copied"
+
+#: local_cluster/ui/dialogs.py
+msgid "local:cluster beim Systemstart öffnen"
+msgstr "Launch local:cluster at system startup"
+
+#: local_cluster/ui/dialogs.py
+msgid "local:cluster schließen"
+msgstr "Exit local:cluster"
+
+#: local_cluster/ui/dialogs.py
+msgid "neue Spielordner im GOG-Spiele-Ordner und in den Bibliotheken automatisch übernehmen"
+msgstr "automatically add new game folders in the GOG games folder and in the libraries"
+
+#: local_cluster/ui/dialogs.py
+msgid "nichts gefunden"
+msgstr "nothing found"
+
+#: local_cluster/ui/dialogs.py
+msgid "noch nicht angelegt · "
+msgstr "not created yet · "
+
+#: local_cluster/ui/dialogs.py
+msgid "protonfixes deaktivieren"
+msgstr "Disable protonfixes"
+
+#: local_cluster/ui/dialogs.py
+msgid "statt in ~/.config/local-cluster/credentials.json (0600); wirkt beim nächsten Login"
+msgstr "instead of ~/.config/local-cluster/credentials.json (0600); takes effect at next sign-in"
+
+#: local_cluster/ui/dialogs.py
+msgid "umu GAMEID (leer = umu-{0})"
+msgstr "umu GAMEID (empty = umu-{0})"
+
+#: local_cluster/ui/dialogs.py
+msgid "umu wendet sonst automatische Spiel-Fixes an"
+msgstr "Otherwise umu applies automatic game fixes"
+
+#: local_cluster/ui/dialogs.py
+msgid "umu-launcher (Proton im Steam-Linux-Runtime-Container)"
+msgstr "umu-launcher (Proton in the Steam Linux Runtime container)"
+
+#: local_cluster/ui/dialogs.py
+msgid "umu-launcher bevorzugen"
+msgstr "Prefer umu-launcher"
+
+#: local_cluster/ui/dialogs.py
+msgid "vom GOverlay-Profil „{0}“ bestimmt"
+msgstr "set by the GOverlay profile \"{0}\""
+
+#: local_cluster/ui/dialogs.py
+msgid "von"
+msgstr "from"
+
+#: local_cluster/ui/dialogs.py
+msgid "vorhanden · "
+msgstr "exists · "
+
+#: local_cluster/ui/dialogs.py
+msgid "waitforexitandrun entspricht Steam"
+msgstr "waitforexitandrun matches Steam"
+
+#: local_cluster/ui/dialogs.py
+msgid "wird bearbeitet … · {0}"
+msgstr "in progress… · {0}"
+
+#: local_cluster/ui/dialogs.py
+msgid "wirkt nach einem Neustart des Clients"
+msgstr "takes effect after restarting the client"
+
+#: local_cluster/ui/dialogs.py
+msgid "{0}\n\nvon: {1}\nnach: {2}\n\nAuf demselben Laufwerk geht das sofort, sonst werden die Dateien kopiert."
+msgstr "{0}\n\nfrom: {1}\nto: {2}\n\nOn the same drive this is instant; otherwise the files are copied."
+
+#: local_cluster/ui/dialogs.py
+msgid "{0} (HH:MM)"
+msgstr "{0} (HH:MM)"
+
+#: local_cluster/ui/dialogs.py
+msgid "{0} (nicht gefunden)"
+msgstr "{0} (not found)"
+
+#: local_cluster/ui/dialogs.py
+msgid "{0} Lesezeichen exportiert"
+msgstr "{0} bookmarks exported"
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/tags.py
+msgid "{0} Spiel"
+msgstr "{0} game"
+
+#: local_cluster/ui/dialogs.py
+msgid "{0} Spiel verschwindet aus dem Client."
+msgstr "{0} game will disappear from the client."
+
+#: local_cluster/ui/dialogs.py local_cluster/ui/tags.py
+msgid "{0} Spiele"
+msgstr "{0} games"
+
+#: local_cluster/ui/dialogs.py
+msgid "{0} Spiele verschwinden aus dem Client."
+msgstr "{0} games will disappear from the client."
+
+#: local_cluster/ui/dialogs.py
+msgid "{0} deinstallieren?"
+msgstr "Uninstall {0}?"
+
+#: local_cluster/ui/dialogs.py
+msgid "{0} installieren"
+msgstr "Install {0}"
+
+#: local_cluster/ui/dialogs.py
+msgid "{0} verwaiste(r) Prefix(e)"
+msgstr "{0} orphaned prefix(es)"
+
+#: local_cluster/ui/dialogs.py
+msgid "„{0}“ angelegt"
+msgstr "“{0}” created"
+
+#: local_cluster/ui/dialogs.py
+msgid "„{0}“ aus der Bibliothek entfernen?"
+msgstr "Remove “{0}” from the library?"
+
+#: local_cluster/ui/dialogs.py
+msgid "„{0}“ gelöscht – {1} Spiel(e) ausgetragen, Dateien bleiben"
+msgstr "“{0}” deleted – {1} game(s) removed from the library, files kept"
+
+#: local_cluster/ui/discover_view.py
+msgid "Alle anzeigen"
+msgstr "Show all"
+
+#: local_cluster/ui/discover_view.py
+msgid "Der GOG-Store ist gerade nicht erreichbar. Entdecken zeigt die Regale wieder, sobald eine Verbindung besteht."
+msgstr "The GOG store can't be reached right now. Discover shows its shelves again as soon as there is a connection."
+
+#: local_cluster/ui/discover_view.py local_cluster/ui/downloads_view.py
+msgid "Erneut versuchen"
+msgstr "Retry"
+
+#: local_cluster/ui/discover_view.py
+msgid "IM BESITZ"
+msgstr "OWNED"
+
+#: local_cluster/ui/discover_view.py
+msgid "Weiter"
+msgstr "Next"
+
+#: local_cluster/ui/discover_view.py local_cluster/ui/store.py local_cluster/ui/window.py
+msgid "Zurück"
+msgstr "Back"
+
+#: local_cluster/ui/downloads_view.py
+msgid "Abgeschlossen"
+msgstr "Completed"
+
+#: local_cluster/ui/downloads_view.py
+msgid "Abgeschlossene und fehlgeschlagene Einträge entfernen"
+msgstr "Remove completed and failed entries"
+
+#: local_cluster/ui/downloads_view.py
+msgid "Aktuell"
+msgstr "Current"
+
+#: local_cluster/ui/downloads_view.py
+msgid "Alles abbrechen"
+msgstr "Cancel all"
+
+#: local_cluster/ui/downloads_view.py
+msgid "Alles fortsetzen"
+msgstr "Resume all"
+
+#: local_cluster/ui/downloads_view.py
+msgid "Alles pausieren"
+msgstr "Pause all"
+
+#: local_cluster/ui/downloads_view.py
+msgid "Bandbreitenbegrenzung ist aktiv"
+msgstr "Bandwidth limit is active"
+
+#: local_cluster/ui/downloads_view.py
+msgid "DOWNLOADS"
+msgstr "DOWNLOADS"
+
+#: local_cluster/ui/downloads_view.py
+msgid "Dadurch werden alle Elemente in der Warteschlange gestoppt, einschließlich aktiver Downloads und Installationen."
+msgstr "This will stop all items in the queue, including active downloads and installations."
+
+#: local_cluster/ui/downloads_view.py
+msgid "Deine Warteschlange ist leer"
+msgstr "Your job queue is empty"
+
+#: local_cluster/ui/downloads_view.py
+msgid "Die Einstellung „Downloads während des Spiels pausieren“ ist aktiviert."
+msgstr "The \"Pause downloads when playing\" setting is enabled."
+
+#: local_cluster/ui/downloads_view.py
+msgid "Download-Einstellungen öffnen"
+msgstr "Open download settings"
+
+#: local_cluster/ui/downloads_view.py
+msgid "Download-Geschwindigkeit begrenzt auf:"
+msgstr "Download speed limited to:"
+
+#: local_cluster/ui/downloads_view.py
+msgid "Downloads im Spiel pausiert"
+msgstr "Downloads are paused while playing"
+
+#: local_cluster/ui/downloads_view.py
+msgid "Downloads pausiert"
+msgstr "Downloads paused"
+
+#: local_cluster/ui/downloads_view.py
+msgid "Durchschnitt"
+msgstr "Average"
+
+#: local_cluster/ui/downloads_view.py
+msgid "Erhältliche Updates"
+msgstr "Available updates"
+
+#: local_cluster/ui/downloads_view.py local_cluster/ui/game_menu.py local_cluster/ui/game_page.py
+msgid "Fortsetzen"
+msgstr "Resume"
+
+#: local_cluster/ui/downloads_view.py
+msgid "Gesamt"
+msgstr "Total"
+
+#: local_cluster/ui/downloads_view.py
+msgid "Heruntergeladen"
+msgstr "Downloaded"
+
+#: local_cluster/ui/downloads_view.py
+msgid "Hier siehst du alle deine abgeschlossenen und aktiven Spiele-Installationen & -Updates."
+msgstr "Here you will see all of your completed and active game installations/updates."
+
+#: local_cluster/ui/downloads_view.py
+msgid "Ja, alles abbrechen"
+msgstr "Yes, cancel all"
+
+#: local_cluster/ui/downloads_view.py local_cluster/ui/log_window.py
+msgid "Leeren"
+msgstr "Clear"
+
+#: local_cluster/ui/downloads_view.py
+msgid "Nach oben verschieben"
+msgstr "Move to front"
+
+#: local_cluster/ui/downloads_view.py
+msgid "Nein, beibehalten"
+msgstr "No, keep"
+
+#: local_cluster/ui/downloads_view.py
+msgid "Neusortieren durch ziehen und ablegen"
+msgstr "Drag and drop to reorder"
+
+#: local_cluster/ui/downloads_view.py local_cluster/ui/game_page.py
+msgid "Pausieren"
+msgstr "Pause"
+
+#: local_cluster/ui/downloads_view.py
+msgid "Spitze"
+msgstr "Peak"
+
+#: local_cluster/ui/downloads_view.py
+msgid "Update"
+msgstr "Update"
+
+#: local_cluster/ui/downloads_view.py
+msgid "Verbleibend"
+msgstr "Remaining"
+
+#: local_cluster/ui/downloads_view.py local_cluster/ui/game_page.py
+msgid "Version {0}"
+msgstr "Version {0}"
+
+#: local_cluster/ui/downloads_view.py
+msgid "Warteschlange"
+msgstr "Queue"
+
+#: local_cluster/ui/downloads_view.py
+msgid "Wird gerade heruntergeladen"
+msgstr "Currently downloading"
+
+#: local_cluster/ui/downloads_view.py
+msgid "Zum Spiel"
+msgstr "Go to game"
+
+#: local_cluster/ui/downloads_view.py
+msgid "{0} · {1} · {2} / {3} · {4} · ETA {5} · {6}/{7} Dateien"
+msgstr "{0} · {1} · {2} / {3} · {4} · ETA {5} · {6}/{7} files"
+
+#: local_cluster/ui/edit_dialog.py
+msgid "Auf Standard zurücksetzen"
+msgstr "Reset to default"
+
+#: local_cluster/ui/edit_dialog.py
+msgid "Automatisch · empfohlen: Hochformat, z. B. 342 × 482 Pixel"
+msgstr "Automatic · recommended: portrait, e.g. 342 × 482 pixels"
+
+#: local_cluster/ui/edit_dialog.py
+msgid "Bearbeiten"
+msgstr "Edit"
+
+#: local_cluster/ui/edit_dialog.py
+msgid "Bilder (JPEG, PNG, WebP)"
+msgstr "Images (JPEG, PNG, WebP)"
+
+#: local_cluster/ui/edit_dialog.py
+msgid "Cover auf Standard zurückgesetzt"
+msgstr "Cover reset to default"
+
+#: local_cluster/ui/edit_dialog.py
+msgid "Cover gespeichert"
+msgstr "Cover saved"
+
+#: local_cluster/ui/edit_dialog.py
+msgid "Cover nicht übernommen: {0}"
+msgstr "Cover not applied: {0}"
+
+#: local_cluster/ui/edit_dialog.py
+msgid "Cover wählen"
+msgstr "Choose cover"
+
+#: local_cluster/ui/edit_dialog.py
+msgid "Datei auswählen …"
+msgstr "Choose file…"
+
+#: local_cluster/ui/edit_dialog.py
+msgid "Eigenes Cover"
+msgstr "Custom cover"
+
+#: local_cluster/ui/edit_dialog.py
+msgid "Info"
+msgstr "Info"
+
+#: local_cluster/ui/edit_dialog.py
+msgid "Kachel"
+msgstr "Tile"
+
+#: local_cluster/ui/edit_dialog.py
+msgid "Medien"
+msgstr "Media"
+
+#: local_cluster/ui/edit_dialog.py
+msgid "Titel auf Standard zurückgesetzt"
+msgstr "Title reset to default"
+
+#: local_cluster/ui/edit_dialog.py
+msgid "Titel gespeichert"
+msgstr "Title saved"
+
+#: local_cluster/ui/ext_cloudsaves.py
+msgid "Cloud-Spielstände sind in den Einstellungen (Spielfunktionen) deaktiviert."
+msgstr "Cloud saves are disabled in the settings (Game features)."
+
+#: local_cluster/ui/ext_cloudsaves.py
+msgid "Dateien: {0} · {1}"
+msgstr "Files: {0} · {1}"
+
+#: local_cluster/ui/ext_cloudsaves.py
+msgid "Jetzt herunterladen"
+msgstr "Download now"
+
+#: local_cluster/ui/ext_cloudsaves.py
+msgid "Jetzt hochladen"
+msgstr "Upload now"
+
+#: local_cluster/ui/ext_cloudsaves.py
+msgid "Lokale Sicherungen öffnen"
+msgstr "Open local backups"
+
+#: local_cluster/ui/ext_cloudsaves.py
+msgid "Noch keine Sicherungen"
+msgstr "No backups yet"
+
+#: local_cluster/ui/ext_cloudsaves.py
+msgid "Noch keine Sicherungen – sie entstehen, bevor Spielstände aus der Cloud lokale Dateien ersetzen."
+msgstr "No backups yet - they are made before saves from the cloud replace local files."
+
+#: local_cluster/ui/ext_cloudsaves.py local_cluster/ui/log_window.py local_cluster/ui/store.py
+msgid "Ordner öffnen"
+msgstr "Open folder"
+
+#: local_cluster/ui/ext_cloudsaves.py
+msgid "Sicherung angelegt"
+msgstr "backup made"
+
+#: local_cluster/ui/ext_cloudsaves.py
+msgid "Sicherungen: {0} · {1}"
+msgstr "Backups: {0} · {1}"
+
+#: local_cluster/ui/ext_cloudsaves.py
+msgid "Speicherorte"
+msgstr "Save locations"
+
+#: local_cluster/ui/ext_cloudsaves.py
+msgid "nicht auflösbar: {0}"
+msgstr "cannot be resolved: {0}"
+
+#: local_cluster/ui/ext_cloudsaves.py
+msgid "werden ermittelt …"
+msgstr "being determined …"
+
+#: local_cluster/ui/ext_friends.py
+msgid "Aktivität"
+msgstr "Activity"
+
+#: local_cluster/ui/ext_friends.py local_cluster/ui/friends_view.py
+msgid "Aus Freundesliste entfernen"
+msgstr "Remove from friends"
+
+#: local_cluster/ui/ext_friends.py
+msgid "Einladung von {0} abgelehnt"
+msgstr "Invite from {0} declined"
+
+#: local_cluster/ui/ext_friends.py
+msgid "Freunde spielen gerade"
+msgstr "Friends playing now"
+
+#: local_cluster/ui/ext_friends.py
+msgid "Freunde werden abgeglichen …"
+msgstr "Syncing friends …"
+
+#: local_cluster/ui/ext_friends.py
+msgid "Für diesen Freund ist kein Profilname bekannt."
+msgstr "No profile name is known for this friend."
+
+#: local_cluster/ui/ext_friends.py
+msgid "Gerade spielt keiner deiner Freunde."
+msgstr "None of your friends is playing right now."
+
+#: local_cluster/ui/ext_friends.py
+msgid "Melde dich an, um die Aktivität deiner Freunde zu sehen."
+msgstr "Sign in to see your friends' activity."
+
+#: local_cluster/ui/ext_friends.py
+msgid "Melde dich an, um zu sehen, was deine Freunde spielen."
+msgstr "Sign in to see what your friends are playing."
+
+#: local_cluster/ui/ext_friends.py
+msgid "Möchtest du {0} wirklich aus deiner Freundesliste entfernen?"
+msgstr "Do you really want to remove {0} from your friends?"
+
+#: local_cluster/ui/ext_friends.py
+msgid "Noch keine Aktivität: local:cluster merkt sich hier, wann Freunde online kommen oder ein Spiel starten (die letzten 50 Ereignisse)."
+msgstr "No activity yet: local:cluster keeps track here of when friends come online or start a game (the last 50 events)."
+
+#: local_cluster/ui/ext_friends.py
+msgid "{0} ist jetzt dein Freund"
+msgstr "{0} is now your friend"
+
+#: local_cluster/ui/ext_friends.py
+msgid "{0} ist jetzt online"
+msgstr "{0} is now online"
+
+#: local_cluster/ui/ext_friends.py
+msgid "{0} spielt jetzt „{1}“"
+msgstr "{0} started playing “{1}”"
+
+#: local_cluster/ui/ext_friends.py
+msgid "{0} spielt {1}"
+msgstr "{0} is playing {1}"
+
+#: local_cluster/ui/ext_friends.py
+msgid "{0} wurde aus der Freundesliste entfernt"
+msgstr "{0} was removed from your friends"
+
+#: local_cluster/ui/ext_goverlay.py
+msgid "Automatisch („{0}“)"
+msgstr "Automatic (“{0}”)"
+
+#: local_cluster/ui/ext_goverlay.py
+msgid "Ein Klick auf das Spiel in GOverlay legt sein Profil an (MangoHud, vkBasalt, OptiScaler …); local:cluster startet das Spiel dann mit diesem Profil – nie mit einer globalen Konfiguration, außer du schaltest das unten ausdrücklich ein."
+msgstr "Clicking the game in GOverlay creates its profile (MangoHud, vkBasalt, OptiScaler …); local:cluster then launches the game with this profile – never with a global configuration unless you explicitly enable that below."
+
+#: local_cluster/ui/ext_goverlay.py local_cluster/ui/game_page.py
+msgid "GOverlay ist nicht installiert."
+msgstr "GOverlay is not installed."
+
+#: local_cluster/ui/ext_goverlay.py
+msgid "GOverlay nicht gefunden"
+msgstr "GOverlay not found"
+
+#: local_cluster/ui/ext_goverlay.py
+msgid "GOverlay nicht gefunden – die Spiele erscheinen nach dem ersten Start von GOverlay."
+msgstr "GOverlay not found – the games appear once GOverlay has been started."
+
+#: local_cluster/ui/ext_goverlay.py local_cluster/ui/game_page.py
+msgid "GOverlay öffnen"
+msgstr "Open GOverlay"
+
+#: local_cluster/ui/ext_goverlay.py
+msgid "GOverlay-Ordnerliste nicht geschrieben: {0}"
+msgstr "GOverlay folder list not written: {0}"
+
+#: local_cluster/ui/ext_goverlay.py
+msgid "GOverlay-Profile pro Spiel verwenden"
+msgstr "Use GOverlay profiles per game"
+
+#: local_cluster/ui/ext_goverlay.py
+msgid "Globales GOverlay-Profil als Rückfall"
+msgstr "Global GOverlay profile as fallback"
+
+#: local_cluster/ui/ext_goverlay.py
+msgid "Jedes installierte Spiel erscheint in GOverlay genau einmal, mit seinem Titel und Cover (Kopien nicht). local:cluster trägt dafür einen eigenen Ordner mit Verknüpfungen in GOverlays Ordnerliste ein – deine eigenen Einträge bleiben. Danach in GOverlay „Refresh game library“ wählen oder GOverlay neu starten."
+msgstr "Every installed game appears in GOverlay exactly once, with its title and cover (copies do not). To do this, local:cluster adds its own folder of links to GOverlay’s folder list – your own entries stay. Then choose “Refresh game library” in GOverlay or restart GOverlay."
+
+#: local_cluster/ui/ext_goverlay.py
+msgid "Mit diesem GOverlay-Profil (MangoHud, vkBasalt, OptiScaler …) startet das Spiel. Automatisch = das Profil, das GOverlay anlegt, wenn du das Spiel dort anklickst."
+msgstr "The game launches with this GOverlay profile (MangoHud, vkBasalt, OptiScaler …). Automatic = the profile GOverlay creates when you click the game there."
+
+#: local_cluster/ui/ext_goverlay.py
+msgid "Nur auf Wunsch: Spiele ohne eigenes Profil starten dann mit dem globalen GOverlay-Profil."
+msgstr "Only on request: games without their own profile then launch with the global GOverlay profile."
+
+#: local_cluster/ui/ext_goverlay.py
+msgid "Spiele in GOverlay"
+msgstr "Games in GOverlay"
+
+#: local_cluster/ui/ext_goverlay.py
+msgid "Spiele in GOverlay anzeigen"
+msgstr "Show games in GOverlay"
+
+#: local_cluster/ui/ext_goverlay.py
+msgid "Startet jedes Spiel mit dem bgmod-Wrapper seines GOverlay-Profils. Die eigenen Schalter MangoHud und vkBasalt entfallen dann (MangoHud bleibt bei Linux-Spielen)."
+msgstr "Launches every game with the bgmod wrapper of its GOverlay profile. The client’s own MangoHud and vkBasalt toggles are then skipped (MangoHud stays for Linux games)."
+
+#: local_cluster/ui/ext_goverlay.py
+msgid "{0} Spiele · Ordner {1}"
+msgstr "{0} games · folder {1}"
+
+#: local_cluster/ui/ext_redist.py
+msgid "Einrichtung erneut ausführen"
+msgstr "Run setup again"
+
+#: local_cluster/ui/ext_redist.py
+msgid "Galaxy-Redistributables werden aktualisiert – siehe Downloads."
+msgstr "Galaxy redistributables are being updated – see Downloads."
+
+#: local_cluster/ui/ext_redist.py
+msgid "Geladen ({0})"
+msgstr "Downloaded ({0})"
+
+#: local_cluster/ui/ext_redist.py
+msgid "Gemeinsamer Ordner für ISI, Visual C++, DirectX, .NET … – wie in GOG Galaxy einmal für alle Spiele geladen."
+msgstr "Shared folder for ISI, Visual C++, DirectX, .NET … – downloaded once for all games, as in GOG Galaxy."
+
+#: local_cluster/ui/ext_redist.py
+msgid "Noch nichts eingerichtet"
+msgstr "Nothing set up yet"
+
+#: local_cluster/ui/ext_redist.py
+msgid "Redistributables im Prefix installieren"
+msgstr "Install redistributables in the prefix"
+
+#: local_cluster/ui/ext_redist.py
+msgid "Status im Prefix"
+msgstr "Status in the prefix"
+
+#: local_cluster/ui/ext_redist.py
+msgid "Wie in GOG Galaxy laufen vor dem ersten Start die Installationsskripte des Spiels und die nötigen Redistributables (DirectX, Visual C++, .NET …) einmal je Prefix."
+msgstr "As in GOG Galaxy, the game's install scripts and the required redistributables (DirectX, Visual C++, .NET …) run once per prefix before the first start."
+
+#: local_cluster/ui/ext_redist.py
+msgid "keine laut Manifest"
+msgstr "none according to manifest"
+
+#: local_cluster/ui/ext_redist.py
+msgid "noch nichts geladen"
+msgstr "nothing downloaded yet"
+
+#: local_cluster/ui/footer.py
+msgid "{0} Update(s) verfügbar"
+msgstr "{0} update(s) available"
+
+#: local_cluster/ui/friends_view.py
+msgid "Ablehnen"
+msgstr "Decline"
+
+#: local_cluster/ui/friends_view.py
+msgid "Annehmen"
+msgstr "Accept"
+
+#: local_cluster/ui/friends_view.py local_cluster/ui/window.py
+msgid "Ansicht"
+msgstr "View"
+
+#: local_cluster/ui/friends_view.py
+msgid "Erhalten {0}"
+msgstr "Received {0}"
+
+#: local_cluster/ui/friends_view.py
+msgid "Erhaltene Einladungen und Empfehlungen"
+msgstr "Received invites and recommendations"
+
+#: local_cluster/ui/friends_view.py
+msgid "Erweiterte Liste"
+msgstr "Expanded list"
+
+#: local_cluster/ui/friends_view.py
+msgid "FREUNDE ONLINE"
+msgstr "FRIENDS ONLINE"
+
+#: local_cluster/ui/friends_view.py local_cluster/ui/menus.py
+msgid "Freunde hinzufügen"
+msgstr "Add friends"
+
+#: local_cluster/ui/friends_view.py
+msgid "Freunde suchen"
+msgstr "Search friends"
+
+#: local_cluster/ui/friends_view.py
+msgid "Freunde-Seitenleiste – verfügbar bei Fenstern breiter als {0} px"
+msgstr "Friends sidebar – available on windows wider than {0} px"
+
+#: local_cluster/ui/friends_view.py
+msgid "Freundesliste"
+msgstr "Friends list"
+
+#: local_cluster/ui/friends_view.py
+msgid "Freundesliste nicht verfügbar"
+msgstr "Friends list not available"
+
+#: local_cluster/ui/friends_view.py
+msgid "Freundesliste wird geladen …"
+msgstr "Loading friends list …"
+
+#: local_cluster/ui/friends_view.py
+msgid "GOG hat nicht geantwortet: {0}"
+msgstr "GOG did not answer: {0}"
+
+#: local_cluster/ui/friends_view.py
+msgid "Hier siehst du deine Freunde, die momentan online oder in Spielen sind."
+msgstr "Here you'll see friends who are currently online or playing games."
+
+#: local_cluster/ui/friends_view.py
+msgid "Kein Freund passt zu „{0}“."
+msgstr "No friend matches “{0}”."
+
+#: local_cluster/ui/friends_view.py
+msgid "Keine Freunde online"
+msgstr "No friends online"
+
+#: local_cluster/ui/friends_view.py
+msgid "Kompakte Liste"
+msgstr "Compact list"
+
+#: local_cluster/ui/friends_view.py
+msgid "Letzter Abgleich fehlgeschlagen ({0}) – angezeigt wird der vorige Stand."
+msgstr "Last sync failed ({0}) – showing the previous state."
+
+#: local_cluster/ui/friends_view.py
+msgid "Melde dich bei GOG an, um deine Freunde zu sehen."
+msgstr "Sign in to GOG to see your friends."
+
+#: local_cluster/ui/friends_view.py
+msgid "Nach Aktivität sortieren"
+msgstr "Sort by activity"
+
+#: local_cluster/ui/friends_view.py
+msgid "Nach Namen sortieren"
+msgstr "Sort by name"
+
+#: local_cluster/ui/friends_view.py
+msgid "Nach gespieltem Spiel gruppieren"
+msgstr "Group by game played"
+
+#: local_cluster/ui/friends_view.py
+msgid "Nachricht senden"
+msgstr "Send message"
+
+#: local_cluster/ui/friends_view.py
+msgid "Nicht im Spiel"
+msgstr "Not playing now"
+
+#: local_cluster/ui/friends_view.py
+msgid "Noch keine Freunde"
+msgstr "No friends yet"
+
+#: local_cluster/ui/friends_view.py
+msgid "Profil ansehen"
+msgstr "View profile"
+
+#: local_cluster/ui/friends_view.py
+msgid "Schicke Einladungen an andere GOG Galaxy-Nutzer – „Freunde hinzufügen“ öffnet dafür gog.com."
+msgstr "Send invites to other GOG Galaxy users – “Add friends” opens gog.com for that."
+
+#: local_cluster/ui/friends_view.py
+msgid "Zeige eine Seitenleiste für Freunde, die online sind"
+msgstr "Show online friends as a sidebar"
+
+#: local_cluster/ui/friends_view.py
+msgid "Öffnet die Freundesseite von gog.com im eingebetteten Store"
+msgstr "Opens the gog.com friends page in the embedded store"
+
+#: local_cluster/ui/friends_view.py
+msgid "„Freunde hinzufügen“ öffnet die Freundesseite von gog.com im eingebetteten Store: Galaxys eigene Suche nach Benutzername oder E-Mail nutzt eine Schnittstelle, auf die sich local:cluster nicht verlassen kann. Dort suchst du Freunde und schickst Einladungen; angenommene Freunde erscheinen hier beim nächsten Abgleich."
+msgstr "“Add friends” opens the gog.com friends page in the embedded store: Galaxy's own search by user name or email uses an interface local:cluster cannot rely on. Search for friends and send invites there; accepted friends appear here with the next sync."
+
+#: local_cluster/ui/game_menu.py
+msgid "Aus Bibliothek entfernen …"
+msgstr "Remove from library…"
+
+#: local_cluster/ui/game_menu.py
+msgid "Bearbeiten …"
+msgstr "Edit…"
+
+#: local_cluster/ui/game_menu.py
+msgid "Bewerten"
+msgstr "Rate"
+
+#: local_cluster/ui/game_menu.py local_cluster/ui/game_page.py
+msgid "Eigenschaften …"
+msgstr "Properties…"
+
+#: local_cluster/ui/game_menu.py local_cluster/ui/menus.py
+msgid "Hilfe erhalten"
+msgstr "Get support"
+
+#: local_cluster/ui/game_menu.py
+msgid "Installation verwalten"
+msgstr "Manage installation"
+
+#: local_cluster/ui/game_menu.py
+msgid "Konfigurieren …"
+msgstr "Configure …"
+
+#: local_cluster/ui/game_menu.py local_cluster/ui/menus.py
+msgid "Nach Updates suchen"
+msgstr "Check for updates"
+
+#: local_cluster/ui/game_menu.py
+msgid "Ordner anzeigen"
+msgstr "Show folder"
+
+#: local_cluster/ui/game_menu.py local_cluster/ui/game_page.py
+msgid "Ordner importieren"
+msgstr "Import folder"
+
+#: local_cluster/ui/game_menu.py
+msgid "Patch-Notizen anzeigen"
+msgstr "View patch notes"
+
+#: local_cluster/ui/game_menu.py
+msgid "Prefix löschen …"
+msgstr "Delete prefix…"
+
+#: local_cluster/ui/game_menu.py
+msgid "Prefix neu anlegen …"
+msgstr "Recreate prefix…"
+
+#: local_cluster/ui/game_menu.py
+msgid "Produktseite ansehen"
+msgstr "View in store"
+
+#: local_cluster/ui/game_menu.py
+msgid "Schreibtisch-Verknüpfung entfernen"
+msgstr "Remove desktop shortcut"
+
+#: local_cluster/ui/game_menu.py
+msgid "Spiel ausblenden"
+msgstr "Hide game"
+
+#: local_cluster/ui/game_menu.py
+msgid "Spiel wieder einblenden"
+msgstr "Unhide game"
+
+#: local_cluster/ui/game_menu.py
+msgid "Spielforum ansehen"
+msgstr "View game forum"
+
+#: local_cluster/ui/game_menu.py
+msgid "Startmenü-Verknüpfung entfernen"
+msgstr "Remove application menu shortcut"
+
+#: local_cluster/ui/game_menu.py
+msgid "Tags verwalten …"
+msgstr "Manage tags …"
+
+#: local_cluster/ui/game_menu.py
+msgid "Verknüpfung auf dem Schreibtisch anlegen"
+msgstr "Create desktop shortcut"
+
+#: local_cluster/ui/game_menu.py
+msgid "Wine-Prefix öffnen"
+msgstr "Open Wine prefix"
+
+#: local_cluster/ui/game_menu.py
+msgid "Winetricks"
+msgstr "Winetricks"
+
+#: local_cluster/ui/game_menu.py
+msgid "Zusätzliche Dateiverknüpfungen"
+msgstr "Additional executables"
+
+#: local_cluster/ui/game_menu.py
+msgid "Überprüfen / Reparieren"
+msgstr "Verify / Repair"
+
+#: local_cluster/ui/game_page.py
+msgid "  (Build {0})"
+msgstr "  (build {0})"
+
+#: local_cluster/ui/game_page.py
+msgid " · Update verfügbar"
+msgstr " · Update available"
+
+#: local_cluster/ui/game_page.py
+msgid "ABBRECHEN"
+msgstr "CANCEL"
+
+#: local_cluster/ui/game_page.py
+msgid "AKTUALISIEREN"
+msgstr "UPDATE"
+
+#: local_cluster/ui/game_page.py local_cluster/ui/log_window.py
+msgid "Alle"
+msgstr "All"
+
+#: local_cluster/ui/game_page.py
+msgid "Alle Spielstände aus der GOG Galaxy-Cloud als Archiv in den Ordner für andere Downloads laden."
+msgstr "Download all saves from the GOG Galaxy Cloud as an archive into the other downloads folder."
+
+#: local_cluster/ui/game_page.py
+msgid "Alle herunterladen"
+msgstr "Download all"
+
+#: local_cluster/ui/game_page.py
+msgid "Anpassen"
+msgstr "Customize"
+
+#: local_cluster/ui/game_page.py
+msgid "BEENDEN"
+msgstr "STOP"
+
+#: local_cluster/ui/game_page.py
+msgid "Betriebssystem:"
+msgstr "OS:"
+
+#: local_cluster/ui/game_page.py
+msgid "Bisher keine Erfolge freigeschaltet."
+msgstr "No achievements unlocked yet."
+
+#: local_cluster/ui/game_page.py
+msgid "Bitte zuerst bei GOG anmelden."
+msgstr "Please sign in to GOG first."
+
+#: local_cluster/ui/game_page.py
+msgid "DLCs im Besitz: {0} von {1}"
+msgstr "DLCs owned: {0} of {1}"
+
+#: local_cluster/ui/game_page.py
+msgid "Der Prefix wird gelöscht und frisch angelegt. Spielstände, die im Prefix liegen, gehen dabei verloren."
+msgstr "The prefix will be deleted and recreated. Saved games stored in the prefix will be lost."
+
+#: local_cluster/ui/game_page.py
+msgid "Der Prefix-Ordner wird gelöscht – inklusive Spielständen darin."
+msgstr "The prefix folder will be deleted – including any saved games in it."
+
+#: local_cluster/ui/game_page.py
+msgid "Dieses Spiel bietet scheinbar keine zusätzlichen Inhalte zum Download."
+msgstr "It seems that this game does not have any extra content available for download."
+
+#: local_cluster/ui/game_page.py
+msgid "Download-Ordner öffnen"
+msgstr "Open downloads folder"
+
+#: local_cluster/ui/game_page.py
+msgid "Downloads verwalten"
+msgstr "Manage downloads"
+
+#: local_cluster/ui/game_page.py
+msgid "ERFOLGE"
+msgstr "ACHIEVEMENTS"
+
+#: local_cluster/ui/game_page.py
+msgid "ERFOLGE · {0} VON {1} FREIGESCHALTET"
+msgstr "ACHIEVEMENTS · {0} OF {1} UNLOCKED"
+
+#: local_cluster/ui/game_page.py
+msgid "Episch"
+msgstr "Epic"
+
+#: local_cluster/ui/game_page.py
+msgid "Erfolge erscheinen, sobald das Spiel installiert ist."
+msgstr "Achievements appear once the game is installed."
+
+#: local_cluster/ui/game_page.py
+msgid "Erfolge nicht abrufbar: {0}"
+msgstr "Achievements not available: {0}"
+
+#: local_cluster/ui/game_page.py
+msgid "Erfolge sind in den Einstellungen ausgeschaltet."
+msgstr "Achievements are switched off in the settings."
+
+#: local_cluster/ui/game_page.py
+msgid "Extern · Bibliothek „{0}“"
+msgstr "External · library “{0}”"
+
+#: local_cluster/ui/game_page.py
+msgid "FORTSETZEN"
+msgstr "RESUME"
+
+#: local_cluster/ui/game_page.py
+msgid "Für dieses Spiel gibt es keine Erfolge"
+msgstr "This game does not have achievements support"
+
+#: local_cluster/ui/game_page.py
+msgid "Für dieses Spiel gibt es keine Patch-Notizen."
+msgstr "There are no patch notes for this game."
+
+#: local_cluster/ui/game_page.py
+msgid "Geheime Erfolge"
+msgstr "Secret achievement"
+
+#: local_cluster/ui/game_page.py
+msgid "Gewöhnlich"
+msgstr "Common"
+
+#: local_cluster/ui/game_page.py
+msgid "INSTALLIEREN"
+msgstr "INSTALL"
+
+#: local_cluster/ui/game_page.py
+msgid "In GOverlay das Spiel anklicken, um sein Profil (MangoHud, vkBasalt …) einzurichten"
+msgstr "Click the game in GOverlay to set up its profile (MangoHud, vkBasalt …)"
+
+#: local_cluster/ui/game_page.py
+msgid "In diesem Ordner liegt keine Installation von {0}."
+msgstr "This folder does not contain an installation of {0}."
+
+#: local_cluster/ui/game_page.py
+msgid "Installiert · Galaxy Content-System"
+msgstr "Installed · Galaxy content system"
+
+#: local_cluster/ui/game_page.py
+msgid "Installiert · Linux-Installer"
+msgstr "Installed · Linux installer"
+
+#: local_cluster/ui/game_page.py
+msgid "Installiert · Offline-Installer"
+msgstr "Installed · offline installer"
+
+#: local_cluster/ui/game_page.py
+msgid "Installiert · aus Spiele-Ordner übernommen"
+msgstr "Installed · imported from games folder"
+
+#: local_cluster/ui/game_page.py
+msgid "KOMPATIBILITÄT"
+msgstr "COMPATIBILITY"
+
+#: local_cluster/ui/game_page.py
+msgid "KOMPATIBILITÄT (WIE STEAM)"
+msgstr "COMPATIBILITY (LIKE STEAM)"
+
+#: local_cluster/ui/game_page.py
+msgid "KOMPATIBILITÄT · {0}"
+msgstr "COMPATIBILITY · {0}"
+
+#: local_cluster/ui/game_page.py
+msgid "Kein Link verfügbar"
+msgstr "No link available"
+
+#: local_cluster/ui/game_page.py
+msgid "Keine Beschreibung verfügbar."
+msgstr "No description available."
+
+#: local_cluster/ui/game_page.py
+msgid "Keine Dateien mit aktuellen Filtern gefunden."
+msgstr "No files found with current filters."
+
+#: local_cluster/ui/game_page.py
+msgid "Keine Extras"
+msgstr "No extras"
+
+#: local_cluster/ui/game_page.py
+msgid "Keine Updates für {0} verfügbar"
+msgstr "No updates available for {0}"
+
+#: local_cluster/ui/game_page.py
+msgid "Kopie von „{0}“"
+msgstr "Copy of “{0}”"
+
+#: local_cluster/ui/game_page.py
+msgid "Legendär"
+msgstr "Legendary"
+
+#: local_cluster/ui/game_page.py
+msgid "Linux (GOG.com)"
+msgstr "Linux (GOG.com)"
+
+#: local_cluster/ui/game_page.py
+msgid "Läuft · {0}"
+msgstr "Running · {0}"
+
+#: local_cluster/ui/game_page.py
+msgid "MEDIEN"
+msgstr "MEDIA"
+
+#: local_cluster/ui/game_page.py
+msgid "Mein Fortschritt"
+msgstr "My progress"
+
+#: local_cluster/ui/game_page.py
+msgid "Meine Bewertung"
+msgstr "My rating"
+
+#: local_cluster/ui/game_page.py
+msgid "Nativ (Linux)"
+msgstr "Native (Linux)"
+
+#: local_cluster/ui/game_page.py
+msgid "Nicht erreicht"
+msgstr "Locked"
+
+#: local_cluster/ui/game_page.py
+msgid "PAUSIERT"
+msgstr "PAUSED"
+
+#: local_cluster/ui/game_page.py
+msgid "Patch-Notizen"
+msgstr "Patch notes"
+
+#: local_cluster/ui/game_page.py
+msgid "Proton / Wine"
+msgstr "Proton / Wine"
+
+#: local_cluster/ui/game_page.py
+msgid "Proton/Wine und Startoptionen (wie Steam-Eigenschaften)"
+msgstr "Proton/Wine and launch options (like Steam properties)"
+
+#: local_cluster/ui/game_page.py
+msgid "Publisher"
+msgstr "Publisher"
+
+#: local_cluster/ui/game_page.py
+msgid "SICHERUNGSKOPIE DEINER CLOUD-SPEICHERSTÄNDE"
+msgstr "CLOUD SAVES BACKUP"
+
+#: local_cluster/ui/game_page.py
+msgid "SPIELDETAILS"
+msgstr "GAME DETAILS"
+
+#: local_cluster/ui/game_page.py
+msgid "Schreibtisch"
+msgstr "desktop"
+
+#: local_cluster/ui/game_page.py
+msgid "Selten"
+msgstr "Rare"
+
+#: local_cluster/ui/game_page.py
+msgid "Serververbindung fehlgeschlagen."
+msgstr "Server connection failed."
+
+#: local_cluster/ui/game_page.py
+msgid "Spiel beenden"
+msgstr "Stop game"
+
+#: local_cluster/ui/game_page.py
+msgid "Sprache:"
+msgstr "Language:"
+
+#: local_cluster/ui/game_page.py
+msgid "Start abbrechen"
+msgstr "Cancel launch"
+
+#: local_cluster/ui/game_page.py
+msgid "Start wird abgebrochen …"
+msgstr "Cancelling launch …"
+
+#: local_cluster/ui/game_page.py
+msgid "Startmenü"
+msgstr "application menu"
+
+#: local_cluster/ui/game_page.py
+msgid "Suche nach Updates für {0} …"
+msgstr "Checking updates for {0} …"
+
+#: local_cluster/ui/game_page.py
+msgid "Ungewöhnlich"
+msgstr "Uncommon"
+
+#: local_cluster/ui/game_page.py
+msgid "Update verfügbar für {0}: {1}"
+msgstr "Update available for {0}: {1}"
+
+#: local_cluster/ui/game_page.py
+msgid "Verknüpfung ({0}) {1}"
+msgstr "Shortcut ({0}) {1}"
+
+#: local_cluster/ui/game_page.py
+msgid "Veröffentlicht"
+msgstr "Released"
+
+#: local_cluster/ui/game_page.py
+msgid "WIRD ABGEBROCHEN …"
+msgstr "CANCELING…"
+
+#: local_cluster/ui/game_page.py
+msgid "Weiterspielen um diesen Erfolg freizuschalten"
+msgstr "Continue playing to unlock this achievement"
+
+#: local_cluster/ui/game_page.py
+msgid "Windows (GOG.com)"
+msgstr "Windows (GOG.com)"
+
+#: local_cluster/ui/game_page.py
+msgid "Windows (extern, nicht von GOG)"
+msgstr "Windows (external, not from GOG)"
+
+#: local_cluster/ui/game_page.py
+msgid "Zu den Downloads hinzugefügt"
+msgstr "Added to downloads"
+
+#: local_cluster/ui/game_page.py
+msgid "angelegt"
+msgstr "created"
+
+#: local_cluster/ui/game_page.py
+msgid "entfernt"
+msgstr "removed"
+
+#: local_cluster/ui/game_page.py
+msgid "kein Proton gefunden"
+msgstr "no Proton found"
+
+#: local_cluster/ui/game_page.py
+msgid "kein Tool gefunden"
+msgstr "no tool found"
+
+#: local_cluster/ui/game_page.py
+msgid "macOS (GOG.com)"
+msgstr "macOS (GOG.com)"
+
+#: local_cluster/ui/game_page.py
+msgid "unbekannt"
+msgstr "unknown"
+
+#: local_cluster/ui/game_page.py
+msgid "z. B. mangohud %command%"
+msgstr "e.g. mangohud %command%"
+
+#: local_cluster/ui/game_page.py
+msgid "{0:.1f} %   {1} / {2}   ↓ {3}   ETA {4}   {5}/{6} Dateien   {7}"
+msgstr "{0:.1f} %   {1} / {2}   ↓ {3}   ETA {4}   {5}/{6} files   {7}"
+
+#: local_cluster/ui/game_page.py
+msgid "{0} (GOG.com)"
+msgstr "{0} (GOG.com)"
+
+#: local_cluster/ui/game_page.py
+msgid "{0} beendet (Exit-Code {1}, {2})"
+msgstr "{0} exited (exit code {1}, {2})"
+
+#: local_cluster/ui/game_page.py
+msgid "{0} deinstalliert"
+msgstr "{0} uninstalled"
+
+#: local_cluster/ui/game_page.py
+msgid "ÜBER DAS SPIEL"
+msgstr "ABOUT THE GAME"
+
+#: local_cluster/ui/game_page.py
+msgid "Übernehmen"
+msgstr "Apply"
+
+#: local_cluster/ui/game_page.py
+msgid "Übersicht"
+msgstr "Overview"
+
+#: local_cluster/ui/game_page.py
+msgid "„{0}“ entfernt"
+msgstr "“{0}” removed"
+
+#: local_cluster/ui/game_page.py
+msgid "„{0}“ übernommen"
+msgstr "\"{0}\" imported"
+
+#: local_cluster/ui/game_page.py
+msgid "▶   SPIELEN"
+msgstr "▶   PLAY"
+
+#: local_cluster/ui/library_sync.py
+msgid "Bibliothek konnte nicht geladen werden: {0}"
+msgstr "Could not load library: {0}"
+
+#: local_cluster/ui/library_sync.py
+msgid "Bibliothek wird abgeglichen …"
+msgstr "Syncing library…"
+
+#: local_cluster/ui/library_sync.py
+msgid "Bibliothek wird geladen … {0}/{1}"
+msgstr "Loading library… {0}/{1}"
+
+#: local_cluster/ui/library_sync.py local_cluster/ui/recent_view.py local_cluster/ui/window.py
+msgid "Neu in der Bibliothek"
+msgstr "New in library"
+
+#: local_cluster/ui/library_sync.py
+msgid "Sitzung abgelaufen – bitte neu anmelden."
+msgstr "Session expired – please sign in again."
+
+#: local_cluster/ui/library_sync.py
+msgid "{0} Spiele geladen"
+msgstr "{0} games loaded"
+
+#: local_cluster/ui/library_sync.py
+msgid "„{0}“ wurde deiner Bibliothek hinzugefügt"
+msgstr "“{0}” was added to your library"
+
+#: local_cluster/ui/log_window.py
+msgid "Im Protokoll suchen"
+msgstr "Search the log"
+
+#: local_cluster/ui/log_window.py
+msgid "In die Zwischenablage kopiert"
+msgstr "Copied to the clipboard"
+
+#: local_cluster/ui/log_window.py local_cluster/ui/menus.py
+msgid "Protokoll"
+msgstr "Log"
+
+#: local_cluster/ui/log_window.py
+msgid "Protokoll leeren"
+msgstr "Clear log"
+
+#: local_cluster/ui/log_window.py
+msgid "Protokoll nicht geleert: {0}"
+msgstr "Log not cleared: {0}"
+
+#: local_cluster/ui/log_window.py
+msgid "Protokoll wählen"
+msgstr "Choose log"
+
+#: local_cluster/ui/log_window.py
+msgid "Stufe"
+msgstr "Level"
+
+#: local_cluster/ui/log_window.py
+msgid "Warnungen"
+msgstr "Warnings"
+
+#: local_cluster/ui/log_window.py
+msgctxt "Zwischenablage"
+msgid "Kopieren"
+msgstr "Copy"
+
+#: local_cluster/ui/log_window.py
+msgid "{0} · {1} von {2} Einträgen"
+msgstr "{0} · {1} of {2} entries"
+
+#: local_cluster/ui/log_window.py
+msgid "„{0}“ wirklich leeren? Die bisherigen Einträge gehen verloren."
+msgstr "Really clear “{0}”? The existing entries will be lost."
+
+#: local_cluster/ui/menus.py
+msgid "Ausloggen"
+msgstr "Sign out"
+
+#: local_cluster/ui/menus.py local_cluster/ui/window.py
+msgid "Beenden"
+msgstr "Exit"
+
+#: local_cluster/ui/menus.py
+msgid "Bibliothek aktualisieren"
+msgstr "Refresh library"
+
+#: local_cluster/ui/menus.py local_cluster/ui/store.py
+msgid "Bisherige Bestellungen"
+msgstr "Orders history"
+
+#: local_cluster/ui/menus.py
+msgid "Datenschutz: Zugangsdaten bleiben auf diesem Rechner (~/.config/local-cluster/credentials.json mit Rechten 0600 oder im System-Schlüsselbund). Das Protokoll maskiert Tokens und Login-Codes. Der Client spricht mit den GOG-Diensten, für Cover eigener Bibliotheken mit Steam und für „Nach Updates suchen“ mit GitHub."
+msgstr "Privacy: credentials stay on this computer (~/.config/local-cluster/credentials.json with mode 0600 or in the system keyring). The log masks tokens and login codes. The client talks to the GOG services, to Steam for covers of custom libraries and to GitHub for \"Check for updates\"."
+
+#: local_cluster/ui/menus.py
+msgid "Frühere Versionen"
+msgstr "Earlier versions"
+
+#: local_cluster/ui/menus.py local_cluster/ui/window.py
+msgid "GOG"
+msgstr "GOG"
+
+#: local_cluster/ui/menus.py
+msgid "GOG und GOG Galaxy sind Marken von GOG sp. z o.o. Dieses Projekt steht in keiner Verbindung zu GOG."
+msgstr "GOG and GOG Galaxy are trademarks of GOG sp. z o.o. This project is not affiliated with GOG."
+
+#: local_cluster/ui/menus.py
+msgid "GOG-Code einlösen"
+msgstr "Redeem GOG code"
+
+#: local_cluster/ui/menus.py
+msgid "Geldbeutel"
+msgstr "Wallet"
+
+#: local_cluster/ui/menus.py
+msgid "Haftungsausschluss: inoffizielles Projekt, Nutzung auf eigenes Risiko. Die GOG-Nutzungsvereinbarung untersagt nicht genehmigte Drittprogramme; GOG duldet Open-Source-Clients wie Heroic, Minigalaxy oder Lutris seit Jahren, ein Anspruch darauf besteht aber nicht. Das Repository enthält keinen Code und keine Grafiken von GOG."
+msgstr "Disclaimer: unofficial project, use at your own risk. The GOG user agreement prohibits unapproved third-party programs; GOG has tolerated open-source clients such as Heroic, Minigalaxy or Lutris for years, but there is no entitlement to that. The repository contains no code and no graphics from GOG."
+
+#: local_cluster/ui/menus.py
+msgid "Kein Änderungsprotokoll gefunden."
+msgstr "No changelog found."
+
+#: local_cluster/ui/menus.py
+msgid "Kontoverwaltung"
+msgstr "Account management"
+
+#: local_cluster/ui/menus.py
+msgid "Lizenz: MIT. Quelltext und vollständiger Lizenztext: {0}"
+msgstr "License: MIT. Source code and full license text: {0}"
+
+#: local_cluster/ui/menus.py
+msgid "Möchtest du dich wirklich ausloggen? Dadurch werden alle Vorgänge in der Downloadliste abgebrochen."
+msgstr "Are you sure you want to sign out? This will abort all the tasks in the download queue."
+
+#: local_cluster/ui/menus.py
+msgid "Nach GOG-Spielen durchsuchen"
+msgstr "Scan folders for GOG Games"
+
+#: local_cluster/ui/menus.py
+msgid "Neu bei uns"
+msgstr "What's new"
+
+#: local_cluster/ui/menus.py local_cluster/ui/prefs_galaxy_services.py
+msgid "Projektseite öffnen"
+msgstr "Open project page"
+
+#: local_cluster/ui/menus.py
+msgid "Rechtliches und Datenschutz"
+msgstr "Legal & privacy"
+
+#: local_cluster/ui/menus.py
+msgid "Spiel manuell hinzufügen"
+msgstr "Add game manually"
+
+#: local_cluster/ui/menus.py
+msgid "Spiele & Freunde hinzufügen"
+msgstr "Add games & friends"
+
+#: local_cluster/ui/menus.py
+msgid "Unsichtbar"
+msgstr "Invisible"
+
+#: local_cluster/ui/menus.py
+msgid "local:cluster {0} – inoffizieller, nativer Client für GOG.com."
+msgstr "local:cluster {0} – unofficial native client for GOG.com."
+
+#: local_cluster/ui/notification_center.py
+msgid "Alle löschen"
+msgstr "Clear all"
+
+#: local_cluster/ui/notification_center.py
+msgid "Als gelesen markieren"
+msgstr "Mark as read"
+
+#: local_cluster/ui/notification_center.py
+msgid "BENACHRICHTIGUNGEN"
+msgstr "NOTIFICATIONS"
+
+#: local_cluster/ui/notification_center.py
+msgid "Keine Benachrichtigungen"
+msgstr "No notifications"
+
+#: local_cluster/ui/power_search_dialog.py
+msgid "Durchsuche Tags, Genres, Bewertungen & mehr..."
+msgstr "Search in tags, genres, ratings & more..."
+
+#: local_cluster/ui/power_search_dialog.py
+msgid "Finde „{0}“ im Store"
+msgstr "Find \"{0}\" in Store"
+
+#: local_cluster/ui/power_search_dialog.py
+msgid "Spiele"
+msgstr "Games"
+
+#: local_cluster/ui/power_search_dialog.py
+msgid "Spiele, Tags, Genres, Entwickler, Lesezeichen, Store …"
+msgstr "Games, tags, genres, developers, bookmarks, store …"
+
+#: local_cluster/ui/power_search_dialog.py local_cluster/ui/window.py
+msgid "Suche"
+msgstr "Search"
+
+#: local_cluster/ui/prefs_galaxy_services.py
+msgid "Datei wählen"
+msgstr "Choose file"
+
+#: local_cluster/ui/prefs_galaxy_services.py
+msgid "Eigener Pfad zu comet (leer = automatisch suchen)"
+msgstr "Own path to comet (empty = search automatically)"
+
+#: local_cluster/ui/prefs_galaxy_services.py
+msgid "Galaxy-Dienste"
+msgstr "Galaxy services"
+
+#: local_cluster/ui/prefs_galaxy_services.py
+msgid "Lizenz"
+msgstr "License"
+
+#: local_cluster/ui/prefs_galaxy_services.py
+msgid "Nicht gefunden oder nicht ausführbar: {0}"
+msgstr "Not found or not executable: {0}"
+
+#: local_cluster/ui/prefs_galaxy_services.py
+msgid "Nicht gefunden – wird zusammen mit comet heruntergeladen."
+msgstr "Not found – will be downloaded together with comet."
+
+#: local_cluster/ui/prefs_galaxy_services.py
+msgid "Wird gesucht …"
+msgstr "Searching …"
+
+#: local_cluster/ui/prefs_galaxy_services.py
+msgid "Wird heruntergeladen …"
+msgstr "Downloading …"
+
+#: local_cluster/ui/prefs_galaxy_services.py
+msgid "Wird heruntergeladen … {0} %"
+msgstr "Downloading … {0} %"
+
+#: local_cluster/ui/prefs_galaxy_services.py
+msgid "comet auswählen"
+msgstr "Choose comet"
+
+#: local_cluster/ui/prefs_galaxy_services.py
+msgid "comet ersetzt den Kommunikationsdienst von GOG Galaxy: Spiele mit Galaxy-SDK schalten Erfolge frei und nutzen Statistiken und Bestenlisten. Ein- und ausschalten unter „Spielfunktionen“."
+msgstr "comet replaces the GOG Galaxy communication service: games with the Galaxy SDK unlock achievements and use stats and leaderboards. Turn it on or off under \"Game features\"."
+
+#: local_cluster/ui/prefs_galaxy_services.py
+msgid "comet von imLinguin, {0} – wird unverändert aus dem offiziellen Release geladen und per SHA-256 geprüft."
+msgstr "comet by imLinguin, {0} – downloaded unmodified from the official release and verified via SHA-256."
+
+#: local_cluster/ui/prefs_galaxy_services.py
+msgid "comet {0} heruntergeladen"
+msgstr "comet {0} downloaded"
+
+#: local_cluster/ui/prefs_library_sync.py
+msgid "Abgleich mit GOG"
+msgstr "Sync with GOG"
+
+#: local_cluster/ui/prefs_library_sync.py
+msgid "Abstand in Minuten"
+msgstr "Interval in minutes"
+
+#: local_cluster/ui/prefs_library_sync.py
+msgid "Beim Wechsel ins Fenster abgleichen"
+msgstr "Sync when switching to the window"
+
+#: local_cluster/ui/prefs_library_sync.py
+msgid "Bibliothek automatisch abgleichen"
+msgstr "Sync library automatically"
+
+#: local_cluster/ui/prefs_library_sync.py
+msgid "Die ganze Bibliothek wird nur geladen, wenn GOG eine Änderung meldet."
+msgstr "The whole library is only loaded when GOG reports a change."
+
+#: local_cluster/ui/prefs_library_sync.py
+msgid "Neue Käufe erscheinen ohne Neustart in der Bibliothek. Von Hand: Zahnrad → „Bibliothek aktualisieren“ (F5)."
+msgstr "New purchases show up in the library without a restart. Manually: gear → “Refresh library” (F5)."
+
+#: local_cluster/ui/prefs_library_sync.py
+msgid "höchstens alle 5 Minuten"
+msgstr "at most every 5 minutes"
+
+#: local_cluster/ui/recent_view.py
+msgid "Alle Widgets sind ausgeblendet – „Ansicht anpassen“ schaltet sie wieder ein."
+msgstr "All widgets are hidden – “Customize view” switches them back on."
+
+#: local_cluster/ui/recent_view.py
+msgid "An- und abschalten, mit den Pfeilen anordnen"
+msgstr "Switch on and off, reorder with the arrows"
+
+#: local_cluster/ui/recent_view.py
+msgid "Ansicht anpassen"
+msgstr "Customize view"
+
+#: local_cluster/ui/recent_view.py
+msgid "DIESE WOCHE"
+msgstr "THIS WEEK"
+
+#: local_cluster/ui/recent_view.py
+msgid "DIESER MONAT"
+msgstr "THIS MONTH"
+
+#: local_cluster/ui/recent_view.py
+msgid "Erst {0} gespielt"
+msgstr "Played only {0}"
+
+#: local_cluster/ui/recent_view.py
+msgid "GESTERN"
+msgstr "YESTERDAY"
+
+#: local_cluster/ui/recent_view.py
+msgid "HEUTE"
+msgstr "TODAY"
+
+#: local_cluster/ui/recent_view.py
+msgid "Hinzugefügt {0}"
+msgstr "Added {0}"
+
+#: local_cluster/ui/recent_view.py
+msgid "In den letzten 30 Tagen ist nichts Neues dazugekommen."
+msgstr "Nothing new in the last 30 days."
+
+#: local_cluster/ui/recent_view.py
+msgid "Installiert {0}"
+msgstr "Installed {0}"
+
+#: local_cluster/ui/recent_view.py
+msgid "Keine Vorschläge: alle installierten Spiele sind schon ausgiebig gespielt. Installiere ein neues Spiel oder lass dich überraschen."
+msgstr "No suggestions: all installed games have been played a lot already. Install a new game or let yourself be surprised."
+
+#: local_cluster/ui/recent_view.py
+msgid "Meine Übersicht"
+msgstr "My summary"
+
+#: local_cluster/ui/recent_view.py
+msgid "Nach oben"
+msgstr "Move up"
+
+#: local_cluster/ui/recent_view.py
+msgid "Nach unten"
+msgstr "Move down"
+
+#: local_cluster/ui/recent_view.py
+msgid "Neu mischen"
+msgstr "Reshuffle"
+
+#: local_cluster/ui/recent_view.py
+msgid "Noch nicht gespielt"
+msgstr "Not played yet"
+
+#: local_cluster/ui/recent_view.py
+msgid "Noch nichts gespielt – gestartete Spiele erscheinen hier."
+msgstr "Nothing played yet – games you launch appear here."
+
+#: local_cluster/ui/recent_view.py
+msgid "SPIEL ANZEIGEN"
+msgstr "SHOW GAME"
+
+#: local_cluster/ui/recent_view.py
+msgid "SPIELEN"
+msgstr "PLAY"
+
+#: local_cluster/ui/recent_view.py
+msgid "Spielzeit je Tag in den letzten 14 Tagen – gezählt werden Spiele, die local:cluster startet."
+msgstr "Playtime per day over the last 14 days – counting games launched by local:cluster."
+
+#: local_cluster/ui/recent_view.py
+msgid "WIDGETS"
+msgstr "WIDGETS"
+
+#: local_cluster/ui/recent_view.py
+msgid "Was als Nächstes spielen"
+msgstr "What to play next"
+
+#: local_cluster/ui/recent_view.py
+msgctxt "Wochentag"
+msgid "Di"
+msgstr "Tue"
+
+#: local_cluster/ui/recent_view.py
+msgctxt "Wochentag"
+msgid "Do"
+msgstr "Thu"
+
+#: local_cluster/ui/recent_view.py
+msgctxt "Wochentag"
+msgid "Fr"
+msgstr "Fri"
+
+#: local_cluster/ui/recent_view.py
+msgctxt "Wochentag"
+msgid "Mi"
+msgstr "Wed"
+
+#: local_cluster/ui/recent_view.py
+msgctxt "Wochentag"
+msgid "Mo"
+msgstr "Mon"
+
+#: local_cluster/ui/recent_view.py
+msgctxt "Wochentag"
+msgid "Sa"
+msgstr "Sat"
+
+#: local_cluster/ui/recent_view.py
+msgctxt "Wochentag"
+msgid "So"
+msgstr "Sun"
+
+#: local_cluster/ui/recent_view.py
+msgid "Zufällig ausgewählt"
+msgstr "Picked at random"
+
+#: local_cluster/ui/recent_view.py
+msgid "Überrasch mich"
+msgstr "Surprise me"
+
+#: local_cluster/ui/store.py local_cluster/ui/window.py
+msgid "Alle Spiele"
+msgstr "All games"
+
+#: local_cluster/ui/store.py
+msgid "Bevorzugter Store"
+msgstr "Preferred store"
+
+#: local_cluster/ui/store.py
+msgid "Die Seite konnte nicht geladen werden"
+msgstr "The page could not be loaded"
+
+#: local_cluster/ui/store.py
+msgid "Die Store-Ansicht wurde neu geladen."
+msgstr "The store view was reloaded."
+
+#: local_cluster/ui/store.py
+msgid "Download abgeschlossen: {0}"
+msgstr "Download complete: {0}"
+
+#: local_cluster/ui/store.py
+msgid "Download gestartet: {0}"
+msgstr "Download started: {0}"
+
+#: local_cluster/ui/store.py
+msgid "Du bist im Store nicht angemeldet."
+msgstr "You are not signed in to the store."
+
+#: local_cluster/ui/store.py
+msgid "Eingebetteter Store nicht verfügbar (Paket webkitgtk-6.0 fehlt) – die Seite wurde im Browser geöffnet."
+msgstr "Embedded store not available (package webkitgtk-6.0 is missing) – the page was opened in the browser."
+
+#: local_cluster/ui/store.py
+msgid "Einkaufen"
+msgstr "Deals"
+
+#: local_cluster/ui/store.py
+msgid "GOG STORE"
+msgstr "GOG STORE"
+
+#: local_cluster/ui/store.py
+msgid "GOG Store"
+msgstr "GOG Store"
+
+#: local_cluster/ui/store.py
+msgid "GOG.COM-Store"
+msgstr "GOG.COM store"
+
+#: local_cluster/ui/store.py
+msgid "Im Store anmelden"
+msgstr "Sign in to the store"
+
+#: local_cluster/ui/store.py
+msgid "In Seitenleiste ausblenden"
+msgstr "Hide from sidebar"
+
+#: local_cluster/ui/store.py
+msgid "Kauf abgeschlossen – die Bibliothek wird aktualisiert."
+msgstr "Purchase complete – refreshing the library."
+
+#: local_cluster/ui/store.py
+msgid "Laden abbrechen"
+msgstr "Stop loading"
+
+#: local_cluster/ui/store.py
+msgid "Prüfe die Internetverbindung und versuche es erneut."
+msgstr "Check your internet connection and try again."
+
+#: local_cluster/ui/store.py
+msgid "Store-Startseite"
+msgstr "Store home"
+
+#: local_cluster/ui/store.py local_cluster/ui/window.py
+msgid "Vor"
+msgstr "Forward"
+
+#: local_cluster/ui/store.py
+msgid "Warenkorb"
+msgstr "Cart"
+
+#: local_cluster/ui/tags.py
+msgid "Alle Spiele, denen diese Tags zugewiesen sind."
+msgstr "All games assigned with these tags."
+
+#: local_cluster/ui/tags.py
+msgid "Alle Tags verwalten"
+msgstr "Manage all tags"
+
+#: local_cluster/ui/tags.py
+msgid "Der Tag wird von {0} Spiel entfernt."
+msgstr "The tag will be removed from {0} game."
+
+#: local_cluster/ui/tags.py
+msgid "Der Tag wird von {0} Spielen entfernt."
+msgstr "The tag will be removed from {0} games."
+
+#: local_cluster/ui/tags.py
+msgid "Neu erstellen …"
+msgstr "Create new …"
+
+#: local_cluster/ui/tags.py
+msgid "Noch keine Tags – unten einen neuen erstellen."
+msgstr "No tags yet – create a new one below."
+
+#: local_cluster/ui/tags.py
+msgid "Tag umbenannt: {0}"
+msgstr "Tag renamed: {0}"
+
+#: local_cluster/ui/tags.py
+msgid "Tag „{0}“ löschen?"
+msgstr "Delete tag \"{0}\"?"
+
+#: local_cluster/ui/tags.py
+msgid "Tags verwalten"
+msgstr "Manage tags"
+
+#: local_cluster/ui/tags.py
+msgid "Tags zuweisen"
+msgstr "Assign tags"
+
+#: local_cluster/ui/tags.py
+msgid "Umbenennen und Löschen gilt für alle Spiele, denen der Tag zugewiesen ist."
+msgstr "Renaming and deleting applies to all games the tag is assigned to."
+
+#: local_cluster/ui/util.py
+msgid "Deutsch"
+msgstr "Deutsch"
+
+#: local_cluster/ui/util.py
+msgid "English"
+msgstr "English"
+
+#: local_cluster/ui/util.py
+msgid "Español (México)"
+msgstr "Español (México)"
+
+#: local_cluster/ui/util.py
+msgid "Italiano"
+msgstr "Italiano"
+
+#: local_cluster/ui/util.py
+msgid "Magyar"
+msgstr "Magyar"
+
+#: local_cluster/ui/util.py
+msgid "Nederlands"
+msgstr "Nederlands"
+
+#: local_cluster/ui/util.py
+msgid "Polski"
+msgstr "Polski"
+
+#: local_cluster/ui/util.py
+msgid "Português (Brasil)"
+msgstr "Português (Brasil)"
+
+#: local_cluster/ui/util.py
+msgid "Svenska"
+msgstr "Svenska"
+
+#: local_cluster/ui/util.py
+msgid "Türkçe"
+msgstr "Türkçe"
+
+#: local_cluster/ui/util.py
+msgid "heute"
+msgstr "today"
+
+#: local_cluster/ui/util.py
+msgid "nie"
+msgstr "never"
+
+#: local_cluster/ui/util.py
+msgid "{0} h {1:02d} min"
+msgstr "{0} h {1:02d} min"
+
+#: local_cluster/ui/util.py
+msgid "{0} min {1:02d} s"
+msgstr "{0} min {1:02d} s"
+
+#: local_cluster/ui/window.py
+msgid " · Linux"
+msgstr " · Linux"
+
+#: local_cluster/ui/window.py
+msgid " – Prefix wird angelegt"
+msgstr " – creating prefix"
+
+#: local_cluster/ui/window.py
+msgid "ABSTAND"
+msgstr "SPACING"
+
+#: local_cluster/ui/window.py
+msgid "Abgemeldet"
+msgstr "Signed out"
+
+#: local_cluster/ui/window.py
+msgid "Abschnitte (Als Nächstes spielen …)"
+msgstr "Sections (Play next…)"
+
+#: local_cluster/ui/window.py
+msgid "Absteigend"
+msgstr "Descending"
+
+#: local_cluster/ui/window.py
+msgid "Alle Spiele haben bereits einen Prefix"
+msgstr "All games already have a prefix"
+
+#: local_cluster/ui/window.py
+msgid "Alle installierten Spiele sind aktuell"
+msgstr "All installed games are up to date"
+
+#: local_cluster/ui/window.py
+msgid "Als Nächstes spielen"
+msgstr "Play next"
+
+#: local_cluster/ui/window.py
+msgid "Angemeldet als {0}"
+msgstr "Signed in as {0}"
+
+#: local_cluster/ui/window.py
+msgid "Aufsteigend"
+msgstr "Ascending"
+
+#: local_cluster/ui/window.py
+msgid "Ausgeblendet"
+msgstr "Hidden"
+
+#: local_cluster/ui/window.py
+msgid "Ausgeblendete wie eingestellt"
+msgstr "Hidden games as set"
+
+#: local_cluster/ui/window.py
+msgid "BIBLIOTHEKEN"
+msgstr "LIBRARIES"
+
+#: local_cluster/ui/window.py
+msgid "Betriebssystem & Konsolen"
+msgstr "OS & consoles"
+
+#: local_cluster/ui/window.py
+msgid "Bibliothek bearbeiten …"
+msgstr "Edit library…"
+
+#: local_cluster/ui/window.py
+msgid "Bibliothek „{0}“ angelegt – Ordner wird durchsucht …"
+msgstr "Library “{0}” created – scanning folder…"
+
+#: local_cluster/ui/window.py
+msgid "Bibliothek „{0}“ gelöscht – {1} Spiel(e) ausgetragen, Dateien und Prefixe bleiben"
+msgstr "Library “{0}” deleted – {1} game(s) removed, files and prefixes are kept"
+
+#: local_cluster/ui/window.py
+msgid "COVERGRÖSSE"
+msgstr "COVER SIZE"
+
+#: local_cluster/ui/window.py
+msgid "DARSTELLUNG"
+msgstr "LAYOUT"
+
+#: local_cluster/ui/window.py
+msgid "Das Spiel wurde ausgeblendet."
+msgstr "The game was hidden."
+
+#: local_cluster/ui/window.py
+msgid "Downloads"
+msgstr "Downloads"
+
+#: local_cluster/ui/window.py
+msgid "Durchsuchen fehlgeschlagen: {0}"
+msgstr "Scan failed: {0}"
+
+#: local_cluster/ui/window.py
+msgid "Einladungen"
+msgstr "Invites"
+
+#: local_cluster/ui/window.py
+msgid "Erhältliche Updates anzeigen"
+msgstr "Show available updates"
+
+#: local_cluster/ui/window.py
+msgid "Extern"
+msgstr "External"
+
+#: local_cluster/ui/window.py
+msgid "FILTER"
+msgstr "FILTER"
+
+#: local_cluster/ui/window.py
+msgid "FREUNDE"
+msgstr "FRIENDS"
+
+#: local_cluster/ui/window.py
+msgid "Favoriten"
+msgstr "Favorites"
+
+#: local_cluster/ui/window.py
+msgid "Fehlende Prefixe anlegen"
+msgstr "Create missing prefixes"
+
+#: local_cluster/ui/window.py
+msgid "Fehlende Prefixe für alle Spiele anlegen"
+msgstr "Create missing prefixes for all games"
+
+#: local_cluster/ui/window.py
+msgid "Filter"
+msgstr "Filter"
+
+#: local_cluster/ui/window.py
+msgid "Freunde online"
+msgstr "Friends online"
+
+#: local_cluster/ui/window.py
+msgid "GOG-Spiel(e) im Spiele-Ordner"
+msgstr "GOG game(s) in the games folder"
+
+#: local_cluster/ui/window.py
+msgid "GRUPPIEREN NACH"
+msgstr "GROUP BY"
+
+#: local_cluster/ui/window.py
+msgid "Gilt für Alle Spiele, Installiert und Zuletzt gespielt"
+msgstr "Applies to All games, Installed and Last played"
+
+#: local_cluster/ui/window.py
+msgid "Gilt für die Bibliothek „{0}“"
+msgstr "Applies to the library “{0}”"
+
+#: local_cluster/ui/window.py
+msgid "Groß"
+msgstr "Large"
+
+#: local_cluster/ui/window.py
+msgid "Hoch verschieben"
+msgstr "Move up"
+
+#: local_cluster/ui/window.py
+msgid "In diesem Port nicht verfügbar"
+msgstr "Not available in this port"
+
+#: local_cluster/ui/window.py
+msgid "Keine Spiele in der Bibliothek. Über das Zahnrad → „Bibliothek aktualisieren“ (F5) die Bibliothek von GOG laden."
+msgstr "No games in the library. Load the library from GOG via the gear → \"Refresh library\" (F5)."
+
+#: local_cluster/ui/window.py
+msgid "Keine neuen Spiele gefunden"
+msgstr "No new games found"
+
+#: local_cluster/ui/window.py
+msgid "Keine verwaisten Prefixe gefunden"
+msgstr "No orphaned prefixes found"
+
+#: local_cluster/ui/window.py
+msgid "Keiner"
+msgstr "None"
+
+#: local_cluster/ui/window.py
+msgid "Klein"
+msgstr "Small"
+
+#: local_cluster/ui/window.py
+msgid "Konto"
+msgstr "Account"
+
+#: local_cluster/ui/window.py
+msgid "Kopien anzeigen"
+msgstr "Show copies"
+
+#: local_cluster/ui/window.py
+msgid "Kürzlich installiert"
+msgstr "Recently installed"
+
+#: local_cluster/ui/window.py
+msgid "LESEZEICHEN"
+msgstr "BOOKMARKS"
+
+#: local_cluster/ui/window.py
+msgid "Lesezeichen angelegt: {0}"
+msgstr "Bookmark added: {0}"
+
+#: local_cluster/ui/window.py
+msgid "Lesezeichen gelöscht"
+msgstr "Bookmark deleted"
+
+#: local_cluster/ui/window.py
+msgid "Lesezeichen löschen"
+msgstr "Delete bookmark"
+
+#: local_cluster/ui/window.py
+msgid "Lesezeichen umbenennen"
+msgstr "Rename bookmark"
+
+#: local_cluster/ui/window.py
+msgid "Liste"
+msgstr "List"
+
+#: local_cluster/ui/window.py
+msgid "LÄDT"
+msgstr "DOWNLOADING"
+
+#: local_cluster/ui/window.py
+msgid "LÄUFT"
+msgstr "RUNNING"
+
+#: local_cluster/ui/window.py
+msgid "Lädt herunter"
+msgstr "Downloading"
+
+#: local_cluster/ui/window.py
+msgid "Läuft"
+msgstr "Running"
+
+#: local_cluster/ui/window.py
+msgid "Melde dich bei GOG an, um deine Bibliothek zu laden."
+msgstr "Sign in to GOG to load your library."
+
+#: local_cluster/ui/window.py
+msgid "Minimieren"
+msgstr "Minimize"
+
+#: local_cluster/ui/window.py
+msgid "Mittel"
+msgstr "Medium"
+
+#: local_cluster/ui/window.py
+msgid "Nachrichten"
+msgstr "Messages"
+
+#: local_cluster/ui/window.py
+msgid "Neu"
+msgstr "New"
+
+#: local_cluster/ui/window.py
+msgid "Noch keine Spiele in „{0}“. Spielordner nach {1} kopieren – sie werden nach dem Kopieren automatisch übernommen – oder einen beliebigen Ordner mit „Spiel hinzufügen …“ aufnehmen."
+msgstr "No games in “{0}” yet. Copy game folders to {1} – they are added automatically once copying is finished – or add any folder with “Add game…”."
+
+#: local_cluster/ui/window.py
+msgid "Noch nichts gespielt – installiere ein Spiel aus „Spiele im Besitz“."
+msgstr "Nothing played yet – install a game from “Owned games”."
+
+#: local_cluster/ui/window.py
+msgid "Nur ausgeblendete Spiele anzeigen."
+msgstr "Only show hidden games."
+
+#: local_cluster/ui/window.py
+msgid "Nur sichtbare Spiele anzeigen."
+msgstr "Only show visible games."
+
+#: local_cluster/ui/window.py
+msgid "Ordner durchsuchen"
+msgstr "Scan folder"
+
+#: local_cluster/ui/window.py
+msgid "Ordner mit gleichem Inhalt wie ein anderes Spiel (z. B. „… - Kopie“) – sonst nur einmal gezeigt"
+msgstr "Folders with the same content as another game (e.g. “… - Copy”) – otherwise shown only once"
+
+#: local_cluster/ui/window.py
+msgid "Ordner nach Spielen durchsuchen"
+msgstr "Scan folder for games"
+
+#: local_cluster/ui/window.py
+msgid "PREFIX"
+msgstr "PREFIX"
+
+#: local_cluster/ui/window.py
+msgid "PRÜFT"
+msgstr "VERIFYING"
+
+#: local_cluster/ui/window.py
+msgid "Prefix angelegt: {0}"
+msgstr "Prefix created: {0}"
+
+#: local_cluster/ui/window.py
+msgid "Prefix wird angelegt"
+msgstr "Creating prefix"
+
+#: local_cluster/ui/window.py
+msgid "Raster"
+msgstr "Grid"
+
+#: local_cluster/ui/window.py
+msgid "Runter verschieben"
+msgstr "Move down"
+
+#: local_cluster/ui/window.py
+msgid "Rückgängig"
+msgstr "Undo"
+
+#: local_cluster/ui/window.py
+msgid "SORTIEREN NACH"
+msgstr "SORT BY"
+
+#: local_cluster/ui/window.py
+msgid "SPIELE"
+msgstr "GAMES"
+
+#: local_cluster/ui/window.py
+msgid "Sehr groß"
+msgstr "Extra large"
+
+#: local_cluster/ui/window.py
+msgid "Sehr klein"
+msgstr "Extra small"
+
+#: local_cluster/ui/window.py
+msgid "Spiel hinzufügen …"
+msgstr "Add game…"
+
+#: local_cluster/ui/window.py
+msgid "Spiel(e) in „{0}“"
+msgstr "game(s) in “{0}”"
+
+#: local_cluster/ui/window.py
+msgid "Spiele-Ordner nach Spielen durchsuchen"
+msgstr "Scan games folders for games"
+
+#: local_cluster/ui/window.py
+msgid "Spiele-Ordner werden bereits durchsucht …"
+msgstr "Games folders are already being scanned…"
+
+#: local_cluster/ui/window.py
+msgid "Spiele-Ordner werden durchsucht …"
+msgstr "Scanning games folders…"
+
+#: local_cluster/ui/window.py
+msgid "Spiele-Ordner öffnen"
+msgstr "Open games folder"
+
+#: local_cluster/ui/window.py
+msgid "Spiele: {0}\nPrefixe: {1}"
+msgstr "Games: {0}\nPrefixes: {1}"
+
+#: local_cluster/ui/window.py
+msgid "Spielordner wählen"
+msgstr "Choose game folder"
+
+#: local_cluster/ui/window.py
+msgid "Suche (Strg+F)"
+msgstr "Search (Ctrl+F)"
+
+#: local_cluster/ui/window.py
+msgid "Suche Spiele"
+msgstr "Search games"
+
+#: local_cluster/ui/window.py
+msgid "TITEL"
+msgstr "TITLE"
+
+#: local_cluster/ui/window.py
+msgid "Titel unter den Covern"
+msgstr "Titles below covers"
+
+#: local_cluster/ui/window.py
+msgid "UPDATE"
+msgstr "UPDATE"
+
+#: local_cluster/ui/window.py
+msgid "Umbenennen"
+msgstr "Rename"
+
+#: local_cluster/ui/window.py
+msgid "Update verfügbar: {0}"
+msgstr "Update available: {0}"
+
+#: local_cluster/ui/window.py
+msgid "Updates verfügbar für {0} Spiel(e)"
+msgstr "Updates available for {0} game(s)"
+
+#: local_cluster/ui/window.py
+msgid "Updates werden installiert: {0} Spiel(e)"
+msgstr "Installing updates: {0} game(s)"
+
+#: local_cluster/ui/window.py
+msgid "VERSCHIEBT"
+msgstr "MOVING"
+
+#: local_cluster/ui/window.py
+msgid "Version von local:cluster und Name dieses Rechners"
+msgstr "local:cluster version and name of this computer"
+
+#: local_cluster/ui/window.py
+msgid "Verwaiste Prefixe entfernen …"
+msgstr "Remove orphaned prefixes…"
+
+#: local_cluster/ui/window.py
+msgid "Weitere Aktionen"
+msgstr "More actions"
+
+#: local_cluster/ui/window.py
+msgid "Wird bearbeitet …"
+msgstr "Processing…"
+
+#: local_cluster/ui/window.py
+msgid "Wird geprüft"
+msgstr "Verifying"
+
+#: local_cluster/ui/window.py
+msgid "Wird noch kopiert: {0} – wird danach übernommen"
+msgstr "Still copying: {0} – will be added afterwards"
+
+#: local_cluster/ui/window.py
+msgid "Wird verschoben"
+msgstr "Moving"
+
+#: local_cluster/ui/window.py
+msgid "Zurücksetzen"
+msgstr "Reset"
+
+#: local_cluster/ui/window.py
+msgid "externe(s) Spiel(e)"
+msgstr "external game(s)"
+
+#: local_cluster/ui/window.py
+msgid "local:cluster v{0} · {1}"
+msgstr "local:cluster v{0} · {1}"
+
+#: local_cluster/ui/window.py
+msgid "{0}\nPrefixe: {1}"
+msgstr "{0}\nPrefixes: {1}"
+
+#: local_cluster/ui/window.py
+msgid "{0} Filter"
+msgstr "{0} filters"
+
+#: local_cluster/ui/window.py
+msgid "{0} Ordner ohne GOG-Spieldaten übersprungen"
+msgstr "Skipped {0} folder(s) without GOG game data"
+
+#: local_cluster/ui/window.py
+msgid "{0} Ordner übersprungen: Spiel ist bereits an anderer Stelle installiert"
+msgstr "Skipped {0} folder(s): game is already installed elsewhere"
+
+#: local_cluster/ui/window.py
+msgid "{0} Prefix(e) gelöscht"
+msgstr "{0} prefix(es) deleted"
+
+#: local_cluster/ui/window.py
+msgid "{0} Prefixe angelegt"
+msgstr "{0} prefixes created"
+
+#: local_cluster/ui/window.py
+msgid "{0} Spiel(e) ausgetragen, Ordner fehlt: {1}"
+msgstr "{0} game(s) removed from the library, folder missing: {1}"
+
+#: local_cluster/ui/window.py
+msgid "{0} abgebrochen: {1}"
+msgstr "{0} canceled: {1}"
+
+#: local_cluster/ui/window.py
+msgid "{0} abgeschlossen: {1}"
+msgstr "{0} finished: {1}"
+
+#: local_cluster/ui/window.py
+msgid "{0} fehlende(r) Prefix(e) werden angelegt"
+msgstr "Creating {0} missing prefix(es)"
+
+#: local_cluster/ui/window.py
+msgid "{0} fehlgeschlagen: {1}"
+msgstr "{0} failed: {1}"
+
+#: local_cluster/ui/window.py
+msgid "{0} {1} erkannt: {2}"
+msgstr "Found {0} {1}: {2}"
+
+#: local_cluster/ui/window.py
+msgid "Öffnen"
+msgstr "Open"
+
+#: local_cluster/ui/window.py
+msgid "„{0}“ hinzugefügt"
+msgstr "“{0}” added"

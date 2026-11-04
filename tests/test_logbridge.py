@@ -5,7 +5,7 @@ import os
 import unittest
 from unittest import mock
 
-from milkyway import logsetup
+from local_cluster import logsetup
 
 ERROR, CRITICAL, WARNING, MESSAGE, INFO, DEBUG = 1 << 2, 1 << 3, 1 << 4, 1 << 5, 1 << 6, 1 << 7
 FATAL, RECURSION = 1 << 1, 1
@@ -54,11 +54,11 @@ class LogBridgeTest(unittest.TestCase):
         self.assertEqual(writer(WARNING, "x", 1, None), "handled")
 
     def test_debug_mode_from_environment(self):
-        with mock.patch.dict(os.environ, {"MILKYWAY_LOG": "debug"}, clear=False):
+        with mock.patch.dict(os.environ, {"LOCAL_CLUSTER_LOG": "debug"}, clear=False):
             self.assertTrue(logsetup.debug_mode())
-        with mock.patch.dict(os.environ, {"MILKYWAY_LOG": "", "MILKYWAY_DEBUG": ""}, clear=False):
+        with mock.patch.dict(os.environ, {"LOCAL_CLUSTER_LOG": "", "LOCAL_CLUSTER_DEBUG": ""}, clear=False):
             self.assertFalse(logsetup.debug_mode())
-        with mock.patch.dict(os.environ, {"MILKYWAY_LOG": "", "MILKYWAY_DEBUG": "1"}, clear=False):
+        with mock.patch.dict(os.environ, {"LOCAL_CLUSTER_LOG": "", "LOCAL_CLUSTER_DEBUG": "1"}, clear=False):
             self.assertTrue(logsetup.debug_mode())
 
 

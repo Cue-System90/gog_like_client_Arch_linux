@@ -1,14 +1,15 @@
-# Milkyway
+# local:cluster
 
 An unofficial, native **GOG.com client for CachyOS / Arch Linux**, modelled on GOG Galaxy 2.x – a GTK4/libadwaita
 app plus a command line tool: **buy games in the built-in GOG store**, install, play and sync them. It rebuilds the
 client natively and talks to the GOG services the way Galaxy does (login, store, library, content system v2,
 GamesDB, gameplay API, cloud storage), and adds what Linux needs: Proton/Wine per game, prefixes and GOverlay.
 
-Formerly *galaxy-linux* – renamed in 0.5.0 (the Milky Way is our galaxy). Settings, sign-in, shortcuts and prefixes
-carry over on first start, and 0.4.x installs 0.5.0 through ⚙ → *Update now*.
+Named after the Local Group, the cluster of galaxies our Milky Way belongs to; formerly *Milkyway* (0.5) and
+*galaxy-linux* (up to 0.4). Settings, sign-in, shortcuts and prefixes carry over on first start, and older versions
+update through ⚙ → *Update now*.
 
-![Milkyway library view](docs/screenshot.png)
+![local:cluster library view](docs/screenshot.png)
 
 ## Features
 
@@ -64,9 +65,9 @@ Update with ⚙ → *Update now* once a release is out, or `git pull && ./instal
 - Sign in through the avatar menu, then install or play from a game's page.
 - ⚙ menu: add games, redeem a GOG code, scan folders for GOG games, refresh the library, settings.
 - Game page → ⚙ *Properties*: Proton/Wine version, launch options, GOverlay profile, cloud saves, prefix setup.
-- Language: *Settings → General → Interface*, or `MILKYWAY_LANG=en milkyway`.
-- Command line: `milkyway --help` (`list`, `install`, `launch`, `cloud`, `redist`, `comet`, `goverlay`, `library` …).
-- Logs: ⚙ → *Log* (filter, search, copy), `~/.local/share/milkyway/logs/` or `milkyway log`.
+- Language: *Settings → General → Interface*, or `LOCAL_CLUSTER_LANG=en local-cluster`.
+- Command line: `local-cluster --help` (`list`, `install`, `launch`, `cloud`, `redist`, `comet`, `goverlay`, `library` …).
+- Logs: ⚙ → *Log* (filter, search, copy), `~/.local/share/local-cluster/logs/` or `local-cluster log`.
   Changes: [CHANGELOG.md](CHANGELOG.md).
 
 Development: `python3 -m unittest discover -s tests -t .`; translations are kept with `scripts/i18n-update.py`.

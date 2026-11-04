@@ -1,7 +1,7 @@
 """Spiel-Metadaten aus api.gog.com/GamesDB (api/models.py) – ohne Netz."""
 import unittest
 
-from milkyway.api.models import GameMeta, LibraryEntry
+from local_cluster.api.models import GameMeta, LibraryEntry
 
 
 class DescriptionTest(unittest.TestCase):

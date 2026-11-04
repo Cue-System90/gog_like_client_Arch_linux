@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Name=local:cluster
+GenericName=Game library (GOG.com, unofficial)
+GenericName[de]=Spielebibliothek (GOG.com, inoffiziell)
+Comment=Unofficial GOG.com client with per-game Proton selection
+Comment[de]=Inoffizieller Client für GOG.com mit Proton-Auswahl pro Spiel
+Exec=local-cluster %u
+Icon=io.github.cue_system90.LocalCluster
+Terminal=false
+Categories=Game;
+Keywords=GOG;Cluster;Galaxy;Milkyway;Proton;Wine;Games;
+Keywords[de]=GOG;Cluster;Galaxy;Milkyway;Proton;Wine;Spiele;
+StartupNotify=true
+StartupWMClass=io.github.cue_system90.LocalCluster
+MimeType=x-scheme-handler/local-cluster;

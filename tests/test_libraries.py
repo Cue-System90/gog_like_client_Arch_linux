@@ -12,9 +12,9 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from milkyway.content.installer import InstallError
-from milkyway.launch import compat
-from milkyway.settings import CustomLibrary, GlobalSettings
+from local_cluster.content.installer import InstallError
+from local_cluster.launch import compat
+from local_cluster.settings import CustomLibrary, GlobalSettings
 
 
 def exe(path: Path, size: int = 2_000_000) -> None:
@@ -37,7 +37,7 @@ class LibraryTestBase(unittest.TestCase):
         cfg, data, cache = self.base / "cfg", self.base / "data", self.base / "cache"
         self.cfg, self.data = cfg, data
         self.patch = mock.patch.multiple(
-            "milkyway.paths", CONFIG_DIR=cfg, DATA_DIR=data, CACHE_DIR=cache, LOG_DIR=data / "logs",
+            "local_cluster.paths", CONFIG_DIR=cfg, DATA_DIR=data, CACHE_DIR=cache, LOG_DIR=data / "logs",
             MANIFEST_DIR=data / "manifests", IMAGE_CACHE_DIR=cache / "images", API_CACHE_DIR=cache / "api",
             SETTINGS_FILE=cfg / "settings.json", GAME_SETTINGS_FILE=cfg / "games.json", CREDENTIALS_FILE=cfg / "credentials.json",
             INSTALLED_FILE=data / "installed.json", PLAYTIME_FILE=data / "playtime.json")
@@ -52,7 +52,7 @@ class LibraryTestBase(unittest.TestCase):
         self.td.cleanup()
 
     def backend(self, gog_dirs: bool = True):
-        from milkyway.backend import Backend
+        from local_cluster.backend import Backend
         b = Backend()
         if gog_dirs:
             b.settings.install_dir, b.settings.prefix_dir = str(self.gog), str(self.gog.parent / "01.Prefixes")
@@ -367,7 +367,7 @@ class DefaultsTest(LibraryTestBase):
 # ----------------------------------------------------------------------------- Kommandozeile
 class CliTest(LibraryTestBase):
     def run_cli(self, *argv: str) -> tuple[int, str]:
-        from milkyway import cli
+        from local_cluster import cli
         out = io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
             rc = cli.main(list(argv))

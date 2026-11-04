@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from milkyway.launch import shortcuts
+from local_cluster.launch import shortcuts
 
 
 class ShortcutTest(unittest.TestCase):
@@ -17,7 +17,7 @@ class ShortcutTest(unittest.TestCase):
         self.apps, self.desk, self.icons = root / "apps", root / "Schreibtisch", root / "icons"
         self.patches = [mock.patch.object(shortcuts, "APPS_DIR", self.apps), mock.patch.object(shortcuts, "ICON_DIR", self.icons),
                         mock.patch.object(shortcuts, "desktop_dir", lambda: self.desk), mock.patch.object(shortcuts, "_refresh_menu", lambda: None),
-                        mock.patch.object(shortcuts.shutil, "which", lambda n: "/usr/bin/milkyway" if n == "milkyway" else None)]
+                        mock.patch.object(shortcuts.shutil, "which", lambda n: "/usr/bin/local-cluster" if n == "local-cluster" else None)]
         for p in self.patches:
             p.start()
 
@@ -29,13 +29,13 @@ class ShortcutTest(unittest.TestCase):
     def test_create_and_remove(self):
         written = shortcuts.create("123", "Mein Spiel: Director's Cut", "/tmp/icon.png", menu=True, desktop=True)
         self.assertEqual(len(written), 2)
-        content = (self.apps / "milkyway-123.desktop").read_text()
-        self.assertIn("Exec=/usr/bin/milkyway milkyway://launch/123", content)
+        content = (self.apps / "local-cluster-123.desktop").read_text()
+        self.assertIn("Exec=/usr/bin/local-cluster local-cluster://launch/123", content)
         self.assertIn("Name=Mein Spiel: Director's Cut", content)
         self.assertIn("Icon=/tmp/icon.png", content)
         self.assertIn("Categories=Game;", content)
         self.assertIn("[Desktop Action Page]", content)
-        self.assertTrue(os.access(self.desk / "milkyway-123.desktop", os.X_OK))
+        self.assertTrue(os.access(self.desk / "local-cluster-123.desktop", os.X_OK))
         self.assertTrue(shortcuts.has_menu_shortcut("123") and shortcuts.has_desktop_shortcut("123"))
         removed = shortcuts.remove("123", menu=True, desktop=False)
         self.assertEqual(len(removed), 1)
@@ -55,7 +55,7 @@ class ShortcutTest(unittest.TestCase):
 
     def test_exec_quoting_is_desktop_spec_compliant(self):
         import shutil as _sh, subprocess
-        self.assertEqual(shortcuts.exec_quote("/usr/bin/milkyway"), "/usr/bin/milkyway")
+        self.assertEqual(shortcuts.exec_quote("/usr/bin/local-cluster"), "/usr/bin/local-cluster")
         self.assertEqual(shortcuts.exec_quote('/mnt/spiele ordner/a"b$c'), '"/mnt/spiele ordner/a\\"b\\$c"')
         # Entwicklungsmodus: Pfad mit Leerzeichen → gültige Exec-Zeile
         with mock.patch.object(shortcuts.shutil, "which", lambda n: None), mock.patch.object(shortcuts.Path, "home", lambda: Path(self.td.name)):
@@ -69,7 +69,7 @@ class ShortcutTest(unittest.TestCase):
 
     def test_fallback_icon_when_missing(self):
         content = shortcuts.desktop_entry("7", "Spiel", None)
-        self.assertIn("Icon=io.github.cue_system90.Milkyway", content)
+        self.assertIn("Icon=io.github.cue_system90.LocalCluster", content)
 
 
 if __name__ == "__main__":
